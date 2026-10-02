@@ -35,7 +35,7 @@ import axios from "axios"
 import { LoginUser } from "../services/auth.service"
 import { loginSchema } from "../schemas/login.schema"
 import { useNavigate } from "react-router-dom"
-import { setUser, type User } from "../slice/authSlice";
+import { setAuthUser, type AuthUser } from "../slice/authSlice";
 import { useAppDispatch } from "@/hooks/redux-hooks";
 
 
@@ -80,14 +80,14 @@ export default function LoginForm() {
       setIsSuccess(true)
       setServerError(null)
       const user = response.data?.data || null;
-      const loggedInUser:User = {
+      const loggedInUser:AuthUser = {
         id:user.id,
         firstName:user.firstName,
         lastName:user.lastName,
         email:user.email,
         user_role:user.user_role,
       }
-      dispatch(setUser(loggedInUser));
+      dispatch(setAuthUser(loggedInUser));
       reset()
       setTimeout(() => {
         navigate("/app/dashboard")

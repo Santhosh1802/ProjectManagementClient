@@ -17,3 +17,20 @@ export type User = {
   updatedAt: string
   lastLoginAt: string
 }
+
+export type PasswordForm = {
+  id: string
+  oldPassword: string
+  newPassword: string
+}
+
+export type DeleteUser = {
+  id: string
+}
+
+export type UserDetails = {
+  id: string
+  firstName: string
+  lastName: string
+  email: string
+}
