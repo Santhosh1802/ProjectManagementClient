@@ -5,114 +5,227 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import React from "react"
-import { Controller, useForm } from "react-hook-form"
-import { userSchema } from "../schemas/user.schema"
-import type { z } from "zod"
+} from "@/components/ui/card";
+
 import {
   Field,
   FieldError,
   FieldGroup,
   FieldLabel,
-} from "@/components/ui/field"
-import { Input } from "@/components/ui/input"
-import { Cloud } from "lucide-react"
-import { Button } from "@/components/ui/button"
+} from "@/components/ui/field";
 
-export default function PersonalInfo() {
-  const { formState, reset, handleSubmit, control,setValue } = useForm<
-    z.infer<typeof userSchema>
-  >({})
-  async function onSubmit(data: z.infer<typeof userSchema>) {
-    console.log(data)
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+
+import {
+  Cloud,
+  Loader2,
+} from "lucide-react";
+
+import {
+  Controller,
+  useForm,
+} from "react-hook-form";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+
+import { z } from "zod";
+
+import { userSchema } from "../schemas/user.schema";
+
+import type { User } from "../types/user.types";
+
+import { useEffect } from "react";
+
+interface PersonalInfoProps {
+  user: User;
+}
+
+type PersonalInfoForm = z.infer<
+  typeof userSchema
+>;
+
+export default function PersonalInfo({
+  user,
+}: PersonalInfoProps) {
+  const {
+    control,
+    reset,
+    handleSubmit,
+    formState: {
+      isDirty,
+      isSubmitting,
+    },
+  } = useForm<PersonalInfoForm>({
+    resolver: zodResolver(userSchema),
+
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      email: "",
+    },
+  });
+
+  /*
+   * Populate the form whenever Redux user changes.
+   */
+  useEffect(() => {
+    reset({
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+    });
+  }, [user, reset]);
+
+  async function onSubmit(
+    data: PersonalInfoForm
+  ) {
+    console.log("Updating profile:", data);
+
+    // TODO:
+    // await updateUser(...)
+    // dispatch(setUser(updatedUser))
   }
+
   return (
-    <Card className="mt-2">
+    <Card className="overflow-hidden">
       <CardHeader>
-        <CardTitle>Personal Information</CardTitle>
+        <CardTitle>
+          Personal Information
+        </CardTitle>
+
         <CardDescription>
-          Update your basic workspace credentials. Your email address receives
-          system alerts and deployment audits.
+          Update your basic workspace credentials.
+          Your email address receives system alerts
+          and deployment notifications.
         </CardDescription>
       </CardHeader>
+
       <CardContent>
-        <form id="personal-info" onSubmit={handleSubmit(onSubmit)}>
+        <form
+          id="personal-info"
+          onSubmit={handleSubmit(onSubmit)}
+        >
           <FieldGroup>
-            <div className="flex flex-row justify-center gap-2">
+            {/* First + Last name */}
+
+            <div
+              className="
+                grid
+                grid-cols-1
+                gap-4
+                sm:grid-cols-2
+              "
+            >
               <Controller
                 name="firstName"
                 control={control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
+                render={({
+                  field,
+                  fieldState,
+                }) => (
+                  <Field
+                    data-invalid={
+                      fieldState.invalid
+                    }
+                  >
                     <FieldLabel htmlFor="personal-info-first-name">
                       First Name
                     </FieldLabel>
+
                     <Input
                       {...field}
                       id="personal-info-first-name"
-                      aria-invalid={fieldState.invalid}
+                      aria-invalid={
+                        fieldState.invalid
+                      }
                       placeholder="Santhosh"
-                      className="text-xs"
-                      autoComplete="firstName"
-                      type="text"
-                      value={field.value}
+                      autoComplete="given-name"
                     />
+
                     {fieldState.invalid && (
                       <FieldError
-                        className="text-[10px]"
-                        errors={[fieldState.error]}
+                        errors={[
+                          fieldState.error,
+                        ]}
                       />
                     )}
                   </Field>
                 )}
               />
+
               <Controller
                 name="lastName"
                 control={control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
+                render={({
+                  field,
+                  fieldState,
+                }) => (
+                  <Field
+                    data-invalid={
+                      fieldState.invalid
+                    }
+                  >
                     <FieldLabel htmlFor="personal-info-last-name">
                       Last Name
                     </FieldLabel>
+
                     <Input
                       {...field}
                       id="personal-info-last-name"
-                      aria-invalid={fieldState.invalid}
+                      aria-invalid={
+                        fieldState.invalid
+                      }
                       placeholder="K"
-                      className="text-xs"
-                      autoComplete="lastName"
-                      type="text"
+                      autoComplete="family-name"
                     />
+
                     {fieldState.invalid && (
                       <FieldError
-                        className="text-[10px]"
-                        errors={[fieldState.error]}
+                        errors={[
+                          fieldState.error,
+                        ]}
                       />
                     )}
                   </Field>
                 )}
               />
             </div>
+
+            {/* Email */}
+
             <Controller
               name="email"
               control={control}
-              render={({ field, fieldState }) => (
-                <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="personal-info-email">Email</FieldLabel>
+              render={({
+                field,
+                fieldState,
+              }) => (
+                <Field
+                  data-invalid={
+                    fieldState.invalid
+                  }
+                >
+                  <FieldLabel htmlFor="personal-info-email">
+                    Email
+                  </FieldLabel>
+
                   <Input
                     {...field}
                     id="personal-info-email"
-                    aria-invalid={fieldState.invalid}
+                    aria-invalid={
+                      fieldState.invalid
+                    }
                     placeholder="santhosh@email.com"
-                    className="text-xs"
                     autoComplete="email"
                     type="email"
                   />
+
                   {fieldState.invalid && (
                     <FieldError
-                      className="text-[10px]"
-                      errors={[fieldState.error]}
+                      errors={[
+                        fieldState.error,
+                      ]}
                     />
                   )}
                 </Field>
@@ -121,13 +234,47 @@ export default function PersonalInfo() {
           </FieldGroup>
         </form>
       </CardContent>
-      <CardFooter className="h-full w-full bg-muted p-4 bottom-0">
-        <div className="flex-1 flex flex-row gap-2 items-center">
-          <Cloud color="green"/>
-          <p>All modifications synchronized with cloud state</p>
+
+      {/* Footer */}
+
+      <CardFooter
+        className="
+          flex
+          flex-col
+          gap-3
+          border-t
+          bg-muted/40
+          p-4
+
+          sm:flex-row
+          sm:items-center
+          sm:justify-between
+        "
+      >
+        <div className="flex items-center gap-2">
+          <Cloud className="size-4 text-green-600" />
+
+          <p className="text-xs text-muted-foreground">
+            {isDirty
+              ? "You have unsaved changes"
+              : "All changes are synchronized"}
+          </p>
         </div>
-        <Button variant="default">Save Profile</Button>
+
+        <Button
+          type="submit"
+          form="personal-info"
+          disabled={
+            !isDirty || isSubmitting
+          }
+        >
+          {isSubmitting && (
+            <Loader2 className="size-4 animate-spin" />
+          )}
+
+          Save Profile
+        </Button>
       </CardFooter>
     </Card>
-  )
+  );
 }

@@ -3,8 +3,8 @@ import {
   FolderKanban,
   LayoutDashboard,
   UserCircle,
-} from "lucide-react";
-import { useLocation, NavLink } from "react-router-dom";
+} from "lucide-react"
+import { useLocation, NavLink } from "react-router-dom"
 
 import {
   Sidebar,
@@ -17,17 +17,14 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar";
+} from "@/components/ui/sidebar"
 
-import { Badge } from "../ui/badge";
-import {
-  Avatar,
-  AvatarFallback,
-} from "../ui/avatar";
+import { Badge } from "../ui/badge"
+import { Avatar, AvatarFallback } from "../ui/avatar"
 
-import { useAppSelector } from "@/hooks/redux-hooks";
+import { useAppSelector } from "@/hooks/redux-hooks"
 
-const mainNavigation = [
+const workspaceNavigation = [
   {
     title: "Dashboard",
     url: "/app/dashboard",
@@ -43,77 +40,53 @@ const mainNavigation = [
     url: "/app/tasks",
     icon: CheckSquare,
   },
+]
+const accountNavigation = [
   {
     title: "Profile",
     url: "/app/profile",
     icon: UserCircle,
   },
-];
+]
 
-function getInitials(
-  firstName?: string,
-  lastName?: string
-) {
+function getInitials(firstName?: string, lastName?: string) {
   if (!firstName && !lastName) {
-    return "?";
+    return "?"
   }
 
-  return `${firstName?.[0] ?? ""}${lastName?.[0] ?? ""}`.toUpperCase();
+  return `${firstName?.[0] ?? ""}${lastName?.[0] ?? ""}`.toUpperCase()
 }
 
 export default function AppSidebar() {
-  const location = useLocation();
+  const location = useLocation()
 
-  const user = useAppSelector(
-    (state) => state.auth.user
-  );
+  const user = useAppSelector((state) => state.auth.user)
 
   const isActiveRoute = (url: string) => {
-    return (
-      location.pathname === url ||
-      location.pathname.startsWith(`${url}/`)
-    );
-  };
+    return location.pathname === url || location.pathname.startsWith(`${url}/`)
+  }
 
-  const initials = getInitials(
-    user?.firstName,
-    user?.lastName
-  );
+  const initials = getInitials(user?.firstName, user?.lastName)
 
-  const fullName = user
-    ? `${user.firstName} ${user.lastName}`
-    : "User";
+  const fullName = user ? `${user.firstName} ${user.lastName}` : "User"
 
   return (
-    <Sidebar
-      collapsible="icon"
-      variant="sidebar"
-      className="bg-muted"
-    >
+    <Sidebar collapsible="icon" variant="sidebar" className="bg-muted">
       {/* Header */}
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
-              render={
-                <NavLink to="/app/dashboard" />
-              }
+              render={<NavLink to="/app/dashboard" />}
               size="lg"
               tooltip="DevFlow"
             >
               <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <img
-                  src="/logo.png"
-                  alt="DevFlow"
-                  width="40"
-                  height="40"
-                />
+                <img src="/logo.png" alt="DevFlow" width="40" height="40" />
               </div>
 
               <div className="flex flex-1 items-center gap-1 text-left text-sm leading-tight">
-                <p className="text-lg font-semibold">
-                  DevFlow
-                </p>
+                <p className="text-lg font-semibold">DevFlow</p>
 
                 <Badge
                   variant="outline"
@@ -130,25 +103,19 @@ export default function AppSidebar() {
       {/* Main Navigation */}
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>
-            Workspace
-          </SidebarGroupLabel>
+          <SidebarGroupLabel>Workspace</SidebarGroupLabel>
 
           <SidebarGroupContent>
             <SidebarMenu>
-              {mainNavigation.map((item) => {
-                const Icon = item.icon;
+              {workspaceNavigation.map((item) => {
+                const Icon = item.icon
 
-                const isActive = isActiveRoute(
-                  item.url
-                );
+                const isActive = isActiveRoute(item.url)
 
                 return (
                   <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton
-                      render={
-                        <NavLink to={item.url} />
-                      }
+                      render={<NavLink to={item.url} />}
                       isActive={isActive}
                       tooltip={item.title}
                     >
@@ -157,7 +124,32 @@ export default function AppSidebar() {
                       <span>{item.title}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
-                );
+                )
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+          <SidebarGroupLabel>Account</SidebarGroupLabel>
+
+          <SidebarGroupContent>
+           <SidebarMenu>
+              {accountNavigation.map((item) => {
+                const Icon = item.icon
+
+                const isActive = isActiveRoute(item.url)
+
+                return (
+                  <SidebarMenuItem key={item.url}>
+                    <SidebarMenuButton
+                      render={<NavLink to={item.url} />}
+                      isActive={isActive}
+                      tooltip={item.title}
+                    >
+                      <Icon />
+
+                      <span>{item.title}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )
               })}
             </SidebarMenu>
           </SidebarGroupContent>
@@ -174,15 +166,11 @@ export default function AppSidebar() {
               className="bg-muted"
             >
               <Avatar className="size-8 shrink-0">
-                <AvatarFallback>
-                  {initials}
-                </AvatarFallback>
+                <AvatarFallback>{initials}</AvatarFallback>
               </Avatar>
 
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">
-                  {fullName}
-                </span>
+                <span className="truncate font-medium">{fullName}</span>
 
                 <span className="truncate text-xs text-muted-foreground">
                   {user?.email ?? "No email"}
@@ -193,5 +181,5 @@ export default function AppSidebar() {
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
-  );
+  )
 }
