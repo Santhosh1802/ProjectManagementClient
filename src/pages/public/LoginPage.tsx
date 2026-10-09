@@ -1,21 +1,27 @@
 import LoginForm from "@/features/auth/components/LoginForm";
-import ProductWording from "@/features/auth/components/ProductWording"
-import TermsAndPrivacyMessage from "@/features/auth/components/TermsAndPrivacyMessage"
+import ProductWording from "@/features/auth/components/ProductWording";
+import TermsAndPrivacyMessage from "@/features/auth/components/TermsAndPrivacyMessage";
 
-export default function LoginPage() {
+export default function RegisterPage() {
   return (
-    <main className="min-h-screen bg-muted">
-      <div className="flex min-h-screen">
-        <section className="hidden lg:flex lg:w-1/2 lg:flex-col lg:justify-center lg:px-10 ">
-          <ProductWording />
-        </section>
-        <section className="flex w-full items-center justify-center p-6 lg:w-1/2">
-          <div className="flex w-full max-w-sm flex-col items-center gap-3">
-            <LoginForm />
-            <TermsAndPrivacyMessage message="creating an account" />
-          </div>
-        </section>
+    <div className="min-h-[calc(100vh-4rem)]">
+      <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-6xl items-center px-6 py-8">
+        <div className="grid w-full items-center gap-12 lg:grid-cols-2 lg:gap-20">
+          {/* Product introduction */}
+          <section className="hidden lg:block">
+            <ProductWording />
+          </section>
+
+          {/* Registration */}
+          <section className="flex justify-center">
+            <div className="w-full max-w-sm">
+              <LoginForm />
+
+              <TermsAndPrivacyMessage message="creating an account" />
+            </div>
+          </section>
+        </div>
       </div>
-    </main>
-  )
+    </div>
+  );
 }
