@@ -3,6 +3,7 @@ import {
   CheckSquare,
   ChevronUp,
   FolderKanban,
+  Keyboard,
   LayoutDashboard,
   Laptop,
   LogOut,
@@ -11,6 +12,8 @@ import {
   Sun,
   UserCircle,
   SettingsIcon,
+  Users,
+  UserPlus,
 } from "lucide-react"
 
 import { NavLink, useNavigate } from "react-router-dom"
@@ -33,6 +36,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
@@ -46,8 +50,26 @@ import { Separator } from "../ui/separator"
 import { logout } from "@/features/auth/slice/authSlice"
 import { clearUser } from "@/features/users/slice/user.slice"
 import { LogoutUser } from "@/features/auth/services/auth.service"
+import { clearProjects } from "@/features/projects/slice/projectSlice"
 
-const workspaceNavigation = [
+import type { LucideIcon } from "lucide-react"
+import { useEffect } from "react";
+
+import { getShortcut } from "@/config/keyboardShortcuts"
+import { useKeyboardShortcutsUI } from "@/context/KeyboardShortcutsContext"
+import { formatShortcutKey, toAriaKeyShortcuts } from "@/lib/keyboard"
+
+const shortcutsHelpKeys = getShortcut("global.shortcuts")?.keys ?? ["mod", "/"]
+
+type AppRole = "ADMIN" | "MANAGER" | "USER"
+
+interface NavigationItem {
+  title: string
+  url: string
+  icon: LucideIcon
+}
+
+const dashboardNavigation: NavigationItem[] = [
   {
     title: "Dashboard",
     url: "/app/dashboard",
@@ -65,7 +87,25 @@ const workspaceNavigation = [
   },
 ]
 
-const accountNavigation = [
+const roleNavigation: Record<AppRole, NavigationItem[]> = {
+  ADMIN: [
+    {
+      title: "User Management",
+      url: "/app/users",
+      icon: Users,
+    },
+  ],
+  MANAGER: [
+    {
+      title: "Create User",
+      url: "/app/users/create",
+      icon: UserPlus,
+    },
+  ],
+  USER: [],
+}
+
+const accountNavigation: NavigationItem[] = [
   {
     title: "Profile",
     url: "/app/profile",
@@ -90,6 +130,17 @@ export default function AppSidebar() {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const user = useAppSelector((state) => state.auth.user)
+  const { openShortcuts } = useKeyboardShortcutsUI()
+
+  const userRole = user?.user_role?.toUpperCase() as AppRole | undefined
+  useEffect(()=>{
+    console.log(userRole);
+    
+  },[userRole])
+  const workspaceNavigation = [
+    ...dashboardNavigation,
+    ...(userRole && userRole in roleNavigation ? roleNavigation[userRole] : []),
+  ]
 
   const theme = useAppSelector((state) => state.theme.theme)
 
@@ -108,6 +159,7 @@ export default function AppSidebar() {
     } finally {
       dispatch(logout())
       dispatch(clearUser())
+      dispatch(clearProjects())
       navigate("/login", { replace: true })
     }
   }
@@ -126,8 +178,14 @@ export default function AppSidebar() {
               size="lg"
               tooltip="DevFlow"
             >
-              <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <img src="/logo.png" alt="DevFlow" width="40" height="40" />
+              <div className="flex size-8 shrink-0 items-center justify-center text-primary-foreground">
+                <img
+                  src="/logo.png"
+                  alt="DevFlow"
+                  width="40"
+                  height="40"
+                  className="rounded-lg"
+                />
               </div>
 
               <div className="flex flex-1 items-center gap-1 text-left text-sm leading-tight">
@@ -294,8 +352,9 @@ export default function AppSidebar() {
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{fullName}</span>
 
+                  
                   <span className="truncate text-xs text-muted-foreground">
-                    {user?.email ?? "No email"}
+                    {userRole ?? "USER"}
                   </span>
                 </div>
 
@@ -317,6 +376,17 @@ export default function AppSidebar() {
                 <DropdownMenuItem render={<NavLink to="/app/settings" />}>
                   <Settings className="size-4" />
                   <span>Settings</span>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  onClick={openShortcuts}
+                  aria-keyshortcuts={toAriaKeyShortcuts(shortcutsHelpKeys)}
+                >
+                  <Keyboard className="size-4" />
+                  <span>Keyboard shortcuts</span>
+                  <DropdownMenuShortcut aria-hidden="true">
+                    {shortcutsHelpKeys.map(formatShortcutKey).join(" ")}
+                  </DropdownMenuShortcut>
                 </DropdownMenuItem>
 
                 <DropdownMenuSeparator />

@@ -12,19 +12,12 @@ export default function PublicLayout() {
     <div className="min-h-screen w-full">
       <header className="fixed inset-x-0 top-0 z-50">
         {!serverAvailable && <ServerStatus />}
-
         <NavBar />
       </header>
 
-      <main
-        className={
-          serverAvailable
-            ? "pt-16"
-            : "pt-26"
-        }
-      >
+      <div className={serverAvailable ? "pt-16" : "pt-26"}>
         <Outlet />
-      </main>
+      </div>
     </div>
   );
 }

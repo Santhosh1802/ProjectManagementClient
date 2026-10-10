@@ -1,4 +1,4 @@
-import { Bell, Search } from "lucide-react";
+import { Search, Keyboard } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -9,13 +9,30 @@ import {
   AvatarFallback,
 } from "@/components/ui/avatar";
 
-import  AppBreadcrumb  from "./AppBreadcrumb";
+import { getShortcut } from "@/config/keyboardShortcuts";
+import { useKeyboardShortcutsUI } from "@/context/KeyboardShortcutsContext";
+import { toAriaKeyShortcuts } from "@/lib/keyboard";
+
+import AppBreadcrumb from "./AppBreadcrumb";
+import ShortcutHint from "./ShortcutHint";
+
+const searchShortcut = getShortcut("global.search");
+const helpShortcut = getShortcut("global.shortcuts");
 
 export default function AppHeader() {
+  // Ctrl/Cmd + K is handled by the central keyboard shortcut system.
+  const { openSearch, openShortcuts } = useKeyboardShortcutsUI();
+
+  const searchKeys = searchShortcut?.keys ?? ["mod", "k"];
+  const ariaKeyShortcuts = toAriaKeyShortcuts(searchKeys);
+  
+  const helpKeys = helpShortcut?.keys ?? ["mod", "/"];
+  const helpAriaKeyShortcuts = toAriaKeyShortcuts(helpKeys);
+
   return (
     <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center border-b backdrop-blur">
 
-      <div className="flex w-full items-center gap-3 px-4">
+      <div className="flex w-full min-w-0 items-center gap-3 px-4">
 
         {/* Sidebar Toggle */}
         <SidebarTrigger className="-ml-1" />
@@ -35,6 +52,10 @@ export default function AppHeader() {
           {/* Global Search */}
           <button
             type="button"
+            onClick={openSearch}
+            aria-label="Search users, projects and tasks"
+            aria-keyshortcuts={ariaKeyShortcuts}
+            aria-haspopup="dialog"
             className="
               hidden
               h-8
@@ -48,19 +69,21 @@ export default function AppHeader() {
               text-sm
               text-muted-foreground
               transition-colors
+              outline-none
               hover:bg-muted
+              focus-visible:border-ring
+              focus-visible:ring-2
+              focus-visible:ring-ring/50
               md:flex
             "
           >
-            <Search className="size-4" />
+            <Search className="size-4" aria-hidden="true" />
 
             <span className="flex-1 text-left">
               Search...
             </span>
 
-            <kbd className="rounded border bg-background px-1.5 py-0.5 text-[10px]">
-              ⌘K
-            </kbd>
+            <ShortcutHint keys={searchKeys} keyClassName="bg-background" />
           </button>
 
 
@@ -68,6 +91,9 @@ export default function AppHeader() {
           <Button
             variant="ghost"
             size="icon"
+            onClick={openSearch}
+            aria-keyshortcuts={ariaKeyShortcuts}
+            aria-haspopup="dialog"
             className="size-8 md:hidden"
           >
             <Search className="size-4" />
@@ -77,20 +103,18 @@ export default function AppHeader() {
             </span>
           </Button>
 
-
-          {/* Notifications */}
+          {/* Keyboard Shortcuts Help */}
           <Button
             variant="ghost"
             size="icon"
-            className="size-8"
+            onClick={openShortcuts}
+            aria-keyshortcuts={helpAriaKeyShortcuts}
+            aria-label="Keyboard shortcuts"
+            className="size-8 text-muted-foreground hover:text-foreground hidden sm:flex"
+            title="Keyboard shortcuts"
           >
-            <Bell className="size-4" />
-
-            <span className="sr-only">
-              Notifications
-            </span>
+            <Keyboard className="size-4" />
           </Button>
-
 
           {/* User */}
           <Avatar className="size-8">

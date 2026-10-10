@@ -7,6 +7,12 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const routeNames: Record<string, string> = {
   dashboard: "Dashboard",
@@ -17,6 +23,9 @@ const routeNames: Record<string, string> = {
   members: "Members",
   activity: "Activity",
 };
+
+// Check if string is a UUID (or just very long)
+const isLongId = (str: string) => str.length > 20;
 
 export default function AppBreadcrumb() {
   const location = useLocation();
@@ -29,48 +38,66 @@ export default function AppBreadcrumb() {
     appIndex !== -1 ? segments.slice(appIndex + 1) : segments;
 
   return (
-    <Breadcrumb>
-      <BreadcrumbList>
-        {/* Home */}
-        <BreadcrumbItem>
-          <BreadcrumbLink
-            render={<Link to="/app/dashboard" />}
-          >
-            Home
-          </BreadcrumbLink>
-        </BreadcrumbItem>
+    <TooltipProvider>
+      <Breadcrumb>
+        <BreadcrumbList className="flex-nowrap">
+          {/* Home */}
+          <BreadcrumbItem className="shrink-0">
+            <BreadcrumbLink
+              render={<Link to="/app/dashboard" />}
+            >
+              Home
+            </BreadcrumbLink>
+          </BreadcrumbItem>
 
-        {routeSegments.map((segment, index) => {
-          const isLast = index === routeSegments.length - 1;
+          {routeSegments.map((segment, index) => {
+            const isLast = index === routeSegments.length - 1;
 
-          const path =
-            "/app/" + routeSegments.slice(0, index + 1).join("/");
+            const path =
+              "/app/" + routeSegments.slice(0, index + 1).join("/");
 
-          const name =
-            routeNames[segment] ??
-            segment
-              .replace(/-/g, " ")
-              .replace(/\b\w/g, (char) => char.toUpperCase());
+            const name =
+              routeNames[segment] ??
+              segment
+                .replace(/-/g, " ")
+                .replace(/\b\w/g, (char) => char.toUpperCase());
 
-          return (
-            <div key={path} className="contents">
-              <BreadcrumbSeparator />
+            const needsTooltip = isLongId(segment);
+            
+            const content = isLast ? (
+              <BreadcrumbPage className="block max-w-[100px] truncate sm:max-w-[150px] md:max-w-[250px]">
+                {name}
+              </BreadcrumbPage>
+            ) : (
+              <BreadcrumbLink
+                className="block max-w-[100px] truncate sm:max-w-[150px] md:max-w-[250px]"
+                render={<Link to={path} />}
+              >
+                {name}
+              </BreadcrumbLink>
+            );
 
-              <BreadcrumbItem>
-                {isLast ? (
-                  <BreadcrumbPage>{name}</BreadcrumbPage>
-                ) : (
-                  <BreadcrumbLink
-                    render={<Link to={path} />}
-                  >
-                    {name}
-                  </BreadcrumbLink>
-                )}
-              </BreadcrumbItem>
-            </div>
-          );
-        })}
-      </BreadcrumbList>
-    </Breadcrumb>
+            return (
+              <div key={path} className="contents">
+                <BreadcrumbSeparator className="shrink-0" />
+
+                <BreadcrumbItem className="min-w-0 shrink">
+                  {needsTooltip ? (
+                    <Tooltip>
+                      <TooltipTrigger render={content}>
+                        {name}
+                      </TooltipTrigger>
+                      <TooltipContent>{name}</TooltipContent>
+                    </Tooltip>
+                  ) : (
+                    content
+                  )}
+                </BreadcrumbItem>
+              </div>
+            );
+          })}
+        </BreadcrumbList>
+      </Breadcrumb>
+    </TooltipProvider>
   );
 }

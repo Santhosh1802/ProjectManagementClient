@@ -13,6 +13,7 @@ import { useAppSelector } from "@/hooks/redux-hooks";
 
 import AppSidebar from "../common/AppSidebar";
 import AppHeader from "../common/AppHeader";
+import KeyboardShortcutsProvider from "../common/KeyboardShortcutsProvider";
 import type { RootState } from "@/app/store";
 
 export default function AppLayout() {
@@ -41,17 +42,19 @@ export default function AppLayout() {
 
   return (
     <SidebarProvider>
-      <AppSidebar />
+      <KeyboardShortcutsProvider>
+        <AppSidebar />
 
-      <SidebarInset>
-        <AppHeader />
+        <SidebarInset>
+          <AppHeader />
 
-        <main className="flex flex-1 flex-col">
-          <div className="flex-1 p-4 md:p-6">
-            <Outlet />
-          </div>
-        </main>
-      </SidebarInset>
+          <main className="flex flex-1 flex-col">
+            <div className="flex-1 p-4 md:p-6">
+              <Outlet />
+            </div>
+          </main>
+        </SidebarInset>
+      </KeyboardShortcutsProvider>
     </SidebarProvider>
   );
 }

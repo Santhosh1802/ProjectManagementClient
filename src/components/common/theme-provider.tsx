@@ -112,6 +112,9 @@ export function ThemeProvider({
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.repeat) return;
 
+      // Already handled elsewhere (e.g. "D" completing the G → D shortcut).
+      if (event.defaultPrevented) return;
+
       if (
         event.metaKey ||
         event.ctrlKey ||
