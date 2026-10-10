@@ -5,8 +5,10 @@ import PersonalInfo from "@/features/users/components/PersonalInfo";
 import PasswordChanger from "@/features/users/components/PasswordChanger";
 import UserDetails from "@/features/users/components/UserDetails";
 import DangerZone from "@/features/users/components/DangerZone";
-
 import { getUserById } from "@/features/users/services/users.service";
+
+import PageContainer from "@/components/common/PageContainer";
+import PageHeader from "@/components/common/PageHeader";
 
 import {
   setUser,
@@ -55,7 +57,7 @@ export default function ProfilePage() {
           id: userId || "",//TODO make loader
         });
 
-        const userData = response.data.data;
+        const userData = response;
 
         dispatch(setUser(userData));
       } catch (error) {
@@ -122,7 +124,11 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="flex w-full flex-col gap-5">
+    <PageContainer className="gap-5">
+      <PageHeader 
+        title="Your Profile" 
+        description="Manage your personal information and account settings."
+      />
 
       {/* ----------------------------------------- */}
       {/* User Details */}
@@ -164,6 +170,6 @@ export default function ProfilePage() {
       <div className="w-full">
         <DangerZone />
       </div>
-    </div>
+    </PageContainer>
   );
 }

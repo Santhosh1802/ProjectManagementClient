@@ -80,7 +80,8 @@ const passwordSchema = z
 type PasswordForm = z.infer<typeof passwordSchema>;
 
 export default function PasswordChanger() {
-    const userId = useAppSelector((state:RootState)=>state.auth.user?.id);
+  const user = useAppSelector((state: RootState) => state.auth.user);
+  const userId = user?.id;
   const [showCurrentPassword, setShowCurrentPassword] =
     useState(false);
 
@@ -174,6 +175,15 @@ export default function PasswordChanger() {
           id="password-change"
           onSubmit={handleSubmit(onSubmit)}
         >
+          {/* Hidden username field for accessibility / password managers */}
+          <input 
+            type="text" 
+            name="username" 
+            autoComplete="username" 
+            defaultValue={user?.email || ""} 
+            className="hidden" 
+            aria-hidden="true"
+          />
           <FieldGroup>
 
             {/* Current Password */}

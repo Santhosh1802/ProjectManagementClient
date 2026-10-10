@@ -1,3 +1,4 @@
+import { submitFormOnModEnter } from "@/lib/keyboard"
 import {
   Card,
   CardContent,
@@ -64,8 +65,8 @@ export default function PersonalInfo({ user }: PersonalInfoProps) {
    */
   useEffect(() => {
     reset({
-      firstName: user.firstName,
-      lastName: user.lastName,
+      firstName: user.firstName ?? "",
+      lastName: user.lastName ?? "",
       email: user.email,
       role: user.userRole,
     })
@@ -83,13 +84,13 @@ export default function PersonalInfo({ user }: PersonalInfoProps) {
     }
     try {
       const response = await updateUser(userDetails)
-      const userData = response.data?.data;
+      const userData = response;
       const updatedUser:User = userData
       const updatedAuthUser:AuthUser = {
         id:updatedUser.id,
         email:updatedUser.email,
-        firstName:updatedUser.firstName,
-        lastName:updatedUser.lastName,
+        firstName:updatedUser.firstName ?? "",
+        lastName:updatedUser.lastName ?? "",
         user_role:updatedUser.userRole
       }
       dispatch(setUser(updatedUser))
@@ -111,7 +112,11 @@ export default function PersonalInfo({ user }: PersonalInfoProps) {
       </CardHeader>
 
       <CardContent>
-        <form id="personal-info" onSubmit={handleSubmit(onSubmit)}>
+        <form
+          id="personal-info"
+          onSubmit={handleSubmit(onSubmit)}
+          onKeyDown={submitFormOnModEnter}
+        >
           <FieldGroup>
             {/* First + Last name */}
 
