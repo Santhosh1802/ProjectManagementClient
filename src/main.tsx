@@ -10,6 +10,8 @@ import { Provider } from "react-redux"
 import { persistor, store } from "./app/store.ts"
 import { PersistGate } from "redux-persist/integration/react"
 import AppInitializer from "@/components/common/AppInitializer.tsx"
+import ErrorBoundary from "@/components/common/ErrorBoundary.tsx"
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <Provider store={store}>
@@ -17,9 +19,10 @@ createRoot(document.getElementById("root")!).render(
         <ThemeProvider>
           <BrowserRouter>
             <TooltipProvider>
-              <AppInitializer />
-              
-              <App />
+              <ErrorBoundary>
+                <AppInitializer />
+                <App />
+              </ErrorBoundary>
             </TooltipProvider>
           </BrowserRouter>
         </ThemeProvider>

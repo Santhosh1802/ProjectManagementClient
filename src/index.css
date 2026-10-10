@@ -131,3 +131,127 @@
     @apply font-sans;
     }
 }
+
+/* =========================================================
+   Vanilla Calendar Pro
+   DevFlow Theme
+   ========================================================= */
+
+:root {
+  /* Base */
+  --vc-bg: var(--background);
+  --vc-color: var(--foreground);
+  --vc-focus-outline-color: var(--ring);
+
+  /* Header / title */
+  --vc-header-color: var(--foreground);
+  --vc-title-color: var(--foreground);
+  --vc-title-color-hover: var(--muted-foreground);
+  --vc-title-color-disabled: var(--muted-foreground);
+
+  /* Month / year picker */
+  --vc-months-years-bg: var(--popover);
+  --vc-months-years-color: var(--muted-foreground);
+  --vc-months-years-bg-hover: var(--muted);
+  --vc-months-years-color-disabled: var(--muted-foreground);
+  --vc-months-years-bg-selected: var(--primary);
+  --vc-months-years-color-selected: var(--primary-foreground);
+
+  /* Collapse */
+  --vc-collapse-color: var(--muted-foreground);
+
+  /* Weekdays */
+  --vc-week-numbers-title-color: var(--muted-foreground);
+  --vc-week-number-color: var(--muted-foreground);
+  --vc-week-number-color-hover: var(--foreground);
+
+  --vc-week-day-color: var(--muted-foreground);
+  --vc-week-day-color-hover: var(--foreground);
+  --vc-week-day-off-color: var(--muted-foreground);
+  --vc-week-day-off-color-hover: var(--foreground);
+
+  /* Dates */
+  --vc-date-bg: var(--background);
+  --vc-date-color: var(--foreground);
+
+  --vc-date-bg-hover: var(--muted);
+  --vc-date-hover-bg: var(--muted);
+  --vc-date-hover-edge-bg: var(--border);
+
+  --vc-date-disabled-color: var(--muted-foreground);
+  --vc-date-outside-color: var(--muted-foreground);
+
+  /* Today */
+  --vc-date-today-bg: var(--muted);
+  --vc-date-today-color: var(--primary);
+  --vc-date-today-outside-color: var(--muted-foreground);
+
+  /* Selected date */
+  --vc-date-selected-bg: var(--primary);
+  --vc-date-selected-color: var(--primary-foreground);
+
+  --vc-date-selected-outside-bg: var(--muted);
+  --vc-date-selected-outside-color: var(--muted-foreground);
+
+  /* Weekends */
+  --vc-date-weekend-color: var(--muted-foreground);
+  --vc-date-weekend-bg-hover: var(--muted);
+  --vc-date-weekend-hover-bg: var(--muted);
+  --vc-date-weekend-hover-edge-bg: var(--border);
+
+  --vc-date-weekend-disabled-color: var(--muted-foreground);
+  --vc-date-weekend-today-color: var(--primary);
+  --vc-date-weekend-today-disabled-color: var(--muted-foreground);
+
+  --vc-date-weekend-outside-bg: var(--background);
+  --vc-date-weekend-outside-color: var(--muted-foreground);
+
+  --vc-date-weekend-outside-bg-hover: var(--muted);
+  --vc-date-weekend-outside-hover-bg: var(--muted);
+
+  --vc-date-weekend-today-outside-color: var(--muted-foreground);
+  --vc-date-weekend-disabled-outside-color: var(--muted-foreground);
+
+  --vc-date-weekend-selected-bg: var(--primary);
+  --vc-date-weekend-selected-color: var(--primary-foreground);
+
+  /* Popup / tooltip */
+  --vc-date-popup-bg: var(--popover);
+  --vc-date-popup-color: var(--popover-foreground);
+
+  --vc-date-range-tooltip-bg: var(--muted);
+  --vc-date-range-tooltip-color: var(--muted-foreground);
+
+  /* Time controls */
+  --vc-time-border-color: var(--border);
+  --vc-time-separator-color: var(--foreground);
+
+  --vc-time-input-bg: var(--background);
+  --vc-time-input-color: var(--foreground);
+  --vc-time-input-bg-hover: var(--muted);
+
+  --vc-time-keeping-color: var(--muted-foreground);
+  --vc-time-keeping-color-hover: var(--foreground);
+
+  --vc-time-range-bg: var(--background);
+  --vc-time-range-track-color: var(--border);
+
+  --vc-time-range-thumb-bg: var(--background);
+  --vc-time-range-thumb-border: var(--border);
+  --vc-time-range-thumb-border-hover: var(--ring);
+}
+
+.vanilla-calendar {
+  z-index: 9999;
+}
+/* ============================================
+   Vanilla Calendar Pro
+   ============================================ */
+
+[data-vc="calendar"] {
+  z-index: 9999 !important;
+}
+[data-vc="calendar"] {
+  position: absolute !important;
+  z-index: 9999 !important;
+}
