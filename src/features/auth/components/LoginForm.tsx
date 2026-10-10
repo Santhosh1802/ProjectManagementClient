@@ -80,12 +80,14 @@ export default function LoginForm() {
       setIsSuccess(true)
       setServerError(null)
       const user = response.data?.data || null;
+      console.log(user);
+      
       const loggedInUser:AuthUser = {
         id:user.id,
         firstName:user.firstName,
         lastName:user.lastName,
         email:user.email,
-        user_role:user.user_role,
+        user_role:user.userRole,
       }
       dispatch(setAuthUser(loggedInUser));
       reset()
@@ -119,7 +121,7 @@ export default function LoginForm() {
   })
 
   return (
-    <Card className="max-w-sm min-w-sm">
+    <Card className="w-full">
       <CardHeader>
         <CardTitle className="text-xl font-bold">Welcome back</CardTitle>
         <CardDescription>
