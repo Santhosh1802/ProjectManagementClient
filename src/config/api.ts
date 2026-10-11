@@ -11,6 +11,8 @@ import { store } from "@/app/store"
 const api = axios.create({
   baseURL: API,
   withCredentials: true,
+  xsrfCookieName: "XSRF-TOKEN",
+  xsrfHeaderName: "X-XSRF-TOKEN",
 })
 
 let csrfToken: string | null = null
