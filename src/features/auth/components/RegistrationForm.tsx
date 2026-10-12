@@ -132,7 +132,7 @@ export default function RegistrationForm() {
   })
 
   return (
-    <Card className="w-full max-w-md">
+    <Card className="w-full">
       <CardHeader>
         <CardTitle className="text-xl font-bold">Create an account</CardTitle>
         <CardDescription>
@@ -143,7 +143,7 @@ export default function RegistrationForm() {
         {serverError && !isSuccess ? (
           <Alert
             variant="destructive"
-            className={"mt-2 mb-2 min-w-sm border-red-400"}
+            className={"mt-2 mb-2 min-w-xs max-w-sm border-red-400"}
           >
             <AlertCircleIcon />
             <AlertTitle>
