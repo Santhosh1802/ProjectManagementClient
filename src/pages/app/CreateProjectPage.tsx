@@ -494,12 +494,12 @@ Remove member
   ========================================================== */
 
   return (
-    <PageContainer className="max-w-5xl">
+    <PageContainer className="max-w-4xl">
       <div className="mb-6 sm:mb-8">
         <Button
           type="button"
           variant="ghost"
-          className="mb-4 -ml-3 gap-2"
+          className="mb-4  gap-2"
           onClick={() => navigate("/app/projects")}
         >
           <ArrowLeft className="size-4" /> Projects

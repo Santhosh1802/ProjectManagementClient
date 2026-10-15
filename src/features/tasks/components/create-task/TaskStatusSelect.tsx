@@ -36,7 +36,7 @@ const statuses = [
     icon: LoaderCircle,
   },
   {
-    value: "COMPLETED",
+    value: "DONE",
     label: "Completed",
     description: "Task has been completed.",
     icon: CheckCircle2,

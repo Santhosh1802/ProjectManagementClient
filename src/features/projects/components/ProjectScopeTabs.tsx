@@ -55,10 +55,10 @@ export function ProjectScopeTabs({
               }}
               className={[
                 "relative rounded-none px-3 py-2.5",
-                "text-sm font-medium",
+                "text-xs font-medium",
                 "hover:bg-transparent",
                 active
-                  ? "text-foreground"
+                  ? "text-primary"
                   : "text-muted-foreground",
               ].join(" ")}
             >
@@ -67,7 +67,7 @@ export function ProjectScopeTabs({
               {item.label}
 
               {active && (
-                <span className="absolute inset-x-0 bottom-0 h-0.5 bg-foreground" />
+                <span className="absolute inset-x-0 bottom-0 h-0.5 bg-accent-foreground" />
               )}
             </Button>
           )

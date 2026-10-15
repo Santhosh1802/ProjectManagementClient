@@ -16,7 +16,7 @@ import {
   UserPlus,
 } from "lucide-react"
 
-import { NavLink, useNavigate } from "react-router-dom"
+import { NavLink, useLocation, useNavigate } from "react-router-dom"
 
 import {
   Sidebar,
@@ -53,11 +53,13 @@ import { LogoutUser } from "@/features/auth/services/auth.service"
 import { clearProjects } from "@/features/projects/slice/projectSlice"
 
 import type { LucideIcon } from "lucide-react"
-import { useEffect } from "react";
+import { useEffect } from "react"
 
 import { getShortcut } from "@/config/keyboardShortcuts"
 import { useKeyboardShortcutsUI } from "@/context/KeyboardShortcutsContext"
 import { formatShortcutKey, toAriaKeyShortcuts } from "@/lib/keyboard"
+import { clearTasks } from "@/features/tasks/slice/task.slice";
+import { clearProjectMembers } from "@/features/projects/slice/projectMemberSlice";
 
 const shortcutsHelpKeys = getShortcut("global.shortcuts")?.keys ?? ["mod", "/"]
 
@@ -90,7 +92,7 @@ const dashboardNavigation: NavigationItem[] = [
 const roleNavigation: Record<AppRole, NavigationItem[]> = {
   ADMIN: [
     {
-      title: "User Management",
+      title: "Users",
       url: "/app/users",
       icon: Users,
     },
@@ -131,12 +133,12 @@ export default function AppSidebar() {
   const navigate = useNavigate()
   const user = useAppSelector((state) => state.auth.user)
   const { openShortcuts } = useKeyboardShortcutsUI()
+  const { pathname } = useLocation();
 
   const userRole = user?.user_role?.toUpperCase() as AppRole | undefined
-  useEffect(()=>{
-    console.log(userRole);
-    
-  },[userRole])
+  useEffect(() => {
+    console.log(userRole)
+  }, [userRole])
   const workspaceNavigation = [
     ...dashboardNavigation,
     ...(userRole && userRole in roleNavigation ? roleNavigation[userRole] : []),
@@ -160,9 +162,12 @@ export default function AppSidebar() {
       dispatch(logout())
       dispatch(clearUser())
       dispatch(clearProjects())
+      dispatch(clearTasks())
+      dispatch(clearProjectMembers())
       navigate("/login", { replace: true })
     }
   }
+  
 
   return (
     <Sidebar collapsible="icon" variant="sidebar" className="bg-muted">
@@ -217,9 +222,9 @@ export default function AppSidebar() {
             <SidebarMenu>
               {workspaceNavigation.map((item) => {
                 const Icon = item.icon
-
+                const selected = pathname.includes(item.title.toLowerCase());
                 return (
-                  <SidebarMenuItem key={item.url}>
+                  <SidebarMenuItem key={item.url} className="m-1">
                     <SidebarMenuButton
                       render={
                         <NavLink
@@ -228,6 +233,7 @@ export default function AppSidebar() {
                         />
                       }
                       tooltip={item.title}
+                      className={selected?"bg-accent":""}
                     >
                       <Icon />
                       <span>{item.title}</span>
@@ -248,12 +254,14 @@ export default function AppSidebar() {
             <SidebarMenu>
               {accountNavigation.map((item) => {
                 const Icon = item.icon
-
+                const selected = pathname.includes(item.title.toLowerCase());
                 return (
-                  <SidebarMenuItem key={item.url}>
+                  <SidebarMenuItem key={item.url} className="m-1">
                     <SidebarMenuButton
                       render={<NavLink to={item.url} />}
                       tooltip={item.title}
+                      
+                      className={selected?"bg-accent":""}
                     >
                       <Icon />
                       <span>{item.title}</span>
@@ -352,7 +360,6 @@ export default function AppSidebar() {
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{fullName}</span>
 
-                  
                   <span className="truncate text-xs text-muted-foreground">
                     {userRole ?? "USER"}
                   </span>

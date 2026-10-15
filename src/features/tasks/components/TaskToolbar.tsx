@@ -1,26 +1,21 @@
 import { useState } from "react"
-import { ArrowDownAZ, ArrowUpAZ, Filter } from "lucide-react"
+import { ArrowDownAZ, ArrowUpAZ, Filter, Info } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import SearchInput from "@/components/common/SearchInput"
 
-import type { TaskFilters as TaskFiltersState, TaskView } from "../types/task.types"
+import type { TaskFilters as TaskFiltersState } from "../types/task.types"
 
-import TaskViewSwitcher from "./TaskViewSwitcher"
 import TaskFilters from "./TaskFilters"
 
 interface TaskToolbarProps {
   filters: TaskFiltersState
-  view: TaskView
   onFiltersChange: (filters: TaskFiltersState) => void
-  onViewChange: (view: TaskView) => void
 }
 
 export default function TaskToolbar({
   filters,
-  view,
   onFiltersChange,
-  onViewChange,
 }: TaskToolbarProps) {
   const [activeDropdown, setActiveDropdown] = useState<"filter" | "sort" | null>(null)
   const updateFilter = <K extends keyof TaskFiltersState>(
@@ -65,14 +60,12 @@ export default function TaskToolbar({
               }}
             >
               <Filter className="size-4" />
-              <span className="hidden sm:inline">Filters</span>
+              <span className="hidden sm:inline text-xs">Filters</span>
               {hasFilters && (
-                <span className="flex size-5 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
-                  !
-                </span>
+                <Info className="text-primary"/>
               )}
             </summary>
-            <div className="absolute left-0 sm:left-auto sm:right-0 z-50 mt-2 w-[calc(100vw-2rem)] sm:w-[420px] rounded-xl border bg-popover p-4 text-popover-foreground shadow-lg">
+            <div className="absolute left-0 sm:left-auto sm:right-0 z-50 mt-2 w-[calc(100vw-2rem)] sm:w-105 rounded-xl border bg-popover p-4 text-popover-foreground shadow-lg">
               <TaskFilters filters={filters} onFiltersChange={onFiltersChange} />
             </div>
           </details>
@@ -94,12 +87,12 @@ export default function TaskToolbar({
               ) : (
                 <ArrowDownAZ className="size-4" />
               )}
-              <span className="hidden sm:inline">Sort</span>
+              <span className="hidden sm:inline text-xs">Sort</span>
             </summary>
             <div className="absolute left-0 sm:left-auto sm:right-0 z-50 mt-2 w-[calc(100vw-2rem)] sm:w-64 rounded-xl border bg-popover p-4 shadow-lg">
               <div className="space-y-3">
                 <div>
-                  <p className="mb-2 text-sm font-medium">Sort by</p>
+                  <p className="mb-2 text-xs font-medium">Sort by</p>
                   <div className="grid gap-1">
                     <SortButton
                       active={filters.sortBy === "createdAt"}
@@ -155,9 +148,6 @@ export default function TaskToolbar({
               </div>
             </div>
           </details>
-
-          {/* View */}
-          <TaskViewSwitcher value={view} onChange={onViewChange} />
         </div>
       </div>
     </div>

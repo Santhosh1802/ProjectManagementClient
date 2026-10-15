@@ -112,7 +112,6 @@ export default function ProjectPage() {
         })
 
         if (cancelled) return
-
         dispatch(setProjects(response))
       } catch (error) {
         if (cancelled) return
@@ -168,6 +167,7 @@ export default function ProjectPage() {
      * dependency inside this handler.
      */
   }
+ 
 
   return (
     <PageContainer>
@@ -178,7 +178,7 @@ export default function ProjectPage() {
         actions={
           <Button
             onClick={handleCreateProject}
-            className="w-full sm:w-auto"
+            className="w-fit sm:w-auto"
           >
             <Plus className="size-4" />
             Create Project

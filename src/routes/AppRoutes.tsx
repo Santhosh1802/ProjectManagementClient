@@ -28,6 +28,7 @@ const UsersPage = lazy(() => import("@/pages/app/UsersPage"))
 const CreateUserPage = lazy(() => import("@/pages/app/CreateUserPage"))
 const CreateProjectPage = lazy(() => import("@/pages/app/CreateProjectPage"))
 const TaskPage = lazy(() => import("@/pages/app/TaskPage"))
+const CreateTaskPage = lazy(() => import("@/pages/app/CreateTaskPage"))
 const TaskDetailsPage = lazy(() => import("@/pages/app/TaskDetailsPage"))
 
 const Settings = lazy(() => import("@/pages/app/Settings"))
@@ -59,6 +60,7 @@ export default function AppRoutes() {
             element={<ProjectMembersPage />}
           />
           <Route path="tasks" element={<TaskPage />} />
+          <Route path="tasks/create" element={<CreateTaskPage />} />
           <Route path="tasks/:taskId" element={<TaskDetailsPage />} />
           <Route element={<RoleGuard allowedRoles={ROUTE_ROLES.userManagement} />}>
             <Route path="users" element={<UsersPage />} />

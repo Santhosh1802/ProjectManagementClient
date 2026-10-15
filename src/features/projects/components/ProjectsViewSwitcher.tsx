@@ -18,6 +18,7 @@ export function ProjectViewSwitcher({
       <Button
         variant={view === "card" ? "secondary" : "ghost"}
         size="icon-sm"
+        className={view === "card" ? "bg-accent" : "ghost"}
         onClick={() => onViewChange("card")}
         aria-label="Card view"
       >
@@ -27,6 +28,7 @@ export function ProjectViewSwitcher({
       <Button
         variant={view === "list" ? "secondary" : "ghost"}
         size="icon-sm"
+        className={view === "list" ? "bg-accent" : "ghost"}
         onClick={() => onViewChange("list")}
         aria-label="List view"
       >
@@ -36,6 +38,7 @@ export function ProjectViewSwitcher({
       <Button
         variant={view === "table" ? "secondary" : "ghost"}
         size="icon-sm"
+        className={view === "table" ? "bg-accent" : "ghost"}
         onClick={() => onViewChange("table")}
         aria-label="Table view"
       >

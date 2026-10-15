@@ -94,7 +94,7 @@ export default function CreateUserPage() {
         <Button
           type="button"
           variant="ghost"
-          className="-ml-3 gap-2"
+          className="gap-2"
           onClick={() => navigate("/app/users")}
         >
           <ArrowLeft className="size-4" /> Users

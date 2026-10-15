@@ -1,7 +1,11 @@
 import type { PageResponse } from "@/features/projects/types/project.types";
 
 
-export type TaskStatus = string
+export type TaskStatus =
+  | "TODO"
+  | "IN_PROGRESS"
+  | "DONE"
+  | "CANCELLED"
 
 export type TaskPriority = string
 
@@ -121,7 +125,7 @@ export type TaskPageResponse = PageResponse<Task>
 
 // features/tasks/types/task.types.ts
 
-export type TaskView = "card" | "list" | "table"
+export type TaskView = "kanban" | "card" | "list" | "table"
 
 export type TaskScope =
   | "ALL"

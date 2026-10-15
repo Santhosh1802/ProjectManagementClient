@@ -30,7 +30,7 @@ export default function TaskDueDateTimePicker({
             className="flex items-center gap-2 text-sm font-medium"
           >
             <CalendarDays className="size-4 text-muted-foreground" />
-            Due date
+            Due date & time
             <span className="font-normal text-muted-foreground">
               (optional)
             </span>
@@ -41,8 +41,9 @@ export default function TaskDueDateTimePicker({
             onChange={field.onChange}
             minDate={minDate}
             maxDate={maxDate}
-            placeholder="Select due date"
+            placeholder="Select due date and time"
             disabled={disabled}
+            enableTime={true}
           />
 
           {fieldState.error?.message && (

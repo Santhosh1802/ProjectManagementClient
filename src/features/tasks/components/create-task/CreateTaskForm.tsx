@@ -22,10 +22,11 @@ import TaskStatusSelect from "@/features/tasks/components/create-task/TaskStatus
 
 import { createTaskSchema } from "@/features/tasks/schema/task.schema"
 import type { CreateTaskFormValues } from "@/features/tasks/schema/task.schema"
-import type { Task } from "@/features/tasks/types/task.types"
+import type { Task, TaskStatus } from "@/features/tasks/types/task.types"
 
 interface CreateTaskFormProps {
   defaultProjectId?: string
+  defaultStatus?: TaskStatus
   onCreated?: (task: Task) => void
   onCancel?: () => void
 
@@ -55,6 +56,7 @@ interface CreateTaskFormProps {
 
 export default function CreateTaskForm({
   defaultProjectId,
+  defaultStatus,
   onCreated,
   onCancel,
   projects = [],
@@ -72,7 +74,7 @@ export default function CreateTaskForm({
     defaultValues: {
       title: "",
       description: "",
-      taskStatus: "TODO",
+      taskStatus: defaultStatus ?? "TODO",
       taskPriority: "MEDIUM",
       projectId: defaultProjectId ?? "",
       assignedToId: "",
@@ -95,6 +97,14 @@ export default function CreateTaskForm({
     })
   }, [defaultProjectId, setValue])
 
+  useEffect(() => {
+    if (!defaultStatus) return
+
+    setValue("taskStatus", defaultStatus, {
+      shouldValidate: true,
+    })
+  }, [defaultStatus, setValue])
+
   const handleSubmit = async (
     values: CreateTaskFormValues,
   ) => {
@@ -108,7 +118,7 @@ export default function CreateTaskForm({
       reset({
         title: "",
         description: "",
-        taskStatus: "TODO",
+        taskStatus: defaultStatus ?? "TODO",
         taskPriority: "MEDIUM",
         projectId: defaultProjectId ?? "",
         assignedToId: "",

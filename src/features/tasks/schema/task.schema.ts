@@ -5,7 +5,7 @@ import { z } from "zod"
 const taskStatuses = [
   "TODO",
   "IN_PROGRESS",
-  "COMPLETED",
+  "DONE",
   "CANCELLED",
 ] as const
 
@@ -51,11 +51,12 @@ export const createTaskSchema = z.object({
   dueDate: z
     .string()
     .regex(
-      /^\d{4}-\d{2}-\d{2}$/,
-      "Please select a valid due date.",
+      /^\d{4}-\d{2}-\d{2}(?:[ T]\d{2}:\d{2}(?::\d{2})?)?$/,
+      "Please select a valid due date and time.",
     )
     .nullable()
-    .optional(),
+    .optional()
+    .or(z.literal("")),
 })
 
 export type CreateTaskFormValues = z.infer<typeof createTaskSchema>

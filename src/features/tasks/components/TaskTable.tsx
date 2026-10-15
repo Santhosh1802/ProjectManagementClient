@@ -46,6 +46,7 @@ function getStatusVariant(
   status: string,
 ): "default" | "secondary" | "outline" | "destructive" {
   switch (status) {
+    case "DONE":
     case "COMPLETED":
       return "default"
     case "IN_PROGRESS":
@@ -89,7 +90,7 @@ function formatDate(date: string | null) {
 }
 
 function isOverdue(date: string | null, status: string) {
-  if (!date || status === "COMPLETED" || status === "CANCELLED") {
+  if (!date || status === "DONE" || status === "COMPLETED" || status === "CANCELLED") {
     return false
   }
 
@@ -169,7 +170,7 @@ export default function TaskTable({
                   <Badge
                     variant={getStatusVariant(task.taskStatus)}
                   >
-                    {task.taskStatus === "COMPLETED" ? (
+                    {task.taskStatus === "DONE" ? (
                       <CheckCircle2 className="mr-1 size-3.5" />
                     ) : (
                       <Circle className="mr-1 size-3.5" />

@@ -99,17 +99,13 @@ export default function AssigneeSelect({
                 >
                   {selectedUser ? (
                     <div className="flex min-w-0 items-center gap-2">
-                      <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
+                      <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
                         {getInitials(selectedUser)}
                       </div>
 
                       <div className="min-w-0 text-left">
-                        <p className="truncate">
+                        <p className="truncate text-xs">
                           {getFullName(selectedUser)}
-                        </p>
-
-                        <p className="truncate text-xs text-muted-foreground">
-                          {selectedUser.email}
                         </p>
                       </div>
                     </div>

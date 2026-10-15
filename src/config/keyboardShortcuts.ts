@@ -164,8 +164,7 @@ export const KEYBOARD_SHORTCUTS: ShortcutDefinition[] = [
     sequence: true,
     description: "Create task",
     category: "Creation",
-    // TaskPage opens its existing "Create task" dialog for this param.
-    action: { type: "navigate", to: "/app/tasks?create=1" },
+    action: { type: "navigate", to: "/app/tasks/create" },
   },
   {
     id: "create.user",

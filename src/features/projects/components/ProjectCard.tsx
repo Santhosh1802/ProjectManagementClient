@@ -17,6 +17,7 @@ import {
 import type { Project } from "../types/project.types"
 import StatusBadge from "@/components/common/StatusBadge"
 import { Button } from "@/components/ui/button"
+import { useAppSelector } from "@/hooks/redux-hooks";
 
 interface ProjectCardProps {
   projects: Project[]
@@ -78,6 +79,7 @@ export function ProjectCard({
   projects,
 }: ProjectCardProps) {
   const navigate = useNavigate()
+  const currentUser = useAppSelector((state)=>state.auth.user?.id);
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
@@ -99,7 +101,7 @@ export function ProjectCard({
               <div className="flex min-w-0 items-start justify-between gap-3">
                 <div className="flex min-w-0 flex-1 items-center gap-3">
                   <Avatar className="size-10 rounded-xl">
-                    <AvatarFallback className="rounded-xl bg-muted text-sm font-semibold border">
+                    <AvatarFallback className="bg-muted text-sm font-semibold border">
                       {project.name
                         .trim()
                         .charAt(0)
@@ -149,7 +151,7 @@ export function ProjectCard({
                     </AvatarFallback>
                   </Avatar>
 
-                  <span className="truncate">
+                  <span className="truncate" title={currentUser===project.owner.id?"Project Owned by you":"Project Owned by other user"}>
                     {project.owner.firstName}{" "}
                     {project.owner.lastName}
                   </span>

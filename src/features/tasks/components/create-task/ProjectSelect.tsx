@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/popover"
 
 import type { CreateTaskFormValues } from "@/features/tasks/schema/task.schema"
+import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
 
 interface ProjectOption {
   id: string
@@ -52,13 +53,13 @@ export default function ProjectSelect({
         )
 
         return (
-          <div className="space-y-2">
-            <label
+          <Field>
+            <FieldLabel
               htmlFor="task-project"
-              className="text-sm font-medium"
+              className="text-xs font-medium"
             >
               Project
-            </label>
+            </FieldLabel>
 
             <Popover
               open={open}
@@ -77,7 +78,7 @@ export default function ProjectSelect({
                 >
                   {selectedProject ? (
                     <div className="flex min-w-0 items-center gap-2">
-                      <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/10">
+                      <div className="flex size-6 shrink-0 items-center justify-center rounded-md bg-primary/10">
                         <FolderKanban className="size-4 text-primary" />
                       </div>
 
@@ -161,13 +162,14 @@ export default function ProjectSelect({
                 </Command>
               </PopoverContent>
             </Popover>
+            <FieldDescription>
+              Select the project the task you want to create.
+            </FieldDescription>
 
-            {fieldState.error?.message && (
-              <p className="text-sm font-medium text-destructive">
-                {fieldState.error.message}
-              </p>
+            {fieldState.error && (
+              <FieldError errors={[fieldState.error]} />
             )}
-          </div>
+          </Field>
         )
       }}
     />

@@ -9,7 +9,7 @@ interface SearchInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 export default function SearchInput({ containerClassName, className, ...props }: SearchInputProps) {
   return (
     <div className={cn("relative w-full", containerClassName)}>
-      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+      <Search className="absolute left-2.5 top-1.5 h-4 w-4 text-muted-foreground" />
       <Input
         type="search"
         className={cn("w-full pl-8 bg-background", className)}

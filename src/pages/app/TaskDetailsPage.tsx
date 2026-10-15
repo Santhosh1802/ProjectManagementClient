@@ -45,6 +45,7 @@ import {
 
 import type {
   Task,
+  TaskStatus,
 } from "@/features/tasks/types/task.types"
 
 import { useAppDispatch } from "@/hooks/redux-hooks"
@@ -63,7 +64,7 @@ const STATUS_OPTIONS = [
     label: "In Progress",
   },
   {
-    value: "COMPLETED",
+    value: "DONE",
     label: "Completed",
   },
   {
@@ -289,7 +290,7 @@ export default function TaskDetailsPage() {
   }, [taskId, dispatch])
 
   const handleStatusChange = async (
-    status: string,
+    status: TaskStatus,
   ) => {
     if (!task || status === task.taskStatus) {
       return
@@ -384,7 +385,7 @@ export default function TaskDetailsPage() {
     task.dueDate &&
     new Date(task.dueDate).getTime() <
       now &&
-    task.taskStatus !== "COMPLETED" &&
+    task.taskStatus !== "DONE" &&
     task.taskStatus !== "CANCELLED"
 
   return (
@@ -417,13 +418,11 @@ export default function TaskDetailsPage() {
               )}
             </div>
 
-            <h1 className="truncate text-2xl font-semibold tracking-tight sm:text-3xl">
+            <h1 className="truncate text-lg font-semibold tracking-tight sm:text-3xl">
               {task.title}
             </h1>
 
-            <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-              {task.description || "No task description provided."}
-            </p>
+            
           </div>
         </div>
 
@@ -515,7 +514,7 @@ export default function TaskDetailsPage() {
 
                   <Select
                     value={task.taskStatus}
-                    onValueChange={(val) => { if (val) void handleStatusChange(val) }}
+                    onValueChange={(val) => { if (val) void handleStatusChange(val as TaskStatus) }}
                     disabled={statusLoading}
                   >
                     <SelectTrigger className="w-full sm:w-52">

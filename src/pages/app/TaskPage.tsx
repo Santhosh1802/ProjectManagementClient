@@ -1,36 +1,30 @@
 import { useEffect, useMemo, useState } from "react"
-import { useSearchParams } from "react-router-dom"
-import { searchProjects } from "@/features/projects/services/projects.services"
-import { searchUsers } from "@/features/users/services/users.service"
+import { useNavigate } from "react-router-dom"
 import ErrorState from "@/components/common/ErrorState"
 import PageContainer from "@/components/common/PageContainer"
 import PageHeader from "@/components/common/PageHeader"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
+import confetti from "canvas-confetti"
+import { toast } from "@/components/ui/toast"
 
 import {
-  createTask,
   deleteTask,
   getAllTasks,
   getTasksByAssignedTo,
   getTasksByCreatedBy,
+  updateTaskStatus,
 } from "@/features/tasks/services/task.services"
 
 import {
-  addTask,
   removeTask,
   setSelectedTask,
   setTaskError,
   setTaskLoading,
   setTaskPage,
+  setTaskPageSize,
   setTasks,
+  updateTask,
 } from "@/features/tasks/slice/task.slice"
 
 import type {
@@ -39,22 +33,15 @@ import type {
   TaskScope,
   TaskSortField,
   TaskSortOrder,
+  TaskStatus,
   TaskStatusFilter,
-  TaskView,
 } from "@/features/tasks/types/task.types"
 
-import type { CreateTaskFormValues } from "@/features/tasks/schema/task.schema"
-
 import TaskToolbar from "@/features/tasks/components/TaskToolbar"
-
 import TaskScopeTabs from "@/features/tasks/components/TaskScopeTabs"
-import TaskList from "@/features/tasks/components/TaskList"
-import TaskCard from "@/features/tasks/components/TaskCard"
-import TaskTable from "@/features/tasks/components/TaskTable"
-import TaskListSkeleton from "@/features/tasks/components/TaskListSkeleton"
-import TaskTableSkeleton from "@/features/tasks/components/TaskTableSkeleton"
+import TaskKanbanBoard from "@/features/tasks/components/TaskKanbanBoard"
+import TaskKanbanSkeleton from "@/features/tasks/components/TaskKanbanSkeleton"
 import TaskEmptyState from "@/features/tasks/components/TaskEmptyState"
-import CreateTaskForm from "@/features/tasks/components/create-task/CreateTaskForm"
 
 import { useAppDispatch, useAppSelector } from "@/hooks/redux-hooks"
 
@@ -73,6 +60,7 @@ const DEFAULT_FILTERS: TaskFiltersState = {
   sortBy: "createdAt",
   sortOrder: "desc",
 }
+
 async function fetchTasks({
   scope,
   currentUserId,
@@ -108,6 +96,7 @@ async function fetchTasks({
 
 export default function TaskPage() {
   const dispatch = useAppDispatch()
+  const navigate = useNavigate()
 
   /*
    * ---------------------------------------------------------
@@ -129,46 +118,6 @@ export default function TaskPage() {
 
   const currentUser = useAppSelector((state) => state.auth.user)
   const canViewAllTasks = currentUser?.user_role === "ADMIN"
-  
-  /*
-   * Your UserState currently exposes `user`, not `users`.
-   *
-   * We deliberately don't use:
-   *
-   * state.user.users
-   *
-   * because that property doesn't exist in your current
-   * UserState.
-   *
-   * Until a proper user-list/search API is connected,
-   * the current authenticated user is used as the available
-   * assignee.
-   */
-
-  const [createProjects, setCreateProjects] = useState<
-    Array<{
-      id: string
-      name: string
-    }>
-  >([])
-
-  const [createUsers, setCreateUsers] = useState<
-    Array<{
-      id: string
-      firstName: string
-      lastName: string
-      email: string
-      isActive: boolean
-    }>
-  >([])
-
-  const [projectsLoading, setProjectsLoading] = useState(false)
-
-  const [usersLoading, setUsersLoading] = useState(false)
-
-  
-
-  
 
   /*
    * ---------------------------------------------------------
@@ -180,95 +129,15 @@ export default function TaskPage() {
     canViewAllTasks ? "ALL" : "ASSIGNED_TO_ME"
   )
 
-  const [view, setView] = useState<TaskView>("card")
-
-  const [createOpen, setCreateOpen] = useState(false)
-
-  /*
-   * `?create=1` (used by the C → T keyboard shortcut) opens the
-   * create dialog. Derived from the URL instead of synced into state.
-   */
-  const [searchParams, setSearchParams] = useSearchParams()
-  const createRequested = searchParams.get("create") === "1"
-  const isCreateDialogOpen = createOpen || createRequested
-
-  const handleCreateOpenChange = (open: boolean) => {
-    setCreateOpen(open)
-
-    if (!open && createRequested) {
-      setSearchParams(
-        (current) => {
-          const next = new URLSearchParams(current)
-          next.delete("create")
-          return next
-        },
-        { replace: true }
-      )
-    }
-  }
-
   const [filters, setFilters] = useState<TaskFiltersState>(DEFAULT_FILTERS)
   const [refreshKey, setRefreshKey] = useState(0)
 
-  /*
-   * ---------------------------------------------------------
-   * Load tasks
-   * ---------------------------------------------------------
-   */
-
   useEffect(() => {
-    if (!isCreateDialogOpen) {
-      return
+    if (size < 50) {
+      dispatch(setTaskPageSize(50))
     }
+  }, [dispatch, size])
 
-    const loadCreateTaskOptions = async () => {
-      try {
-        setProjectsLoading(true)
-        setUsersLoading(true)
-
-        const [projectsResponse, usersResponse] = await Promise.all([
-          searchProjects({
-            page: 0,
-            size: 10,
-            scope: "ALL",
-            sortBy: "createdAt",
-            sortOrder: "desc",
-          }),
-          searchUsers({
-            page: 0,
-            size: 10,
-            isActive: true,
-            sortBy: "createdAt",
-            sortOrder: "desc",
-          }),
-        ])
-
-        setCreateProjects(
-          projectsResponse.content.map((project) => ({
-            id: project.id,
-            name: project.name,
-          }))
-        )
-
-        setCreateUsers(
-          usersResponse.content.map((user) => ({
-            id: user.id,
-            firstName: user.firstName,
-            lastName: user.lastName ?? "",
-            email: user.email,
-            isActive: user.isActive,
-          }))
-        )
-      } catch (error) {
-        console.error("Failed to load task creation options:", error)
-      } finally {
-        setProjectsLoading(false)
-        setUsersLoading(false)
-      }
-    }
-
-    void loadCreateTaskOptions()
-  }, [isCreateDialogOpen])
   useEffect(() => {
     let cancelled = false
 
@@ -431,45 +300,6 @@ export default function TaskPage() {
 
   /*
    * ---------------------------------------------------------
-   * Create task
-   * ---------------------------------------------------------
-   */
-
-  const handleTaskCreated = (task: Task) => {
-    dispatch(addTask(task))
-    handleCreateOpenChange(false)
-  }
-
-  const handleCreateTask = async (
-    values: CreateTaskFormValues
-  ): Promise<Task> => {
-    if (!currentUser?.id) {
-      throw new Error("Unable to determine the current user.")
-    }
-
-    return createTask({
-      title: values.title.trim(),
-
-      description: values.description?.trim() || undefined,
-
-      taskStatus: values.taskStatus,
-
-      taskPriority: values.taskPriority,
-
-      projectId: values.projectId,
-
-      assignedToId: values.assignedToId,
-
-      createdById: currentUser.id,
-
-      dueDate: values.dueDate
-        ? new Date(`${values.dueDate}T23:59:59`).toISOString()
-        : null,
-    })
-  }
-
-  /*
-   * ---------------------------------------------------------
    * Refresh
    * ---------------------------------------------------------
    */
@@ -485,8 +315,7 @@ export default function TaskPage() {
 
   const handleViewTask = (task: Task) => {
     dispatch(setSelectedTask(task))
-
-    window.location.href = `/app/tasks/${task.id}`
+    navigate(`/app/tasks/${task.id}`)
   }
 
   /*
@@ -526,6 +355,75 @@ export default function TaskPage() {
 
   /*
    * ---------------------------------------------------------
+   * Kanban Status Change (Drag & Drop or Quick Move)
+   * ---------------------------------------------------------
+   */
+
+  const handleStatusChange = async (taskId: string, newStatus: TaskStatus) => {
+    const previousTask = tasks.find((t) => t.id === taskId)
+    if (!previousTask || previousTask.taskStatus === newStatus) {
+      return
+    }
+
+    // Optimistically update in Redux so card moves immediately
+    const optimisticTask: Task = {
+      ...previousTask,
+      taskStatus: newStatus,
+      updatedAt: new Date().toISOString(),
+    }
+    dispatch(updateTask(optimisticTask))
+
+    try {
+      const updated = await updateTaskStatus({
+        id: taskId,
+        status: newStatus,
+      })
+      dispatch(updateTask(updated))
+
+      const statusLabels: Record<string, string> = {
+        TODO: "To Do",
+        IN_PROGRESS: "In Progress",
+        DONE: "Completed",
+        CANCELLED: "Cancelled",
+      }
+
+      toast.add({
+        type: "success",
+        title: `Task moved to ${statusLabels[newStatus] || newStatus}`,
+        description: `"${previousTask.title}" updated successfully.`,
+      })
+
+      if (newStatus === "DONE") {
+        try {
+          confetti({
+            particleCount: 50,
+            spread: 60,
+            origin: { y: 0.7 },
+          })
+        } catch {
+          // ignore confetti errors
+        }
+      }
+    } catch (error) {
+      // Revert optimistic update on failure
+      dispatch(updateTask(previousTask))
+      toast.add({
+        type: "error",
+        title: "Unable to update task status",
+        description:
+          error instanceof Error
+            ? error.message
+            : "An unexpected error occurred while updating status.",
+      })
+    }
+  }
+
+  const handleAddTaskInColumn = (status: TaskStatus) => {
+    navigate(`/app/tasks/create?status=${status}`)
+  }
+
+  /*
+   * ---------------------------------------------------------
    * Pagination
    * ---------------------------------------------------------
    */
@@ -548,74 +446,6 @@ export default function TaskPage() {
 
   /*
    * ---------------------------------------------------------
-   * Create form search
-   * ---------------------------------------------------------
-   *
-   * These remain intentionally empty until the project/user
-   * search services are connected.
-   */
-
-  const handleProjectSearch = async (keyword: string) => {
-    try {
-      setProjectsLoading(true)
-
-      const response = await searchProjects({
-        page: 0,
-        size: 10,
-        keyword: keyword.trim() || undefined,
-        scope: "ALL",
-        sortBy: "createdAt",
-        sortOrder: "desc",
-      })
-
-      setCreateProjects(
-        response.content.map((project) => ({
-          id: project.id,
-          name: project.name,
-        }))
-      )
-    } catch (error) {
-      console.error("Failed to search projects:", error)
-
-      setCreateProjects([])
-    } finally {
-      setProjectsLoading(false)
-    }
-  }
-
-  const handleUserSearch = async (keyword: string) => {
-    try {
-      setUsersLoading(true)
-
-      const response = await searchUsers({
-        page: 0,
-        size: 10,
-        keyword: keyword.trim() || undefined,
-        isActive: true,
-        sortBy: "createdAt",
-        sortOrder: "desc",
-      })
-
-      setCreateUsers(
-        response.content.map((user) => ({
-          id: user.id,
-          firstName: user.firstName,
-          lastName: user.lastName ?? "",
-          email: user.email,
-          isActive: user.isActive,
-        }))
-      )
-    } catch (error) {
-      console.error("Failed to search users:", error)
-
-      setCreateUsers([])
-    } finally {
-      setUsersLoading(false)
-    }
-  }
-
-  /*
-   * ---------------------------------------------------------
    * Render state
    * ---------------------------------------------------------
    */
@@ -628,7 +458,7 @@ export default function TaskPage() {
         title="Tasks" 
         description="Manage and track your tasks across projects." 
         actions={
-          <Button onClick={() => setCreateOpen(true)}>
+          <Button onClick={() => navigate("/app/tasks/create")}>
             <Plus className="size-4 mr-2" />
             Create task
           </Button>
@@ -652,8 +482,6 @@ export default function TaskPage() {
         <TaskToolbar
           filters={filters}
           onFiltersChange={handleFiltersChange}
-          view={view}
-          onViewChange={setView}
         />
 
         {/* Result information */}
@@ -678,48 +506,25 @@ export default function TaskPage() {
         )}
 
         {/* Loading */}
-        {loading && view !== "table" && <TaskListSkeleton count={6} />}
-
-        {loading && view === "table" && <TaskTableSkeleton rows={10} />}
+        {loading && <TaskKanbanSkeleton />}
 
         {/* Empty */}
         {showEmptyState && (
           <TaskEmptyState
             filtered={hasActiveFilters}
-            onCreate={() => setCreateOpen(true)}
+            onCreate={() => navigate("/app/tasks/create")}
             onClearFilters={hasActiveFilters ? handleResetFilters : undefined}
           />
         )}
 
-        {/* Card view */}
-        {!loading && filteredTasks.length > 0 && view === "card" && (
-          <TaskList
+        {/* Kanban Board */}
+        {!loading && !showEmptyState && (
+          <TaskKanbanBoard
             tasks={filteredTasks}
-            onView={handleViewTask}
-            onDelete={handleDeleteTask}
-          />
-        )}
-
-        {/* List view */}
-        {!loading && filteredTasks.length > 0 && view === "list" && (
-          <div className="flex flex-col gap-4">
-            {filteredTasks.map((task) => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                onView={handleViewTask}
-                onDelete={handleDeleteTask}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Table view */}
-        {!loading && filteredTasks.length > 0 && view === "table" && (
-          <TaskTable
-            tasks={filteredTasks}
-            onView={handleViewTask}
-            onDelete={handleDeleteTask}
+            onStatusChange={handleStatusChange}
+            onViewTask={handleViewTask}
+            onDeleteTask={handleDeleteTask}
+            onAddTask={handleAddTaskInColumn}
           />
         )}
 
@@ -751,32 +556,6 @@ export default function TaskPage() {
             </div>
           </div>
         )}
-
-      {/* Create task dialog */}
-      <Dialog open={isCreateDialogOpen} onOpenChange={handleCreateOpenChange}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Create task</DialogTitle>
-
-            <DialogDescription>
-              Create a task, assign it to a project member, and set its priority
-              and due date.
-            </DialogDescription>
-          </DialogHeader>
-
-          <CreateTaskForm
-            projects={createProjects}
-            users={createUsers}
-            projectsLoading={projectsLoading}
-            usersLoading={usersLoading}
-            onProjectSearch={handleProjectSearch}
-            onUserSearch={handleUserSearch}
-            onSubmitTask={handleCreateTask}
-            onCreated={handleTaskCreated}
-            onCancel={() => handleCreateOpenChange(false)}
-          />
-        </DialogContent>
-      </Dialog>
     </PageContainer>
   )
 }

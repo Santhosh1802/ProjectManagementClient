@@ -3,6 +3,7 @@ import {
   ArrowDownAZ,
   ArrowUpAZ,
   Filter,
+  Info,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -91,18 +92,18 @@ export function ProjectToolbar({
             >
               <Filter className="size-4" />
 
-              <span className="hidden sm:inline">
+              <span className="hidden sm:inline text-xs">
                 Filters
               </span>
 
               {hasFilters && (
-                <span className="flex size-5 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
-                  !
+                <span className="flex size-5 items-center justify-center rounded-full text-xs text-primary" title="Filters applied for projects">
+                  <Info/>
                 </span>
               )}
             </summary>
 
-            <div className="absolute left-0 sm:left-auto sm:right-0 z-50 mt-2 w-[calc(100vw-2rem)] sm:w-[420px] rounded-xl border bg-popover p-4 text-popover-foreground shadow-lg">
+            <div className="absolute left-0 sm:left-auto sm:right-0 z-50 mt-2 w-[calc(100vw-2rem)] sm:w-105 rounded-xl border bg-popover p-4 text-popover-foreground shadow-lg">
               <ProjectFilters
                 filters={filters}
                 onFiltersChange={onFiltersChange}
@@ -129,12 +130,12 @@ export function ProjectToolbar({
                 <ArrowDownAZ className="size-4" />
               )}
 
-              <span className="hidden sm:inline">
+              <span className="hidden sm:inline text-xs">
                 Sort
               </span>
             </summary>
 
-            <div className="absolute left-0 sm:left-auto sm:right-0 z-50 mt-2 w-[calc(100vw-2rem)] sm:w-64 rounded-xl border bg-popover p-4 shadow-lg">
+            <div className="absolute left-0 sm:left-auto sm:right-0 z-50 mt-2 w-[calc(100vw-rem)] sm:w-105 rounded-xl border bg-popover p-4 shadow-lg">
               <div className="space-y-3">
 
                 <div>

@@ -1,4 +1,4 @@
-import { Grid2X2, List, Table2 } from "lucide-react"
+import {LayoutGrid, List, Table2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -17,12 +17,12 @@ interface TaskViewSwitcherProps {
 const views: {
   value: TaskView
   label: string
-  icon: typeof Grid2X2
+  icon: typeof LayoutGrid
 }[] = [
   {
     value: "card",
     label: "Card view",
-    icon: Grid2X2,
+    icon: LayoutGrid,
   },
   {
     value: "list",

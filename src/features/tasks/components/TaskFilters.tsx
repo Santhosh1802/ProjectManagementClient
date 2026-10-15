@@ -22,7 +22,7 @@ const TASK_STATUSES: { value: TaskStatus | "ALL"; label: string }[] = [
   { value: "ALL", label: "All statuses" },
   { value: "TODO", label: "To Do" },
   { value: "IN_PROGRESS", label: "In Progress" },
-  { value: "COMPLETED", label: "Completed" },
+  { value: "DONE", label: "Completed" },
   { value: "CANCELLED", label: "Cancelled" },
 ]
 
