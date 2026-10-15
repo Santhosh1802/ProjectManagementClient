@@ -233,7 +233,7 @@ export default function AppSidebar() {
                         />
                       }
                       tooltip={item.title}
-                      className={selected?"bg-accent":""}
+                      className={selected?"bg-accent-foreground/10":""}
                     >
                       <Icon />
                       <span>{item.title}</span>
@@ -261,7 +261,7 @@ export default function AppSidebar() {
                       render={<NavLink to={item.url} />}
                       tooltip={item.title}
                       
-                      className={selected?"bg-accent":""}
+                      className={selected?"bg-muted-foreground/10":""}
                     >
                       <Icon />
                       <span>{item.title}</span>
