@@ -150,6 +150,7 @@ export interface TaskFilters {
   search: string
   status: TaskStatusFilter
   priority: TaskPriorityFilter
+  projectIds?: string[]
   sortBy: TaskSortField
   sortOrder: TaskSortOrder
 }

@@ -1,15 +1,13 @@
 import {
   CalendarDays,
-  CheckCircle2,
-  Circle,
   Clock3,
   MoreHorizontal,
 } from "lucide-react"
 
 import type { Task } from "@/features/tasks/types/task.types"
 
+import StatusBadge from "@/components/common/StatusBadge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -33,44 +31,6 @@ interface TaskTableProps {
   onEdit?: (task: Task) => void
   onDelete?: (task: Task) => void
   onStatusChange?: (task: Task) => void
-}
-
-function formatLabel(value: string) {
-  return value
-    .toLowerCase()
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (char) => char.toUpperCase())
-}
-
-function getStatusVariant(
-  status: string,
-): "default" | "secondary" | "outline" | "destructive" {
-  switch (status) {
-    case "DONE":
-    case "COMPLETED":
-      return "default"
-    case "IN_PROGRESS":
-      return "secondary"
-    case "CANCELLED":
-      return "destructive"
-    default:
-      return "outline"
-  }
-}
-
-function getPriorityVariant(
-  priority: string,
-): "default" | "secondary" | "outline" | "destructive" {
-  switch (priority) {
-    case "URGENT":
-      return "destructive"
-    case "HIGH":
-      return "default"
-    case "MEDIUM":
-      return "secondary"
-    default:
-      return "outline"
-  }
 }
 
 function formatDate(date: string | null) {
@@ -167,28 +127,12 @@ export default function TaskTable({
 
                 {/* Status */}
                 <TableCell>
-                  <Badge
-                    variant={getStatusVariant(task.taskStatus)}
-                  >
-                    {task.taskStatus === "DONE" ? (
-                      <CheckCircle2 className="mr-1 size-3.5" />
-                    ) : (
-                      <Circle className="mr-1 size-3.5" />
-                    )}
-
-                    {formatLabel(task.taskStatus)}
-                  </Badge>
+                  <StatusBadge status={task.taskStatus} showDot />
                 </TableCell>
 
                 {/* Priority */}
                 <TableCell>
-                  <Badge
-                    variant={getPriorityVariant(
-                      task.taskPriority,
-                    )}
-                  >
-                    {formatLabel(task.taskPriority)}
-                  </Badge>
+                  <StatusBadge status={task.taskPriority} />
                 </TableCell>
 
                 {/* Assignee */}

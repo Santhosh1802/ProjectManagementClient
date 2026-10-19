@@ -15,7 +15,6 @@ import {
 import { toast } from "@/components/ui/toast"
 
 import { searchProjects } from "@/features/projects/services/projects.services"
-import { searchUsers } from "@/features/users/services/users.service"
 import { createTask } from "@/features/tasks/services/task.services"
 import { addTask } from "@/features/tasks/slice/task.slice"
 import type { Task, TaskStatus } from "@/features/tasks/types/task.types"
@@ -40,44 +39,23 @@ export default function CreateTaskPage() {
   const defaultProjectId = searchParams.get("projectId") || undefined
 
   const [projects, setProjects] = useState<Array<{ id: string; name: string }>>([])
-  const [users, setUsers] = useState<
-    Array<{
-      id: string
-      firstName: string
-      lastName: string
-      email: string
-      isActive: boolean
-    }>
-  >([])
-
   const [projectsLoading, setProjectsLoading] = useState(false)
-  const [usersLoading, setUsersLoading] = useState(false)
 
-  // Load available projects and users
+  // Load available projects
   useEffect(() => {
     let cancelled = false
 
     const loadOptions = async () => {
       try {
         setProjectsLoading(true)
-        setUsersLoading(true)
 
-        const [projectsResponse, usersResponse] = await Promise.all([
-          searchProjects({
-            page: 0,
-            size: 20,
-            scope: "ALL",
-            sortBy: "createdAt",
-            sortOrder: "desc",
-          }),
-          searchUsers({
-            page: 0,
-            size: 20,
-            isActive: true,
-            sortBy: "createdAt",
-            sortOrder: "desc",
-          }),
-        ])
+        const projectsResponse = await searchProjects({
+          page: 0,
+          size: 50,
+          scope: "ALL",
+          sortBy: "createdAt",
+          sortOrder: "desc",
+        })
 
         if (!cancelled) {
           setProjects(
@@ -86,23 +64,12 @@ export default function CreateTaskPage() {
               name: p.name,
             }))
           )
-
-          setUsers(
-            usersResponse.content.map((u) => ({
-              id: u.id,
-              firstName: u.firstName,
-              lastName: u.lastName ?? "",
-              email: u.email,
-              isActive: u.isActive,
-            }))
-          )
         }
       } catch (err) {
-        console.error("Failed to load options for task creation:", err)
+        console.error("Failed to load projects for task creation:", err)
       } finally {
         if (!cancelled) {
           setProjectsLoading(false)
-          setUsersLoading(false)
         }
       }
     }
@@ -135,33 +102,6 @@ export default function CreateTaskPage() {
       console.error("Failed to search projects:", err)
     } finally {
       setProjectsLoading(false)
-    }
-  }
-
-  const handleUserSearch = async (keyword: string) => {
-    try {
-      setUsersLoading(true)
-      const res = await searchUsers({
-        page: 0,
-        size: 20,
-        keyword: keyword.trim() || undefined,
-        isActive: true,
-        sortBy: "createdAt",
-        sortOrder: "desc",
-      })
-      setUsers(
-        res.content.map((u) => ({
-          id: u.id,
-          firstName: u.firstName,
-          lastName: u.lastName ?? "",
-          email: u.email,
-          isActive: u.isActive,
-        }))
-      )
-    } catch (err) {
-      console.error("Failed to search users:", err)
-    } finally {
-      setUsersLoading(false)
     }
   }
 
@@ -255,11 +195,8 @@ export default function CreateTaskPage() {
             defaultProjectId={defaultProjectId}
             defaultStatus={defaultStatus}
             projects={projects}
-            users={users}
             projectsLoading={projectsLoading}
-            usersLoading={usersLoading}
             onProjectSearch={handleProjectSearch}
-            onUserSearch={handleUserSearch}
             onSubmitTask={handleSubmitTask}
             onCreated={handleCreated}
             onCancel={() => navigate("/app/tasks")}

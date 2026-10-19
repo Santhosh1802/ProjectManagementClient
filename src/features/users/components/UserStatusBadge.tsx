@@ -1,26 +1,25 @@
-import { Badge } from "@/components/ui/badge";
-import type { UserRole } from "../types/user.types";
+import StatusBadge from "@/components/common/StatusBadge"
+import type { UserRole } from "../types/user.types"
 
 interface UserStatusBadgeProps {
-  status: UserRole | "active" | "inactive" | "verified" | "unverified";
+  status: UserRole | "active" | "inactive" | "verified" | "unverified"
+  className?: string
+  showDot?: boolean
 }
-
-const labels: Record<UserStatusBadgeProps["status"], string> = {
-  ADMIN: "Admin",
-  MANAGER: "Manager",
-  USER: "User",
-  active: "Active",
-  inactive: "Inactive",
-  verified: "Verified",
-  unverified: "Unverified",
-};
 
 export default function UserStatusBadge({
   status,
+  className,
+  showDot,
 }: UserStatusBadgeProps) {
+  // Show a dot for active/inactive and verified/unverified states
+  const shouldShowDot = showDot ?? (status === "active" || status === "inactive" || status === "verified" || status === "unverified")
+
   return (
-    <Badge variant="outline">
-      {labels[status]}
-    </Badge>
-  );
+    <StatusBadge
+      status={status}
+      showDot={shouldShowDot}
+      className={className}
+    />
+  )
 }

@@ -9,8 +9,8 @@ import {
   UserRound,
 } from "lucide-react"
 
-import type { Task, TaskPriority, TaskStatus } from "@/features/tasks/types/task.types"
-import { Badge } from "@/components/ui/badge"
+import type { Task, TaskStatus } from "@/features/tasks/types/task.types"
+import StatusBadge from "@/components/common/StatusBadge"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -39,28 +39,6 @@ const STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
   { value: "DONE", label: "Completed" },
   { value: "CANCELLED", label: "Cancelled" },
 ]
-
-function getPriorityLabel(priority: string) {
-  return priority
-    .toLowerCase()
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (char) => char.toUpperCase())
-}
-
-function getPriorityVariant(
-  priority: TaskPriority
-): "default" | "secondary" | "outline" | "destructive" {
-  switch (priority) {
-    case "URGENT":
-      return "destructive"
-    case "HIGH":
-      return "default"
-    case "MEDIUM":
-      return "secondary"
-    default:
-      return "outline"
-  }
-}
 
 function getInitials(firstName?: string, lastName?: string) {
   return `${firstName?.charAt(0) ?? ""}${lastName?.charAt(0) ?? ""}`.toUpperCase()
@@ -146,12 +124,10 @@ export default function TaskKanbanCard({
           className="flex shrink-0 items-center gap-1.5"
           onClick={(e) => e.stopPropagation()}
         >
-          <Badge
-            variant={getPriorityVariant(task.taskPriority)}
-            className="text-[10px] px-1.5 py-0 font-medium"
-          >
-            {getPriorityLabel(task.taskPriority)}
-          </Badge>
+          <StatusBadge
+            status={task.taskPriority}
+            size="sm"
+          />
 
           <DropdownMenu>
             <DropdownMenuTrigger

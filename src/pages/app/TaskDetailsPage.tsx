@@ -80,19 +80,6 @@ function formatPriority(priority: string) {
   )
 }
 
-function getPriorityVariant(priority: string) {
-  switch (priority) {
-    case "URGENT":
-      return "destructive"
-
-    case "HIGH":
-      return "default"
-
-    default:
-      return "secondary"
-  }
-}
-
 function formatDate(
   value?: string | null,
 ) {
@@ -405,11 +392,8 @@ export default function TaskDetailsPage() {
 
           <div className="min-w-0">
             <div className="mb-1 flex flex-wrap items-center gap-2">
-              <StatusBadge status={task.taskStatus} />
-
-              <Badge variant={getPriorityVariant(task.taskPriority)}>
-                {formatPriority(task.taskPriority)}
-              </Badge>
+              <StatusBadge status={task.taskStatus} showDot />
+              <StatusBadge status={task.taskPriority} />
 
               {isOverdue && (
                 <Badge variant="destructive">

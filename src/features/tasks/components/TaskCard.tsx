@@ -1,7 +1,5 @@
 import {
   CalendarDays,
-  CheckCircle2,
-  Circle,
   Clock3,
   MoreHorizontal,
   UserRound,
@@ -9,7 +7,7 @@ import {
 
 import type { Task } from "@/features/tasks/types/task.types"
 
-import { Badge } from "@/components/ui/badge"
+import StatusBadge from "@/components/common/StatusBadge"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -32,63 +30,6 @@ interface TaskCardProps {
   onEdit?: (task: Task) => void
   onDelete?: (task: Task) => void
   onStatusChange?: (task: Task) => void
-}
-
-function getStatusLabel(status: string) {
-  switch (status) {
-    case "TODO":
-      return "To Do"
-    case "IN_PROGRESS":
-      return "In Progress"
-    case "DONE":
-    case "COMPLETED":
-      return "Completed"
-    case "CANCELLED":
-      return "Cancelled"
-    default:
-      return status
-        .toLowerCase()
-        .replace(/_/g, " ")
-        .replace(/\b\w/g, (char) => char.toUpperCase())
-  }
-}
-
-function getPriorityLabel(priority: string) {
-  return priority
-    .toLowerCase()
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (char) => char.toUpperCase())
-}
-
-function getStatusVariant(
-  status: string,
-): "default" | "secondary" | "outline" | "destructive" {
-  switch (status) {
-    case "DONE":
-    case "COMPLETED":
-      return "default"
-    case "IN_PROGRESS":
-      return "secondary"
-    case "CANCELLED":
-      return "destructive"
-    default:
-      return "outline"
-  }
-}
-
-function getPriorityVariant(
-  priority: string,
-): "default" | "secondary" | "outline" | "destructive" {
-  switch (priority) {
-    case "URGENT":
-      return "destructive"
-    case "HIGH":
-      return "default"
-    case "MEDIUM":
-      return "secondary"
-    default:
-      return "outline"
-  }
 }
 
 function getInitials(firstName?: string, lastName?: string) {
@@ -135,19 +76,8 @@ export default function TaskCard({
       <CardHeader className="space-y-3">
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <Badge variant={getStatusVariant(task.taskStatus)}>
-              {task.taskStatus === "DONE" ? (
-                <CheckCircle2 className="mr-1 size-3.5" />
-              ) : (
-                <Circle className="mr-1 size-3.5" />
-              )}
-
-              {getStatusLabel(task.taskStatus)}
-            </Badge>
-
-            <Badge variant={getPriorityVariant(task.taskPriority)}>
-              {getPriorityLabel(task.taskPriority)}
-            </Badge>
+            <StatusBadge status={task.taskStatus} showDot />
+            <StatusBadge status={task.taskPriority} />
           </div>
 
           <DropdownMenu>

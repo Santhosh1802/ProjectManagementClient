@@ -9,14 +9,17 @@ import { TooltipProvider } from "./components/ui/tooltip.tsx"
 import { Provider } from "react-redux"
 import { persistor, store } from "./app/store.ts"
 import { PersistGate } from "redux-persist/integration/react"
+import { QueryClientProvider } from "@tanstack/react-query"
+import { queryClient } from "@/lib/queryClient.ts"
 import AppInitializer from "@/components/common/AppInitializer.tsx"
 import ErrorBoundary from "@/components/common/ErrorBoundary.tsx"
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <Provider store={store}>
-      <PersistGate loading={null} persistor={persistor}>
-        <ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <Provider store={store}>
+        <PersistGate loading={null} persistor={persistor}>
+          <ThemeProvider>
           <BrowserRouter>
             <TooltipProvider>
               <ErrorBoundary>
@@ -28,5 +31,6 @@ createRoot(document.getElementById("root")!).render(
         </ThemeProvider>
       </PersistGate>
     </Provider>
+    </QueryClientProvider>
   </StrictMode>
 )

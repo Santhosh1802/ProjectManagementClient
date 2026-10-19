@@ -17,6 +17,7 @@ import {
 } from "lucide-react"
 
 import { NavLink, useLocation, useNavigate } from "react-router-dom"
+import { cn } from "cn"
 
 import {
   Sidebar,
@@ -29,6 +30,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar"
 
 import {
@@ -46,7 +48,6 @@ import { Avatar, AvatarFallback } from "../ui/avatar"
 import { useAppDispatch, useAppSelector } from "@/hooks/redux-hooks"
 
 import { setTheme, type Theme } from "../../app/slice/themeSlice"
-import { Separator } from "../ui/separator"
 import { logout } from "@/features/auth/slice/authSlice"
 import { clearUser } from "@/features/users/slice/user.slice"
 import { LogoutUser } from "@/features/auth/services/auth.service"
@@ -60,6 +61,7 @@ import { useKeyboardShortcutsUI } from "@/context/KeyboardShortcutsContext"
 import { formatShortcutKey, toAriaKeyShortcuts } from "@/lib/keyboard"
 import { clearTasks } from "@/features/tasks/slice/task.slice";
 import { clearProjectMembers } from "@/features/projects/slice/projectMemberSlice";
+import { queryClient } from "@/lib/queryClient"
 
 const shortcutsHelpKeys = getShortcut("global.shortcuts")?.keys ?? ["mod", "/"]
 
@@ -159,6 +161,8 @@ export default function AppSidebar() {
     } catch (error) {
       console.log(error)
     } finally {
+      queryClient.cancelQueries()
+      queryClient.clear()
       dispatch(logout())
       dispatch(clearUser())
       dispatch(clearProjects())
@@ -167,38 +171,53 @@ export default function AppSidebar() {
       navigate("/login", { replace: true })
     }
   }
-  
+
+  const { isMobile, setOpenMobile } = useSidebar()
+
+  const handleNavClick = () => {
+    if (isMobile) {
+      setOpenMobile(false)
+    }
+  }
+
+  const isRouteActive = (url: string) => {
+    if (url === "/app/dashboard") {
+      return pathname === "/app/dashboard"
+    }
+    return pathname.startsWith(url)
+  }
 
   return (
-    <Sidebar collapsible="icon" variant="sidebar" className="bg-muted">
+    <Sidebar collapsible="icon" variant="sidebar" className="border-r border-sidebar-border bg-sidebar">
       {/* ----------------------------------------- */}
       {/* Header */}
       {/* ----------------------------------------- */}
 
-      <SidebarHeader>
+      <SidebarHeader className="border-b border-sidebar-border/60 p-2">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
-              render={<NavLink to="/app/dashboard" />}
+              render={<NavLink to="/app/dashboard" onClick={handleNavClick} />}
               size="lg"
               tooltip="DevFlow"
+              className="hover:bg-sidebar-accent/70 transition-colors group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-0!"
             >
-              <div className="flex size-8 shrink-0 items-center justify-center text-primary-foreground">
+              <div className="flex size-8 shrink-0 items-center justify-center text-primary-foreground shadow-xs">
                 <img
                   src="/logo.png"
                   alt="DevFlow"
-                  width="40"
-                  height="40"
-                  className="rounded-lg"
+                  width="24"
+                  height="24"
+                  className=" object-contain"
                 />
               </div>
 
-              <div className="flex flex-1 items-center gap-1 text-left text-sm leading-tight">
-                <p className="text-lg font-semibold">DevFlow</p>
+              <div className="flex flex-1 items-center gap-1.5 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
+                <p className="text-base font-semibold tracking-tight text-sidebar-foreground">DevFlow</p>
 
                 <Badge
                   variant="outline"
-                  className="font-mono text-xs font-light"
+                  className="font-mono text-[10px] font-medium border-sidebar-border/80 px-1.5 py-0"
                 >
                   v{import.meta.env.VITE_APP_VERSION}
                 </Badge>
@@ -212,31 +231,42 @@ export default function AppSidebar() {
       {/* Main Navigation */}
       {/* ----------------------------------------- */}
 
-      <SidebarContent>
+      <SidebarContent className="gap-2 py-2">
         {/* Workspace */}
 
         <SidebarGroup>
-          <SidebarGroupLabel>Workspace</SidebarGroupLabel>
-          <Separator />
+          <SidebarGroupLabel className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80 px-2 py-1">
+            Workspace
+          </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="gap-1">
               {workspaceNavigation.map((item) => {
                 const Icon = item.icon
-                const selected = pathname.includes(item.title.toLowerCase());
+                const active = isRouteActive(item.url)
                 return (
-                  <SidebarMenuItem key={item.url} className="m-1">
+                  <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton
                       render={
                         <NavLink
                           to={item.url}
                           end={item.url === "/app/dashboard"}
+                          onClick={handleNavClick}
                         />
                       }
                       tooltip={item.title}
-                      className={selected?"bg-accent-foreground/10":""}
+                      isActive={active}
+                      className={cn(
+                        "relative flex items-center rounded-md font-medium text-sidebar-foreground/80 transition-all duration-150",
+                        active
+                          ? "bg-primary/10 text-primary font-semibold shadow-2xs hover:bg-primary/15 hover:text-primary dark:bg-primary/20 dark:text-primary dark:hover:bg-primary/25"
+                          : "hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                      )}
                     >
-                      <Icon />
-                      <span>{item.title}</span>
+                      <Icon className={cn("size-4 shrink-0", active ? "text-primary" : "text-muted-foreground")} />
+                      <span className="truncate">{item.title}</span>
+                      {active && (
+                        <span className="ml-auto size-1.5 rounded-full bg-primary group-data-[collapsible=icon]:hidden" />
+                      )}
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )
@@ -248,23 +278,32 @@ export default function AppSidebar() {
         {/* Account */}
 
         <SidebarGroup>
-          <SidebarGroupLabel>Account</SidebarGroupLabel>
-          <Separator />
+          <SidebarGroupLabel className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80 px-2 py-1">
+            Account
+          </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="gap-1">
               {accountNavigation.map((item) => {
                 const Icon = item.icon
-                const selected = pathname.includes(item.title.toLowerCase());
+                const active = isRouteActive(item.url)
                 return (
-                  <SidebarMenuItem key={item.url} className="m-1">
+                  <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton
-                      render={<NavLink to={item.url} />}
+                      render={<NavLink to={item.url} onClick={handleNavClick} />}
                       tooltip={item.title}
-                      
-                      className={selected?"bg-muted-foreground/10":""}
+                      isActive={active}
+                      className={cn(
+                        "relative flex items-center rounded-md font-medium text-sidebar-foreground/80 transition-all duration-150",
+                        active
+                          ? "bg-primary/10 text-primary font-semibold shadow-2xs hover:bg-primary/15 hover:text-primary dark:bg-primary/20 dark:text-primary dark:hover:bg-primary/25"
+                          : "hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                      )}
                     >
-                      <Icon />
-                      <span>{item.title}</span>
+                      <Icon className={cn("size-4 shrink-0", active ? "text-primary" : "text-muted-foreground")} />
+                      <span className="truncate">{item.title}</span>
+                      {active && (
+                        <span className="ml-auto size-1.5 rounded-full bg-primary group-data-[collapsible=icon]:hidden" />
+                      )}
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )
@@ -284,13 +323,13 @@ export default function AppSidebar() {
           {/* Theme */}
           {/* ------------------------------------- */}
 
-          <SidebarMenuItem>
+          <SidebarMenuItem className="px-2 py-1">
             <DropdownMenu>
               <DropdownMenuTrigger
                 render={
                   <SidebarMenuButton
                     tooltip="Appearance"
-                    className="bg-muted/50 hover:bg-muted"
+                    className="bg-muted/50 hover:bg-muted group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-0!"
                   />
                 }
               >
@@ -302,9 +341,9 @@ export default function AppSidebar() {
                   <Laptop />
                 )}
 
-                <span>Appearance</span>
+                <span className="group-data-[collapsible=icon]:hidden">Appearance</span>
 
-                <ChevronUp className="ml-auto size-4 text-muted-foreground" />
+                <ChevronUp className="ml-auto size-4 text-muted-foreground group-data-[collapsible=icon]:hidden" />
               </DropdownMenuTrigger>
 
               <DropdownMenuContent side="top" align="end" className="w-48">
@@ -342,14 +381,14 @@ export default function AppSidebar() {
           {/* User */}
           {/* ------------------------------------- */}
 
-          <SidebarMenuItem>
+          <SidebarMenuItem className="px-2">
             <DropdownMenu>
               <DropdownMenuTrigger
                 render={
                   <SidebarMenuButton
                     size="lg"
                     tooltip={fullName}
-                    className="bg-muted"
+                    className="bg-muted group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-0!"
                   />
                 }
               >
@@ -357,7 +396,7 @@ export default function AppSidebar() {
                   <AvatarFallback>{initials}</AvatarFallback>
                 </Avatar>
 
-                <div className="grid flex-1 text-left text-sm leading-tight">
+                <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
                   <span className="truncate font-medium">{fullName}</span>
 
                   <span className="truncate text-xs text-muted-foreground">
@@ -365,7 +404,7 @@ export default function AppSidebar() {
                   </span>
                 </div>
 
-                <ChevronUp className="size-4" />
+                <ChevronUp className="size-4 group-data-[collapsible=icon]:hidden" />
               </DropdownMenuTrigger>
 
               <DropdownMenuContent side="top" align="end" className="w-56">
@@ -375,12 +414,12 @@ export default function AppSidebar() {
 
                 <DropdownMenuSeparator />
 
-                <DropdownMenuItem render={<NavLink to="/app/profile" />}>
+                <DropdownMenuItem render={<NavLink to="/app/profile" onClick={handleNavClick} />}>
                   <UserCircle className="size-4" />
                   <span>Profile</span>
                 </DropdownMenuItem>
 
-                <DropdownMenuItem render={<NavLink to="/app/settings" />}>
+                <DropdownMenuItem render={<NavLink to="/app/settings" onClick={handleNavClick} />}>
                   <Settings className="size-4" />
                   <span>Settings</span>
                 </DropdownMenuItem>

@@ -1,4 +1,4 @@
-import { Users, UserCheck, UserMinus } from "lucide-react"
+import { Users } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 
@@ -9,8 +9,8 @@ interface UserScopeTabsProps {
   onChange: (value: UserStatus) => void
   counts?: {
     all: number
-    active: number
-    inactive: number
+    active?: number
+    inactive?: number
   }
 }
 
@@ -20,18 +20,6 @@ const scopeItems = [
     label: "All users",
     icon: Users,
     countKey: "all" as const,
-  },
-  {
-    value: "active" as const,
-    label: "Active",
-    icon: UserCheck,
-    countKey: "active" as const,
-  },
-  {
-    value: "inactive" as const,
-    label: "Inactive",
-    icon: UserMinus,
-    countKey: "inactive" as const,
   },
 ]
 

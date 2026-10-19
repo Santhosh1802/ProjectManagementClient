@@ -143,7 +143,7 @@ export default function RegistrationForm() {
         {serverError && !isSuccess ? (
           <Alert
             variant="destructive"
-            className={"mt-2 mb-2 min-w-xs max-w-sm border-red-400"}
+            className="mt-2 mb-2 w-full border-red-400"
           >
             <AlertCircleIcon />
             <AlertTitle>
@@ -151,24 +151,30 @@ export default function RegistrationForm() {
                 ? "Email Already Exist"
                 : "Registration Failed"}
             </AlertTitle>
-            <AlertDescription className="flex flex-row items-center text-[10px]">
-              {serverError?.message}
-              <a
-                href=""
-                className={serverError?.status === 409 ? "pl-1" : "hidden"}
-              >
-                Sign in instead
-              </a>
+            <AlertDescription className="text-[10px] break-words">
+              <span>{serverError?.message}</span>
+              {serverError?.status === 409 && (
+                <a
+                  href="/login"
+                  className="inline-block pl-1 underline"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    goToLoginPage()
+                  }}
+                >
+                  Sign in instead
+                </a>
+              )}
             </AlertDescription>
           </Alert>
         ) : (
           <Alert
             variant="success"
-            className={isSuccess ? "mt-2 mb-2 min-w-sm" : "hidden"}
+            className={isSuccess ? "mt-2 mb-2 w-full" : "hidden"}
           >
             <CheckCircle2Icon />
             <AlertTitle>Account Created</AlertTitle>
-            <AlertDescription className="flex flex-row items-center text-[10px]">
+            <AlertDescription className="text-[10px] break-words">
               Your workspace has been provisioned. Redirecting you to login
               page..
             </AlertDescription>
@@ -293,7 +299,7 @@ export default function RegistrationForm() {
                 <p className="pb-2 font-mono text-xs font-medium text-muted-foreground">
                   PASSWORD REQUIREMENTS
                 </p>
-                <div className="flex min-w-sm flex-col gap-1">
+                <div className="flex w-full flex-col gap-1">
                   <div className="flex flex-row items-center gap-2">
                     {passwordRequirements.minLength ? (
                       <CheckCircle2Icon className="size-4 text-green-500" />

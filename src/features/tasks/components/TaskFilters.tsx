@@ -1,9 +1,5 @@
-import {
-  Check,
-  CircleDot,
-  Signal,
-  X,
-} from "lucide-react"
+import { useState, useEffect } from "react"
+import { Check, CircleDot, Signal } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 
@@ -15,7 +11,8 @@ import type {
 
 interface TaskFiltersProps {
   filters: TaskFiltersState
-  onFiltersChange: (filters: TaskFiltersState) => void
+  onApplyFilters: (filters: TaskFiltersState) => void
+  onClose?: () => void
 }
 
 const TASK_STATUSES: { value: TaskStatus | "ALL"; label: string }[] = [
@@ -36,48 +33,81 @@ const TASK_PRIORITIES: { value: TaskPriority | "ALL"; label: string }[] = [
 
 export default function TaskFilters({
   filters,
-  onFiltersChange,
+  onApplyFilters,
+  onClose,
 }: TaskFiltersProps) {
-  const hasActiveFilters = filters.status !== "ALL" || filters.priority !== "ALL"
+  // Staged draft state until user clicks Apply
+  const [draftFilters, setDraftFilters] = useState<TaskFiltersState>(filters)
 
-  const updateFilter = <K extends keyof TaskFiltersState>(
+  useEffect(() => {
+    setDraftFilters(filters)
+  }, [filters])
+
+  const hasDraftFilters =
+    draftFilters.status !== "ALL" ||
+    draftFilters.priority !== "ALL"
+
+  const updateDraft = <K extends keyof TaskFiltersState>(
     key: K,
     value: TaskFiltersState[K]
   ) => {
-    onFiltersChange({
-      ...filters,
+    setDraftFilters((prev) => ({
+      ...prev,
       [key]: value,
-    })
+    }))
   }
 
-  const clearFilters = () => {
-    onFiltersChange({
-      ...filters,
+  const handleApply = () => {
+    onApplyFilters(draftFilters)
+    onClose?.()
+  }
+
+  const handleReset = () => {
+    const cleared: TaskFiltersState = {
+      ...draftFilters,
       status: "ALL",
       priority: "ALL",
-    })
+    }
+    setDraftFilters(cleared)
+    onApplyFilters(cleared)
+    onClose?.()
   }
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b pb-2">
+        <span className="text-xs font-semibold text-foreground">Filter tasks</span>
+        {hasDraftFilters && (
+          <button
+            type="button"
+            onClick={handleReset}
+            className="text-[11px] font-medium text-muted-foreground hover:text-foreground"
+          >
+            Clear all
+          </button>
+        )}
+      </div>
+
       {/* Status */}
       <div className="space-y-2">
-        <div className="flex items-center gap-2 text-sm font-medium">
-          <CircleDot className="size-4" />
+        <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+          <CircleDot className="size-3.5" />
           Status
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1.5">
           {TASK_STATUSES.map((status) => {
-            const active = filters.status === status.value
+            const active = draftFilters.status === status.value
             return (
               <Button
                 key={status.value}
                 type="button"
                 size="sm"
                 variant={active ? "secondary" : "outline"}
-                onClick={() => updateFilter("status", status.value)}
+                className="h-7 text-xs"
+                onClick={() => updateDraft("status", status.value)}
               >
-                {active && <Check className="size-3.5 mr-2" />}
+                {active && <Check className="size-3 mr-1" />}
                 {status.label}
               </Button>
             )
@@ -87,22 +117,23 @@ export default function TaskFilters({
 
       {/* Priority */}
       <div className="space-y-2">
-        <div className="flex items-center gap-2 text-sm font-medium">
-          <Signal className="size-4" />
+        <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+          <Signal className="size-3.5" />
           Priority
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1.5">
           {TASK_PRIORITIES.map((priority) => {
-            const active = filters.priority === priority.value
+            const active = draftFilters.priority === priority.value
             return (
               <Button
                 key={priority.value}
                 type="button"
                 size="sm"
                 variant={active ? "secondary" : "outline"}
-                onClick={() => updateFilter("priority", priority.value)}
+                className="h-7 text-xs"
+                onClick={() => updateDraft("priority", priority.value)}
               >
-                {active && <Check className="size-3.5 mr-2" />}
+                {active && <Check className="size-3 mr-1" />}
                 {priority.label}
               </Button>
             )
@@ -110,20 +141,29 @@ export default function TaskFilters({
         </div>
       </div>
 
-      {/* Clear */}
-      {hasActiveFilters && (
-        <div className="flex justify-end border-t pt-3">
+      {/* Footer / Apply Action */}
+      <div className="flex items-center justify-end gap-2 border-t pt-3">
+        {onClose && (
           <Button
             type="button"
             variant="ghost"
             size="sm"
-            onClick={clearFilters}
+            className="h-7 text-xs text-muted-foreground"
+            onClick={onClose}
           >
-            <X className="size-4 mr-2" />
-            Clear filters
+            Cancel
           </Button>
-        </div>
-      )}
+        )}
+        <Button
+          type="button"
+          size="sm"
+          className="h-7 text-xs"
+          onClick={handleApply}
+        >
+          <Check className="size-3 mr-1" />
+          Apply filters
+        </Button>
+      </div>
     </div>
   )
 }

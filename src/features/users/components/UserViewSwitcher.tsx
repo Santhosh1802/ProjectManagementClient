@@ -1,50 +1,73 @@
+import { LayoutGrid, List, Table2 } from "lucide-react"
 
-"use client";
-
-import { LayoutGrid, List, Table2 } from "lucide-react";
+import { Button } from "@/components/ui/button"
 import {
-  ToggleGroup,
-  ToggleGroupItem,
-} from "@/components/ui/toggle-group";
-import type { UserView } from "../types/user.types";
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+
+import type { UserView } from "../types/user.types"
 
 interface UserViewSwitcherProps {
-  value: UserView;
-  onChange: (value: UserView) => void;
+  value: UserView
+  onChange: (view: UserView) => void
 }
 
-const isUserView = (value: string): value is UserView =>
-  value === "card" || value === "list" || value === "table";
+const views: {
+  value: UserView
+  label: string
+  icon: typeof LayoutGrid
+}[] = [
+  {
+    value: "card",
+    label: "Card view",
+    icon: LayoutGrid,
+  },
+  {
+    value: "list",
+    label: "List view",
+    icon: List,
+  },
+  {
+    value: "table",
+    label: "Table view",
+    icon: Table2,
+  },
+]
 
 export default function UserViewSwitcher({
   value,
   onChange,
 }: UserViewSwitcherProps) {
   return (
-    <ToggleGroup
-      value={[value]}
-      onValueChange={(next: string[]) => {
-        const selected = next.find(isUserView);
+    <div className="flex h-7.5 items-center rounded-md border bg-background p-0.5">
+      {views.map((view) => {
+        const Icon = view.icon
+        const isActive = value === view.value
 
-        if (selected) {
-          onChange(selected);
-        }
-      }}
-      variant="outline"
-      size="sm"
-      aria-label="User display mode"
-    >
-      <ToggleGroupItem value="card" aria-label="Card view">
-        <LayoutGrid className="size-4" />
-      </ToggleGroupItem>
+        return (
+          <Tooltip key={view.value}>
+            <TooltipTrigger render={
+              <Button
+                type="button"
+                variant={isActive ? "secondary" : "ghost"}
+                size="icon"
+                className="size-6.5"
+                aria-label={view.label}
+                aria-pressed={isActive}
+                onClick={() => onChange(view.value)}
+              >
+                <Icon className="size-3.5" />
+              </Button>
+            } />
 
-      <ToggleGroupItem value="list" aria-label="List view">
-        <List className="size-4" />
-      </ToggleGroupItem>
-
-      <ToggleGroupItem value="table" aria-label="Table view">
-        <Table2 className="size-4" />
-      </ToggleGroupItem>
-    </ToggleGroup>
-  );
+            <TooltipContent>
+              {view.label}
+            </TooltipContent>
+          </Tooltip>
+        )
+      })}
+    </div>
+  )
 }

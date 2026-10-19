@@ -111,7 +111,7 @@ export default function AssigneeSelect({
                     </div>
                   ) : (
                     <span className="text-muted-foreground">
-                      Select an assignee
+                      {disabled ? "Select a project first" : "Select an assignee"}
                     </span>
                   )}
 

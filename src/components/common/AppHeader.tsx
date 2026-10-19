@@ -32,22 +32,24 @@ export default function AppHeader() {
   return (
     <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center border-b backdrop-blur">
 
-      <div className="flex w-full min-w-0 items-center gap-3 px-4">
+      <div className="flex w-full min-w-0 items-center gap-2 px-3 sm:gap-3 sm:px-4">
 
         {/* Sidebar Toggle */}
-        <SidebarTrigger className="-ml-1" />
+        <SidebarTrigger className="-ml-1 shrink-0" />
 
         <Separator
           orientation="vertical"
-          className="h-4"
+          className="h-4 shrink-0"
         />
 
         {/* Breadcrumb */}
-        <AppBreadcrumb />
+        <div className="flex-1 min-w-0 overflow-hidden">
+          <AppBreadcrumb />
+        </div>
 
 
         {/* Right Section */}
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
 
           {/* Global Search */}
           <button

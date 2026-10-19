@@ -1,14 +1,16 @@
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
-import PersonalInfo from "@/features/users/components/PersonalInfo";
-import PasswordChanger from "@/features/users/components/PasswordChanger";
 import UserDetails from "@/features/users/components/UserDetails";
 import DangerZone from "@/features/users/components/DangerZone";
+import AccountSettings from "@/features/users/components/AccountSettings";
+import UserWorkspaceOverview from "@/features/users/components/UserWorkspaceOverview";
 import { getUserById } from "@/features/users/services/users.service";
 
 import PageContainer from "@/components/common/PageContainer";
 import PageHeader from "@/components/common/PageHeader";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { FolderKanban, Settings } from "lucide-react";
 
 import {
   setUser,
@@ -23,6 +25,7 @@ import {
 
 export default function ProfilePage() {
   const dispatch = useAppDispatch();
+  const [activeTab, setActiveTab] = useState<string>("overview");
 
   const userId = useAppSelector(
     (state) => state.auth.user?.id
@@ -54,7 +57,7 @@ export default function ProfilePage() {
         dispatch(setUserLoading(true));
 
         const response = await getUserById({
-          id: userId || "",//TODO make loader
+          id: userId || "",
         });
 
         const userData = response;
@@ -124,52 +127,66 @@ export default function ProfilePage() {
   }
 
   return (
-    <PageContainer className="gap-5">
+    <PageContainer className="gap-6">
       <PageHeader 
         title="Your Profile" 
-        description="Manage your personal information and account settings."
+        description="View your workspace activity, projects, and manage account settings."
       />
 
       {/* ----------------------------------------- */}
-      {/* User Details */}
+      {/* User Details Banner */}
       {/* ----------------------------------------- */}
 
       <UserDetails user={user} />
 
       {/* ----------------------------------------- */}
-      {/* Profile Settings */}
+      {/* Tabs: Overview & Projects vs Settings */}
       {/* ----------------------------------------- */}
 
-      <div
-        className="
-          grid
-          w-full
-          grid-cols-1
-          items-start
-          gap-5
-          xl:grid-cols-2
-        "
+      <Tabs
+        value={activeTab}
+        onValueChange={(val) => {
+          if (val) setActiveTab(val);
+        }}
+        className="w-full space-y-6"
       >
-        {/* Personal Information */}
-
-        <div className="min-w-0">
-          <PersonalInfo user={user} />
+        <div className="w-full overflow-x-auto no-scrollbar border-b border-border pb-1">
+          <TabsList variant="line" className="inline-flex w-max min-w-full sm:min-w-0 sm:w-auto gap-2">
+            <TabsTrigger
+              value="overview"
+              className="gap-2 px-3 py-2 text-sm font-medium whitespace-nowrap"
+            >
+              <FolderKanban className="size-4 shrink-0" />
+              <span>Overview & Projects</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="settings"
+              className="gap-2 px-3 py-2 text-sm font-medium whitespace-nowrap"
+            >
+              <Settings className="size-4 shrink-0" />
+              <span>Account Settings</span>
+            </TabsTrigger>
+          </TabsList>
         </div>
 
-        {/* Password */}
+        {/* Tab 1: Overview & Projects */}
+        <TabsContent value="overview" className="mt-0 focus-visible:outline-none">
+          <UserWorkspaceOverview
+            user={user}
+            onSwitchToSettings={() => setActiveTab("settings")}
+          />
+        </TabsContent>
 
-        <div className="min-w-0">
-          <PasswordChanger />
-        </div>
-      </div>
+        {/* Tab 2: Account Settings */}
+        <TabsContent value="settings" className="mt-0 space-y-6 focus-visible:outline-none">
+          <AccountSettings user={user} />
 
-      {/* ----------------------------------------- */}
-      {/* Danger Zone */}
-      {/* ----------------------------------------- */}
-
-      <div className="w-full">
-        <DangerZone />
-      </div>
+          {/* Danger Zone */}
+          <div className="w-full">
+            <DangerZone />
+          </div>
+        </TabsContent>
+      </Tabs>
     </PageContainer>
   );
 }

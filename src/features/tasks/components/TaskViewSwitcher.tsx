@@ -1,4 +1,4 @@
-import {LayoutGrid, List, Table2 } from "lucide-react"
+import { Kanban, LayoutGrid, List, Table2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -19,6 +19,11 @@ const views: {
   label: string
   icon: typeof LayoutGrid
 }[] = [
+  {
+    value: "kanban",
+    label: "Kanban board",
+    icon: Kanban,
+  },
   {
     value: "card",
     label: "Card view",
@@ -41,7 +46,7 @@ export default function TaskViewSwitcher({
   onChange,
 }: TaskViewSwitcherProps) {
   return (
-    <div className="flex items-center rounded-md border bg-background p-1">
+    <div className="flex h-7.5 items-center rounded-md border bg-background p-0.5">
       {views.map((view) => {
         const Icon = view.icon
         const isActive = value === view.value
@@ -53,12 +58,12 @@ export default function TaskViewSwitcher({
                 type="button"
                 variant={isActive ? "secondary" : "ghost"}
                 size="icon"
-                className="size-8"
+                className="size-6.5"
                 aria-label={view.label}
                 aria-pressed={isActive}
                 onClick={() => onChange(view.value)}
               >
-                <Icon className="size-4" />
+                <Icon className="size-3.5" />
               </Button>
             } />
 

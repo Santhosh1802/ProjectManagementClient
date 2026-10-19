@@ -8,6 +8,9 @@ import { Plus } from "lucide-react"
 import confetti from "canvas-confetti"
 import { toast } from "@/components/ui/toast"
 
+import { useQuery } from "@tanstack/react-query"
+import { taskKeys } from "@/lib/queryKeys"
+
 import {
   deleteTask,
   getAllTasks,
@@ -15,6 +18,7 @@ import {
   getTasksByCreatedBy,
   updateTaskStatus,
 } from "@/features/tasks/services/task.services"
+import { searchProjects } from "@/features/projects/services/projects.services"
 
 import {
   removeTask,
@@ -29,34 +33,74 @@ import {
 
 import type {
   Task,
-  TaskPriorityFilter,
+  TaskFilters,
   TaskScope,
-  TaskSortField,
-  TaskSortOrder,
   TaskStatus,
-  TaskStatusFilter,
+  TaskView,
 } from "@/features/tasks/types/task.types"
 
 import TaskToolbar from "@/features/tasks/components/TaskToolbar"
 import TaskScopeTabs from "@/features/tasks/components/TaskScopeTabs"
 import TaskKanbanBoard from "@/features/tasks/components/TaskKanbanBoard"
 import TaskKanbanSkeleton from "@/features/tasks/components/TaskKanbanSkeleton"
+import TaskList from "@/features/tasks/components/TaskList"
+import TaskListSkeleton from "@/features/tasks/components/TaskListSkeleton"
+import TaskTable from "@/features/tasks/components/TaskTable"
+import TaskTableSkeleton from "@/features/tasks/components/TaskTableSkeleton"
 import TaskEmptyState from "@/features/tasks/components/TaskEmptyState"
 
-import { useAppDispatch, useAppSelector } from "@/hooks/redux-hooks"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 
-interface TaskFiltersState {
-  search: string
-  status: TaskStatusFilter
-  priority: TaskPriorityFilter
-  sortBy: TaskSortField
-  sortOrder: TaskSortOrder
+import { useAppDispatch, useAppSelector } from "@/hooks/redux-hooks"
+import { useIsMobile } from "@/hooks/use-mobile"
+
+function getPaginationItems(
+  totalPages: number,
+  currentPage: number
+): (number | "ellipsis")[] {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, index) => index)
+  }
+
+  const pages = new Set<number>([
+    0,
+    totalPages - 1,
+    currentPage,
+    currentPage - 1,
+    currentPage + 1,
+  ])
+
+  const visiblePages = [...pages]
+    .filter((p) => p >= 0 && p < totalPages)
+    .sort((a, b) => a - b)
+
+  const result: (number | "ellipsis")[] = []
+
+  visiblePages.forEach((p, index) => {
+    if (index > 0 && p - visiblePages[index - 1] > 1) {
+      result.push("ellipsis")
+    }
+    result.push(p)
+  })
+
+  return result
 }
+
+type TaskFiltersState = TaskFilters
 
 const DEFAULT_FILTERS: TaskFiltersState = {
   search: "",
   status: "ALL",
   priority: "ALL",
+  projectIds: [],
   sortBy: "createdAt",
   sortOrder: "desc",
 }
@@ -125,58 +169,106 @@ export default function TaskPage() {
    * ---------------------------------------------------------
    */
 
+  const isMobile = useIsMobile()
+  const [userSelectedView, setUserSelectedView] = useState<TaskView | null>(null)
+  const view: TaskView = userSelectedView ?? (isMobile ? "card" : "kanban")
+
   const [scope, setScope] = useState<TaskScope>(
     canViewAllTasks ? "ALL" : "ASSIGNED_TO_ME"
   )
 
   const [filters, setFilters] = useState<TaskFiltersState>(DEFAULT_FILTERS)
-  const [refreshKey, setRefreshKey] = useState(0)
+
+
+  const {
+    data: tasksResponse,
+    isLoading: queryLoading,
+    isFetching: queryFetching,
+    error: queryError,
+    refetch,
+  } = useQuery({
+    queryKey: [...taskKeys.all, scope, currentUser?.id ?? "anonymous", page, size],
+    queryFn: () =>
+      fetchTasks({
+        scope,
+        currentUserId: currentUser?.id,
+        page,
+        size,
+      }),
+  })
 
   useEffect(() => {
-    if (size < 50) {
-      dispatch(setTaskPageSize(50))
+    dispatch(setTaskLoading(queryLoading))
+  }, [dispatch, queryLoading])
+
+  useEffect(() => {
+    if (tasksResponse) {
+      dispatch(setTasks(tasksResponse))
     }
-  }, [dispatch, size])
+  }, [dispatch, tasksResponse])
 
   useEffect(() => {
-    let cancelled = false
-
-    const load = async () => {
+    if (queryError) {
+      dispatch(
+        setTaskError(
+          queryError instanceof Error ? queryError.message : "Unable to load tasks."
+        )
+      )
+    } else {
+      dispatch(setTaskError(null))
+    }
+  }, [dispatch, queryError])
+  /*
+  /*
+   * ---------------------------------------------------------
+   * Fetch available projects for filtering
+   * ---------------------------------------------------------
+   */
+  const { data: projectsData, isLoading: projectsLoading } = useQuery({
+    queryKey: ["projects", "for-task-filter"],
+    queryFn: async () => {
       try {
-        dispatch(setTaskLoading(true))
-        dispatch(setTaskError(null))
-
-        const response = await fetchTasks({
-          scope,
-          currentUserId: currentUser?.id,
-          page,
-          size,
+        const res = await searchProjects({
+          page: 0,
+          size: 100,
+          scope: "ALL",
+          sortBy: "createdAt",
+          sortOrder: "desc",
         })
+        return (res?.content || []).map((p) => ({
+          id: p.id,
+          name: p.name,
+        }))
+      } catch (err) {
+        console.error("Failed to load projects for filter:", err)
+        return []
+      }
+    },
+    staleTime: 2 * 60 * 1000,
+  })
 
-        if (!cancelled) {
-          dispatch(setTasks(response))
-        }
-      } catch (error) {
-        if (!cancelled) {
-          dispatch(
-            setTaskError(
-              error instanceof Error ? error.message : "Unable to load tasks."
-            )
-          )
-        }
-      } finally {
-        if (!cancelled) {
-          dispatch(setTaskLoading(false))
+  // Derive projects from both projects API and tasks currently loaded (deduplicated)
+  const projectOptions = useMemo(() => {
+    const map = new Map<string, string>()
+
+    if (projectsData) {
+      for (const p of projectsData) {
+        if (p?.id && p?.name) {
+          map.set(p.id, p.name)
         }
       }
     }
 
-    void load()
-
-    return () => {
-      cancelled = true
+    // Also include any project already present on the loaded tasks
+    for (const t of tasks) {
+      if (t?.project?.id && t?.project?.name && !map.has(t.project.id)) {
+        map.set(t.project.id, t.project.name)
+      }
     }
-  }, [currentUser, dispatch, page, scope, size, refreshKey])
+
+    return Array.from(map.entries()).map(([id, name]) => ({ id, name }))
+  }, [projectsData, tasks])
+
   /*
    * ---------------------------------------------------------
    * Client-side filtering + sorting
@@ -188,6 +280,7 @@ export default function TaskPage() {
 
   const filteredTasks = useMemo(() => {
     const search = filters.search.trim().toLowerCase()
+    const selectedProjectIds = filters.projectIds || []
 
     const result = tasks.filter((task) => {
       const createdByName =
@@ -209,7 +302,16 @@ export default function TaskPage() {
       const matchesPriority =
         filters.priority === "ALL" || task.taskPriority === filters.priority
 
-      return matchesSearch && matchesStatus && matchesPriority
+      const matchesProject =
+        selectedProjectIds.length === 0 ||
+        selectedProjectIds.includes(task.project.id)
+
+      return (
+        matchesSearch &&
+        matchesStatus &&
+        matchesPriority &&
+        matchesProject
+      )
     })
 
     return [...result].sort((a, b) => {
@@ -265,6 +367,7 @@ export default function TaskPage() {
     filters.search.trim() !== "" ||
     filters.status !== "ALL" ||
     filters.priority !== "ALL" ||
+    (filters.projectIds && filters.projectIds.length > 0) ||
     filters.sortBy !== "createdAt" ||
     filters.sortOrder !== "desc"
 
@@ -298,15 +401,6 @@ export default function TaskPage() {
     }
   }
 
-  /*
-   * ---------------------------------------------------------
-   * Refresh
-   * ---------------------------------------------------------
-   */
-
-  const handleRefresh = () => {
-    setRefreshKey((value) => value + 1)
-  }
   /*
    * ---------------------------------------------------------
    * View task
@@ -456,7 +550,9 @@ export default function TaskPage() {
     <PageContainer>
       <PageHeader 
         title="Tasks" 
-        description="Manage and track your tasks across projects." 
+        description="Manage and track your tasks across projects."
+        onRefresh={() => void refetch()}
+        isRefreshing={queryFetching}
         actions={
           <Button onClick={() => navigate("/app/tasks/create")}>
             <Plus className="size-4 mr-2" />
@@ -475,13 +571,22 @@ export default function TaskPage() {
           <ErrorState 
             title="Unable to load tasks"
             description={error}
-            retryAction={handleRefresh}
+            retryAction={() => void refetch()}
           />
         )}
 
         <TaskToolbar
           filters={filters}
           onFiltersChange={handleFiltersChange}
+          view={view}
+          onViewChange={setUserSelectedView}
+          projects={projectOptions}
+          projectsLoading={projectsLoading}
+          pageSize={size}
+          onPageSizeChange={(newSize) => {
+            dispatch(setTaskPageSize(newSize))
+            dispatch(setTaskPage(0))
+          }}
         />
 
         {/* Result information */}
@@ -506,7 +611,13 @@ export default function TaskPage() {
         )}
 
         {/* Loading */}
-        {loading && <TaskKanbanSkeleton />}
+        {loading && (
+          <>
+            {view === "kanban" && <TaskKanbanSkeleton />}
+            {(view === "card" || view === "list") && <TaskListSkeleton />}
+            {view === "table" && <TaskTableSkeleton />}
+          </>
+        )}
 
         {/* Empty */}
         {showEmptyState && (
@@ -517,43 +628,109 @@ export default function TaskPage() {
           />
         )}
 
-        {/* Kanban Board */}
+        {/* Views */}
         {!loading && !showEmptyState && (
-          <TaskKanbanBoard
-            tasks={filteredTasks}
-            onStatusChange={handleStatusChange}
-            onViewTask={handleViewTask}
-            onDeleteTask={handleDeleteTask}
-            onAddTask={handleAddTaskInColumn}
-          />
+          <>
+            {view === "kanban" && (
+              <TaskKanbanBoard
+                tasks={filteredTasks}
+                onStatusChange={handleStatusChange}
+                onViewTask={handleViewTask}
+                onDeleteTask={handleDeleteTask}
+                onAddTask={handleAddTaskInColumn}
+              />
+            )}
+
+            {(view === "card" || view === "list") && (
+              <TaskList
+                tasks={filteredTasks}
+                onView={handleViewTask}
+                onDelete={handleDeleteTask}
+              />
+            )}
+
+            {view === "table" && (
+              <TaskTable
+                tasks={filteredTasks}
+                onView={handleViewTask}
+                onDelete={handleDeleteTask}
+              />
+            )}
+          </>
         )}
 
         {/* Pagination */}
-        {!loading && totalPages > 1 && (
-          <div className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
+        {!loading && totalElements > 0 && (
+          <div className="flex flex-col gap-4 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted-foreground">
-              Page {page + 1} of {totalPages}
+              Showing {page * size + 1}–{Math.min((page + 1) * size, totalElements)} of{" "}
+              {totalElements.toLocaleString("en-IN")} tasks
             </p>
 
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                disabled={first || loading}
-                onClick={handlePreviousPage}
-                className="rounded-md border px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Previous
-              </button>
+            <Pagination className="mx-0 w-auto justify-start sm:justify-end">
+              <PaginationContent className="flex-wrap">
+                <PaginationItem>
+                  <PaginationPrevious
+                    href="#"
+                    aria-disabled={first || loading}
+                    tabIndex={first || loading ? -1 : undefined}
+                    className={
+                      first || loading
+                        ? "pointer-events-none opacity-50"
+                        : "cursor-pointer"
+                    }
+                    onClick={(event) => {
+                      event.preventDefault()
+                      if (!first && !loading) {
+                        handlePreviousPage()
+                      }
+                    }}
+                  />
+                </PaginationItem>
 
-              <button
-                type="button"
-                disabled={last || loading}
-                onClick={handleNextPage}
-                className="rounded-md border px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Next
-              </button>
-            </div>
+                {getPaginationItems(totalPages, page).map((item, index) => (
+                  <PaginationItem key={`${item}-${index}`}>
+                    {item === "ellipsis" ? (
+                      <PaginationEllipsis />
+                    ) : (
+                      <PaginationLink
+                        href="#"
+                        isActive={page === item}
+                        aria-label={`Go to page ${item + 1}`}
+                        aria-current={page === item ? "page" : undefined}
+                        onClick={(event) => {
+                          event.preventDefault()
+                          if (page !== item && !loading) {
+                            dispatch(setTaskPage(item))
+                          }
+                        }}
+                      >
+                        {item + 1}
+                      </PaginationLink>
+                    )}
+                  </PaginationItem>
+                ))}
+
+                <PaginationItem>
+                  <PaginationNext
+                    href="#"
+                    aria-disabled={last || loading}
+                    tabIndex={last || loading ? -1 : undefined}
+                    className={
+                      last || loading
+                        ? "pointer-events-none opacity-50"
+                        : "cursor-pointer"
+                    }
+                    onClick={(event) => {
+                      event.preventDefault()
+                      if (!last && !loading) {
+                        handleNextPage()
+                      }
+                    }}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
           </div>
         )}
     </PageContainer>

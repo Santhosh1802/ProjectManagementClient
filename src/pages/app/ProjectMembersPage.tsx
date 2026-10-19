@@ -55,6 +55,7 @@ import {
 } from "@/components/ui/select"
 
 import { Badge } from "@/components/ui/badge"
+import StatusBadge from "@/components/common/StatusBadge"
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 
@@ -63,10 +64,13 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import {
   Pagination,
   PaginationContent,
+  PaginationEllipsis,
   PaginationItem,
+  PaginationLink,
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
+import PageSizeSelector from "@/components/common/PageSizeSelector"
 
 import { useAppDispatch, useAppSelector } from "@/hooks/redux-hooks"
 
@@ -99,11 +103,44 @@ import {
   setProjectMemberError,
   setProjectMemberLoading,
   setProjectMemberPage,
+  setProjectMemberPageSize,
   setProjectMembers,
   updateProjectMember,
 } from "@/features/projects/slice/projectMemberSlice"
 
 type RoleFilter = "ALL" | ProjectRole
+
+function getPaginationItems(
+  totalPages: number,
+  currentPage: number
+): (number | "ellipsis")[] {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, index) => index)
+  }
+
+  const pages = new Set<number>([
+    0,
+    totalPages - 1,
+    currentPage,
+    currentPage - 1,
+    currentPage + 1,
+  ])
+
+  const visiblePages = [...pages]
+    .filter((p) => p >= 0 && p < totalPages)
+    .sort((a, b) => a - b)
+
+  const result: (number | "ellipsis")[] = []
+
+  visiblePages.forEach((p, index) => {
+    if (index > 0 && p - visiblePages[index - 1] > 1) {
+      result.push("ellipsis")
+    }
+    result.push(p)
+  })
+
+  return result
+}
 
 function getUserName(member: ProjectMember) {
   return `${member.user?.firstName ?? ""} ${member.user?.lastName ?? ""}`.trim()
@@ -129,10 +166,6 @@ function getUserNameFromUser(user: User) {
 
 function formatRole(role: ProjectRole) {
   return role === "MANAGER" ? "Manager" : "Member"
-}
-
-function getRoleBadgeVariant(role: ProjectRole) {
-  return role === "MANAGER" ? "default" : "secondary"
 }
 
 export default function ProjectMembersPage() {
@@ -713,11 +746,10 @@ export default function ProjectMembersPage() {
                       </div>
 
                       <div className="flex items-center justify-between gap-3 sm:justify-end">
-                        <Badge
-                          variant={getRoleBadgeVariant(member.projectRole)}
-                        >
-                          {formatRole(member.projectRole)}
-                        </Badge>
+                        <StatusBadge
+                          status={member.projectRole}
+                          label={formatRole(member.projectRole)}
+                        />
 
                         {permissions.canManageMembers && !isOwner && (
                           <DropdownMenu>
@@ -769,51 +801,89 @@ export default function ProjectMembersPage() {
               </div>
             )}
 
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between border-t px-4 py-4 sm:px-6">
-                <p className="text-xs text-muted-foreground">
-                  Page {page + 1} of {totalPages}
-                </p>
+            {totalPages > 0 && (
+              <div className="flex flex-col gap-4 border-t px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                <div className="flex flex-wrap items-center gap-3">
+                  <p className="text-xs text-muted-foreground">
+                    Showing {totalElements === 0 ? 0 : page * size + 1}–{Math.min((page + 1) * size, totalElements)} of{" "}
+                    {totalElements.toLocaleString("en-IN")} members
+                  </p>
+                  <PageSizeSelector
+                    value={size}
+                    onChange={(newSize) => {
+                      dispatch(setProjectMemberPageSize(newSize))
+                      dispatch(setProjectMemberPage(0))
+                    }}
+                    options={[10, 20, 50]}
+                  />
+                </div>
 
-                <Pagination className="mx-0 w-auto">
-                  <PaginationContent>
-                    <PaginationItem>
-                      <PaginationPrevious
-                        href="#"
-                        onClick={(event) => {
-                          event.preventDefault()
-
-                          if (page > 0) {
-                            handlePageChange(page - 1)
+                {totalPages > 1 && (
+                  <Pagination className="mx-0 w-auto justify-start sm:justify-end">
+                    <PaginationContent className="flex-wrap">
+                      <PaginationItem>
+                        <PaginationPrevious
+                          href="#"
+                          aria-disabled={page === 0}
+                          tabIndex={page === 0 ? -1 : undefined}
+                          className={
+                            page === 0
+                              ? "pointer-events-none opacity-50"
+                              : "cursor-pointer"
                           }
-                        }}
-                        aria-disabled={page === 0}
-                        className={
-                          page === 0 ? "pointer-events-none opacity-50" : ""
-                        }
-                      />
-                    </PaginationItem>
+                          onClick={(event) => {
+                            event.preventDefault()
+                            if (page > 0) {
+                              handlePageChange(page - 1)
+                            }
+                          }}
+                        />
+                      </PaginationItem>
 
-                    <PaginationItem>
-                      <PaginationNext
-                        href="#"
-                        onClick={(event) => {
-                          event.preventDefault()
+                      {getPaginationItems(totalPages, page).map((item, index) => (
+                        <PaginationItem key={`${item}-${index}`}>
+                          {item === "ellipsis" ? (
+                            <PaginationEllipsis />
+                          ) : (
+                            <PaginationLink
+                              href="#"
+                              isActive={page === item}
+                              aria-label={`Go to page ${item + 1}`}
+                              aria-current={page === item ? "page" : undefined}
+                              onClick={(event) => {
+                                event.preventDefault()
+                                if (page !== item) {
+                                  handlePageChange(item)
+                                }
+                              }}
+                            >
+                              {item + 1}
+                            </PaginationLink>
+                          )}
+                        </PaginationItem>
+                      ))}
 
-                          if (page < totalPages - 1) {
-                            handlePageChange(page + 1)
+                      <PaginationItem>
+                        <PaginationNext
+                          href="#"
+                          aria-disabled={page >= totalPages - 1}
+                          tabIndex={page >= totalPages - 1 ? -1 : undefined}
+                          className={
+                            page >= totalPages - 1
+                              ? "pointer-events-none opacity-50"
+                              : "cursor-pointer"
                           }
-                        }}
-                        aria-disabled={page >= totalPages - 1}
-                        className={
-                          page >= totalPages - 1
-                            ? "pointer-events-none opacity-50"
-                            : ""
-                        }
-                      />
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
+                          onClick={(event) => {
+                            event.preventDefault()
+                            if (page < totalPages - 1) {
+                              handlePageChange(page + 1)
+                            }
+                          }}
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                )}
               </div>
             )}
           </CardContent>

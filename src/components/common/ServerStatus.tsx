@@ -12,11 +12,11 @@ export default function ServerStatus() {
   }
 
   return (
-    <Alert variant="destructive" className="rounded-none border-x-0 border-t-0">
+    <Alert variant="destructive" className="rounded-none border-x-0 border-t-0 flex flex-row justify-center">
       <AlertCircle className="h-4 w-4" />
 
       <AlertDescription>
-        Server unavailable. Please try again later.
+        Server unavailable. Please try again later. Refresh the page to Check again.
       </AlertDescription>
     </Alert>
   );

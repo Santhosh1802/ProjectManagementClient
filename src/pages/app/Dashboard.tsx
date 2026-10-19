@@ -1,11 +1,7 @@
-
-import { useEffect, useState } from "react"
 import { useNavigate, Link } from "react-router-dom"
-import { searchProjects } from "@/features/projects/services/projects.services"
-import { getTasksByAssignedTo } from "@/features/tasks/services/task.services"
+import { useProjectsQuery } from "@/features/projects/hooks/useProjectsQuery"
+import { useTasksByAssignedToQuery } from "@/features/tasks/hooks/useTasksQuery"
 import { useAppSelector } from "@/hooks/redux-hooks"
-import type { Project } from "@/features/projects/types/project.types"
-import type { Task } from "@/features/tasks/types/task.types"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, Briefcase, Clock, FolderKanban, Activity } from "lucide-react"
@@ -17,61 +13,45 @@ export default function Dashboard() {
   const navigate = useNavigate()
   const currentUser = useAppSelector((state) => state.auth.user)
 
-  const [projects, setProjects] = useState<Project[]>([])
-  const [tasks, setTasks] = useState<Task[]>([])
-  const [loadingProjects, setLoadingProjects] = useState(true)
-  const [loadingTasks, setLoadingTasks] = useState(true)
-  const [totalTasks, setTotalTasks] = useState(0)
-  const [totalProjects, setTotalProjects] = useState(0)
+  const {
+    data: projRes,
+    isLoading: loadingProjects,
+    isFetching: isFetchingProjects,
+    refetch: refetchProjects,
+  } = useProjectsQuery({ size: 5, sortBy: "createdAt", sortOrder: "desc" })
 
-  useEffect(() => {
-    let cancelled = false
-    async function loadData() {
-      try {
-        const projRes = await searchProjects({ size: 5, sortBy: "createdAt", sortOrder: "desc" })
-        if (!cancelled) {
-          setProjects(projRes.content)
-          setTotalProjects(projRes.totalElements)
-          setLoadingProjects(false)
-        }
-      } catch {
-        if (!cancelled) setLoadingProjects(false)
-      }
-    }
-    void loadData()
-    return () => { cancelled = true }
-  }, [])
+  const {
+    data: taskRes,
+    isLoading: loadingTasks,
+    isFetching: isFetchingTasks,
+    refetch: refetchTasks,
+  } = useTasksByAssignedToQuery(
+    { assignedToId: currentUser?.id ?? "", size: 5 },
+    { enabled: Boolean(currentUser?.id) }
+  )
 
-  useEffect(() => {
-    let cancelled = false
-    
-    async function loadTasksData() {
-      if (!currentUser?.id) {
-        if (!cancelled) setLoadingTasks(false)
-        return
-      }
-      
-      const userId = currentUser.id;
-      try {
-        const taskRes = await getTasksByAssignedTo({ assignedToId: userId, size: 5 })
-        if (!cancelled) {
-          setTasks(taskRes.content)
-          setTotalTasks(taskRes.totalElements)
-          setLoadingTasks(false)
-        }
-      } catch {
-        if (!cancelled) setLoadingTasks(false)
-      }
+  const projects = projRes?.content ?? []
+  const totalProjects = projRes?.totalElements ?? 0
+
+  const tasks = taskRes?.content ?? []
+  const totalTasks = taskRes?.totalElements ?? 0
+
+  const isRefreshing = isFetchingProjects || isFetchingTasks
+
+  const handleRefresh = () => {
+    void refetchProjects()
+    if (currentUser?.id) {
+      void refetchTasks()
     }
-    void loadTasksData()
-    return () => { cancelled = true }
-  }, [currentUser?.id])
+  }
 
   return (
     <PageContainer className="space-y-6">
       <PageHeader 
         title={`Welcome back, ${currentUser?.firstName || 'User'}!`}
         description="Here is an overview of your workspace."
+        onRefresh={handleRefresh}
+        isRefreshing={isRefreshing}
       />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

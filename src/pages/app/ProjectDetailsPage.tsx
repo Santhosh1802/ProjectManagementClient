@@ -6,17 +6,18 @@ import {
   CircleUserRound,
   Clock3,
   Pencil,
+  RefreshCw,
   Users,
 } from "lucide-react"
 import { useNavigate, useParams } from "react-router-dom"
+import { cn } from "@/lib/utils"
 
 import { Button } from "@/components/ui/button"
-
-import { getProjectById } from "@/features/projects/services/projects.services"
-
-import { getProjectMembers } from "@/features/projects/services/project.members.service"
-
-import { getTasksByProject } from "@/features/tasks/services/task.services"
+import {
+  useProjectDetailQuery,
+  useProjectMembersQuery,
+} from "@/features/projects/hooks/useProjectsQuery"
+import { useTasksByProjectQuery } from "@/features/tasks/hooks/useTasksQuery"
 
 import {
   setSelectedProject,
@@ -230,149 +231,111 @@ export default function ProjectDetailsPage() {
     projectRole: currentProjectMember?.projectRole,
   })
   /* ==========================================================
-     Load project
+     React Query data fetching
      ========================================================== */
 
+  const {
+    data: projectData,
+    isLoading: isProjectQueryLoading,
+    isFetching: isProjectFetching,
+    error: projectQueryError,
+    refetch: refetchProject,
+  } = useProjectDetailQuery(projectId, { enabled: Boolean(projectId) })
+
+  const {
+    data: memberData,
+    isLoading: isMemberQueryLoading,
+    isFetching: isMemberFetching,
+    error: memberQueryError,
+    refetch: refetchMembers,
+  } = useProjectMembersQuery(
+    { projectId: projectId || "", page: memberPage, size: memberPageSize },
+    { enabled: Boolean(projectId) }
+  )
+
+  const {
+    data: taskData,
+    isLoading: isTaskQueryLoading,
+    isFetching: isTaskFetching,
+    error: taskQueryError,
+    refetch: refetchTasks,
+  } = useTasksByProjectQuery(
+    { projectId: projectId || "", page: taskPage, size: taskPageSize },
+    { enabled: Boolean(projectId) }
+  )
+
   useEffect(() => {
-    if (!projectId) {
-      dispatch(setProjectError("Project ID is missing."))
+    dispatch(setProjectLoading(isProjectQueryLoading))
+  }, [dispatch, isProjectQueryLoading])
 
-      return
+  useEffect(() => {
+    if (projectData) {
+      dispatch(setSelectedProject(projectData))
     }
+  }, [dispatch, projectData])
 
-    let cancelled = false
-
-    async function loadProject() {
-      dispatch(setProjectLoading(true))
+  useEffect(() => {
+    if (projectQueryError) {
+      dispatch(
+        setProjectError(
+          projectQueryError instanceof Error ? projectQueryError.message : "Failed to load project."
+        )
+      )
+    } else {
       dispatch(setProjectError(null))
-
-      try {
-        const projectData = await getProjectById({
-          id: projectId || "",
-        })
-
-        if (cancelled) return
-
-        dispatch(setSelectedProject(projectData))
-      } catch (error) {
-        if (cancelled) return
-
-        dispatch(
-          setProjectError(
-            error instanceof Error ? error.message : "Failed to load project."
-          )
-        )
-      } finally {
-        if (!cancelled) {
-          dispatch(setProjectLoading(false))
-        }
-      }
     }
-
-    loadProject()
-
-    return () => {
-      cancelled = true
-    }
-  }, [dispatch, projectId])
-
-  /* ==========================================================
-     Load project members
-     ========================================================== */
+  }, [dispatch, projectQueryError])
 
   useEffect(() => {
-    if (!projectId) {
-      return
+    dispatch(setProjectMemberLoading(isMemberQueryLoading))
+  }, [dispatch, isMemberQueryLoading])
+
+  useEffect(() => {
+    if (memberData) {
+      dispatch(setProjectMembers(memberData))
     }
+  }, [dispatch, memberData])
 
-    let cancelled = false
-
-    async function loadMembers() {
-      dispatch(setProjectMemberLoading(true))
+  useEffect(() => {
+    if (memberQueryError) {
+      dispatch(
+        setProjectMemberError(
+          memberQueryError instanceof Error ? memberQueryError.message : "Failed to load project members."
+        )
+      )
+    } else {
       dispatch(setProjectMemberError(null))
-
-      try {
-        const memberData = await getProjectMembers({
-          projectId: projectId || "",
-          page: memberPage,
-          size: memberPageSize,
-        })
-
-        if (cancelled) return
-
-        dispatch(setProjectMembers(memberData))
-      } catch (error) {
-        if (cancelled) return
-
-        dispatch(
-          setProjectMemberError(
-            error instanceof Error
-              ? error.message
-              : "Failed to load project members."
-          )
-        )
-      } finally {
-        if (!cancelled) {
-          dispatch(setProjectMemberLoading(false))
-        }
-      }
     }
-
-    loadMembers()
-
-    return () => {
-      cancelled = true
-    }
-  }, [dispatch, projectId, memberPage, memberPageSize])
-
-  /* ==========================================================
-     Load project tasks
-     ========================================================== */
+  }, [dispatch, memberQueryError])
 
   useEffect(() => {
-    if (!projectId) {
-      return
+    dispatch(setTaskLoading(isTaskQueryLoading))
+  }, [dispatch, isTaskQueryLoading])
+
+  useEffect(() => {
+    if (taskData) {
+      dispatch(setTasks(taskData))
     }
+  }, [dispatch, taskData])
 
-    let cancelled = false
-
-    async function loadTasks() {
-      dispatch(setTaskLoading(true))
-      dispatch(setTaskError(null))
-
-      try {
-        const taskData = await getTasksByProject({
-          projectId: projectId || "",
-          page: taskPage,
-          size: taskPageSize,
-        })
-
-        if (cancelled) return
-
-        dispatch(setTasks(taskData))
-      } catch (error) {
-        if (cancelled) return
-
-        dispatch(
-          setTaskError(
-            error instanceof Error
-              ? error.message
-              : "Failed to load project tasks."
-          )
+  useEffect(() => {
+    if (taskQueryError) {
+      dispatch(
+        setTaskError(
+          taskQueryError instanceof Error ? taskQueryError.message : "Failed to load project tasks."
         )
-      } finally {
-        if (!cancelled) {
-          dispatch(setTaskLoading(false))
-        }
-      }
+      )
+    } else {
+      dispatch(setTaskError(null))
     }
+  }, [dispatch, taskQueryError])
 
-    loadTasks()
-
-    return () => {
-      cancelled = true
-    }
-  }, [dispatch, projectId, taskPage, taskPageSize])
+  const isDetailsRefreshing = isProjectFetching || isMemberFetching || isTaskFetching
+  const handleDetailsRefresh = () => {
+    void refetchProject()
+    void refetchMembers()
+    void refetchTasks()
+  }
 
   /* ==========================================================
      Loading
@@ -458,7 +421,7 @@ export default function ProjectDetailsPage() {
             <div className="mb-1 flex items-center gap-2">
               <p className="text-sm text-muted-foreground">Project</p>
 
-              <StatusBadge status={project.projectStatus} />
+              <StatusBadge status={project.projectStatus} showDot />
             </div>
 
             <h1 className="truncate text-2xl font-semibold tracking-tight">
@@ -471,12 +434,27 @@ export default function ProjectDetailsPage() {
           </div>
         </div>
 
-        {permissions?.canEditProject && (
-          <Button onClick={() => setEditProjectOpen(true)}>
-            <Pencil className="size-4" />
-            Edit Project
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleDetailsRefresh}
+            disabled={isDetailsRefreshing}
+            className="h-7.5 gap-1.5 px-2.5 text-xs text-muted-foreground hover:text-foreground"
+            title="Refresh data"
+          >
+            <RefreshCw className={cn("size-3.5", isDetailsRefreshing && "animate-spin text-primary")} />
+            <span>{isDetailsRefreshing ? "Refreshing..." : "Refresh"}</span>
           </Button>
-        )}
+
+          {permissions?.canEditProject && (
+            <Button onClick={() => setEditProjectOpen(true)}>
+              <Pencil className="size-4" />
+              Edit Project
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* ======================================================
@@ -783,7 +761,7 @@ export default function ProjectDetailsPage() {
                     key={task.id}
                     task={task}
                     onView={(t) => {
-                      window.location.href = `/app/tasks/${t.id}`
+                      navigate(`/app/tasks/${t.id}`)
                     }}
                   />
                 ))}

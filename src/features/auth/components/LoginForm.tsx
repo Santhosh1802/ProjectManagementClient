@@ -132,30 +132,36 @@ export default function LoginForm() {
         {serverError && !isSuccess ? (
           <Alert
             variant="destructive"
-            className={"mt-2 mb-2 max-w-sm min-w-xs border-red-400"}
+            className="mt-2 mb-2 w-full border-red-400"
           >
             <AlertCircleIcon />
             <AlertTitle>
               {serverError?.status === 409 ? "User Not Found" : "Login Failed"}
             </AlertTitle>
-            <AlertDescription className="flex flex-row items-center text-[10px]">
-              {serverError?.message}
-              <a
-                href=""
-                className={serverError?.status === 409 ? "pl-1" : "hidden"}
-              >
-                Sign up instead
-              </a>
+            <AlertDescription className="text-[10px] break-words">
+              <span>{serverError?.message}</span>
+              {serverError?.status === 409 && (
+                <a
+                  href="/register"
+                  className="inline-block pl-1 underline"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    goToRegisterPage()
+                  }}
+                >
+                  Sign up instead
+                </a>
+              )}
             </AlertDescription>
           </Alert>
         ) : (
           <Alert
             variant="success"
-            className={isSuccess ? "mt-2 mb-2 max-w-sm min-w-xs" : "hidden"}
+            className={isSuccess ? "mt-2 mb-2 w-full" : "hidden"}
           >
             <CheckCircle2Icon />
             <AlertTitle>Authentication successful</AlertTitle>
-            <AlertDescription className="flex flex-row items-center text-[10px]">
+            <AlertDescription className="text-[10px] break-words">
               Authentication successful. Redirecting to workspace.
             </AlertDescription>
           </Alert>

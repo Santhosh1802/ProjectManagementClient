@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useEffect } from "react"
-import { useForm } from "react-hook-form"
+import { useEffect, useMemo, useRef } from "react"
+import { useForm, useWatch } from "react-hook-form"
 import { submitFormOnModEnter, toAriaKeyShortcuts } from "@/lib/keyboard"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -23,6 +23,7 @@ import TaskStatusSelect from "@/features/tasks/components/create-task/TaskStatus
 import { createTaskSchema } from "@/features/tasks/schema/task.schema"
 import type { CreateTaskFormValues } from "@/features/tasks/schema/task.schema"
 import type { Task, TaskStatus } from "@/features/tasks/types/task.types"
+import { useProjectDetailQuery, useProjectMembersQuery } from "@/features/projects/hooks/useProjectsQuery"
 
 interface CreateTaskFormProps {
   defaultProjectId?: string
@@ -35,19 +36,8 @@ interface CreateTaskFormProps {
     name: string
   }>
 
-  users?: Array<{
-    id: string
-    firstName: string
-    lastName: string
-    email: string
-    isActive: boolean
-  }>
-
   projectsLoading?: boolean
-  usersLoading?: boolean
-
   onProjectSearch?: (keyword: string) => void
-  onUserSearch?: (keyword: string) => void
 
   onSubmitTask?: (
     values: CreateTaskFormValues,
@@ -60,11 +50,8 @@ export default function CreateTaskForm({
   onCreated,
   onCancel,
   projects = [],
-  users = [],
   projectsLoading = false,
-  usersLoading = false,
   onProjectSearch,
-  onUserSearch,
   onSubmitTask,
 }: CreateTaskFormProps) {
   const form = useForm<CreateTaskFormValues>({
@@ -87,7 +74,87 @@ export default function CreateTaskForm({
     reset,
     setValue,
     register,
+    control,
   } = form
+
+  const selectedProjectId = useWatch({
+    control,
+    name: "projectId",
+  })
+
+  const prevProjectIdRef = useRef(selectedProjectId)
+
+  // Fetch project members and project detail (owner) for the selected project
+  const {
+    data: projectDetail,
+    isLoading: isProjectDetailLoading,
+  } = useProjectDetailQuery(selectedProjectId, {
+    enabled: Boolean(selectedProjectId),
+  })
+
+  const {
+    data: membersData,
+    isLoading: isMembersLoading,
+  } = useProjectMembersQuery(
+    { projectId: selectedProjectId || "", page: 0, size: 100 },
+    { enabled: Boolean(selectedProjectId) }
+  )
+
+  // Derive assignable users exclusively from the selected project (owner + members)
+  const projectAssignees = useMemo(() => {
+    if (!selectedProjectId) {
+      return []
+    }
+
+    const memberMap = new Map<
+      string,
+      {
+        id: string
+        firstName: string
+        lastName: string
+        email: string
+        isActive: boolean
+      }
+    >()
+
+    // Add project owner
+    if (projectDetail?.owner) {
+      memberMap.set(projectDetail.owner.id, {
+        id: projectDetail.owner.id,
+        firstName: projectDetail.owner.firstName,
+        lastName: projectDetail.owner.lastName,
+        email: projectDetail.owner.email,
+        isActive: true,
+      })
+    }
+
+    // Add project members
+    if (membersData?.content) {
+      for (const m of membersData.content) {
+        if (m.user && !memberMap.has(m.user.id)) {
+          memberMap.set(m.user.id, {
+            id: m.user.id,
+            firstName: m.user.firstName,
+            lastName: m.user.lastName,
+            email: m.user.email,
+            isActive: m.user.isActive ?? true,
+          })
+        }
+      }
+    }
+
+    return Array.from(memberMap.values())
+  }, [selectedProjectId, projectDetail, membersData])
+
+  // Reset assignee when selected project changes
+  useEffect(() => {
+    if (prevProjectIdRef.current !== selectedProjectId) {
+      if (prevProjectIdRef.current) {
+        setValue("assignedToId", "", { shouldValidate: false })
+      }
+      prevProjectIdRef.current = selectedProjectId
+    }
+  }, [selectedProjectId, setValue])
 
   useEffect(() => {
     if (!defaultProjectId) return
@@ -217,10 +284,9 @@ export default function CreateTaskForm({
 
         <AssigneeSelect
           control={form.control}
-          users={users}
-          loading={usersLoading}
-          onSearch={onUserSearch}
-          disabled={isSubmitting}
+          users={projectAssignees}
+          loading={isProjectDetailLoading || isMembersLoading}
+          disabled={isSubmitting || !selectedProjectId}
         />
       </div>
 

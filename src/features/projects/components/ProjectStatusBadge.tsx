@@ -1,47 +1,24 @@
-import { Badge } from "@/components/ui/badge"
-
+import StatusBadge from "@/components/common/StatusBadge"
 import type { ProjectStatus } from "../types/project.types"
 
 interface ProjectStatusBadgeProps {
   status: ProjectStatus
-}
-
-const statusConfig: Record<
-  ProjectStatus,
-  {
-    label: string
-    variant: "default" | "secondary" | "destructive" | "outline"
-  }
-> = {
-  PLANNING: {
-    label: "Planning",
-    variant: "secondary",
-  },
-
-  ACTIVE: {
-    label: "Active",
-    variant: "default",
-  },
-
-  COMPLETED: {
-    label: "Completed",
-    variant: "outline",
-  },
-
-  ARCHIVED: {
-    label: "Archived",
-    variant: "secondary",
-  },
+  className?: string
+  showDot?: boolean
 }
 
 export function ProjectStatusBadge({
   status,
+  className,
+  showDot = true,
 }: ProjectStatusBadgeProps) {
-  const config = statusConfig[status]
-
   return (
-    <Badge variant={config.variant}>
-      {config.label}
-    </Badge>
+    <StatusBadge
+      status={status}
+      showDot={showDot}
+      className={className}
+    />
   )
 }
+
+export default ProjectStatusBadge

@@ -15,3 +15,19 @@ export function formatDateTime(isoString?: string | null) {
     hour12: true,
   }).format(date);
 }
+
+export function formatDate(isoString?: string | null) {
+  if (!isoString) {
+    return "—";
+  }
+
+  const date = new Date(isoString);
+
+  if (Number.isNaN(date.getTime())) {
+    return "—";
+  }
+
+  return new Intl.DateTimeFormat("en-IN", {
+    dateStyle: "medium",
+  }).format(date);
+}

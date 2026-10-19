@@ -150,19 +150,19 @@ export default function UserFilters({
         <PopoverTrigger render={<Button
             type="button"
             variant="outline"
-            className="h-10 w-full justify-between gap-2 rounded-lg border-border/70 bg-card px-3 sm:w-auto sm:justify-center"
+            className="h-7.5 w-full justify-between gap-1.5 rounded-md border-border/70 bg-card px-2.5 text-xs font-medium sm:w-auto sm:justify-center"
           >
-            <span className="flex items-center gap-2">
-              <SlidersHorizontal className="size-4" />
+            <span className="flex items-center gap-1.5">
+              <SlidersHorizontal className="size-3.5" />
               Filters
               {activeFilterCount > 0 && (
-                <span className="flex size-5 items-center justify-center rounded-full bg-primary text-[11px] font-semibold text-primary-foreground">
+                <span className="flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">
                   {activeFilterCount}
                 </span>
               )}
             </span>
 
-            <span className="text-xs text-muted-foreground sm:hidden">
+            <span className="text-[11px] text-muted-foreground sm:hidden">
               {activeFilterCount > 0
                 ? `${activeFilterCount} active`
                 : "Optional"}
