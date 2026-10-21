@@ -14,11 +14,8 @@ import { clearUser } from "@/features/users/slice/user.slice"
 import { clearProjects } from "@/features/projects/slice/projectSlice"
 import { clearTasks } from "@/features/tasks/slice/task.slice"
 import { clearProjectMembers } from "@/features/projects/slice/projectMemberSlice"
-import { useNavigate } from "react-router-dom"
-
 export default function AuthInitializer() {
   const dispatch = useAppDispatch()
-  const navigate = useNavigate()
 
   useEffect(() => {
     const checkAuthentication = async () => {
@@ -43,11 +40,9 @@ export default function AuthInitializer() {
           dispatch(clearProjects())
           dispatch(clearTasks())
           dispatch(clearProjectMembers())
-          navigate("/login", { replace: true })
         }
       } catch (error) {
-        console.error("Session verification failed:", error)
-
+        // Not logged in or session expired
         queryClient.cancelQueries()
         queryClient.clear()
         dispatch(logout())
@@ -55,7 +50,6 @@ export default function AuthInitializer() {
         dispatch(clearProjects())
         dispatch(clearTasks())
         dispatch(clearProjectMembers())
-        navigate("/login", { replace: true })
       } finally {
         dispatch(setAuthLoading(false))
       }
