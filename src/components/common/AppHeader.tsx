@@ -32,7 +32,7 @@ export default function AppHeader() {
   const helpAriaKeyShortcuts = toAriaKeyShortcuts(helpKeys);
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center border-b backdrop-blur">
+    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center border-b border-border/70 bg-background/80 backdrop-blur-md transition-colors after:pointer-events-none after:absolute after:bottom-0 after:left-0 after:h-[1.5px] after:w-full after:bg-gradient-to-r after:from-transparent after:via-primary/35 after:to-transparent">
 
       <div className="flex w-full min-w-0 items-center gap-2 px-3 sm:gap-3 sm:px-4">
 
@@ -68,26 +68,28 @@ export default function AppHeader() {
               gap-2
               rounded-md
               border
+              border-border/60
               bg-muted/40
               px-3
               text-sm
               text-muted-foreground
-              transition-colors
+              transition-all
               outline-none
-              hover:bg-muted
-              focus-visible:border-ring
+              hover:border-primary/40
+              hover:bg-muted/70
+              focus-visible:border-primary
               focus-visible:ring-2
-              focus-visible:ring-ring/50
+              focus-visible:ring-primary/25
               md:flex
             "
           >
-            <Search className="size-4" aria-hidden="true" />
+            <Search className="size-4 text-primary/70 transition-colors" aria-hidden="true" />
 
-            <span className="flex-1 text-left">
+            <span className="flex-1 text-left text-xs">
               Search...
             </span>
 
-            <ShortcutHint keys={searchKeys} keyClassName="bg-background" />
+            <ShortcutHint keys={searchKeys} keyClassName="bg-background/80 border-border/80" />
           </button>
 
 
@@ -98,7 +100,7 @@ export default function AppHeader() {
             onClick={openSearch}
             aria-keyshortcuts={ariaKeyShortcuts}
             aria-haspopup="dialog"
-            className="size-8 md:hidden"
+            className="size-8 text-muted-foreground hover:text-primary md:hidden"
           >
             <Search className="size-4" />
 
@@ -114,15 +116,15 @@ export default function AppHeader() {
             onClick={openShortcuts}
             aria-keyshortcuts={helpAriaKeyShortcuts}
             aria-label="Keyboard shortcuts"
-            className="size-8 text-muted-foreground hover:text-foreground hidden sm:flex"
+            className="size-8 text-muted-foreground hover:text-primary hidden sm:flex"
             title="Keyboard shortcuts"
           >
             <Keyboard className="size-4" />
           </Button>
 
-          {/* User */}
-          <Avatar className="size-8">
-            <AvatarFallback>
+          {/* User Avatar with subtle theme border */}
+          <Avatar className="size-8 ring-1 ring-primary/25 transition-all hover:ring-primary/60">
+            <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
               {currentUser
                 ? `${currentUser.firstName?.[0] || ""}${currentUser.lastName?.[0] || ""}`.toUpperCase() || "U"
                 : "U"}
