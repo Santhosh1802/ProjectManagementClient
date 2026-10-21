@@ -20,7 +20,7 @@ import type {
   UpdateTaskDetailsRequest,
   UpdateTaskStatusRequest,
 } from "../types/task.types"
-import { taskKeys } from "@/lib/queryKeys"
+import { taskKeys, projectKeys } from "@/lib/queryKeys"
 
 export function useTasksQuery(request: GetTasksRequest = {}, options?: { enabled?: boolean }) {
   return useQuery({
@@ -66,8 +66,11 @@ export function useCreateTaskMutation() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (request: CreateTaskRequest) => createTask(request),
-    onSuccess: () => {
+    onSuccess: (data) => {
       void queryClient.invalidateQueries({ queryKey: taskKeys.all })
+      if (data?.project?.id) {
+        void queryClient.invalidateQueries({ queryKey: projectKeys.detail(data.project.id) })
+      }
     },
   })
 }
@@ -76,8 +79,14 @@ export function useUpdateTaskStatusMutation() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (request: UpdateTaskStatusRequest) => updateTaskStatus(request),
-    onSuccess: () => {
+    onSuccess: (data) => {
       void queryClient.invalidateQueries({ queryKey: taskKeys.all })
+      if (data?.id) {
+        void queryClient.invalidateQueries({ queryKey: taskKeys.detail(data.id) })
+      }
+      if (data?.project?.id) {
+        void queryClient.invalidateQueries({ queryKey: projectKeys.detail(data.project.id) })
+      }
     },
   })
 }
@@ -91,16 +100,22 @@ export function useUpdateTaskDetailsMutation() {
       if (data?.id) {
         void queryClient.invalidateQueries({ queryKey: taskKeys.detail(data.id) })
       }
+      if (data?.project?.id) {
+        void queryClient.invalidateQueries({ queryKey: projectKeys.detail(data.project.id) })
+      }
     },
   })
 }
 
-export function useDeleteTaskMutation() {
+export function useDeleteTaskMutation(projectId?: string) {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (request: DeleteTaskRequest) => deleteTask(request),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: taskKeys.all })
+      if (projectId) {
+        void queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) })
+      }
     },
   })
 }

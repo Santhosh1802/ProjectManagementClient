@@ -42,4 +42,10 @@ export default defineConfig({
     port: 4321,
     strictPort: true,
   },
+  // @ts-expect-error vitest config option
+  test: {
+    globals: true,
+    environment: "jsdom",
+    setupFiles: "./src/test/setup.ts",
+  },
 })

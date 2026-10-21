@@ -24,7 +24,7 @@ import type {
   UpdateProjectMemberRoleRequest,
   UpdateProjectOwnerRequest,
 } from "../types/project.types"
-import { projectKeys } from "@/lib/queryKeys"
+import { projectKeys, taskKeys } from "@/lib/queryKeys"
 
 export function useProjectsQuery(request: ProjectSearchRequest = {}, options?: { enabled?: boolean }) {
   return useQuery({
@@ -92,8 +92,10 @@ export function useDeleteProjectMutation() {
     mutationFn: (request: DeleteProjectRequest) => deleteProject(request),
     onSuccess: (_, variables) => {
       void queryClient.invalidateQueries({ queryKey: projectKeys.lists() })
+      void queryClient.invalidateQueries({ queryKey: taskKeys.all })
       if (variables?.id) {
         void queryClient.invalidateQueries({ queryKey: projectKeys.detail(variables.id) })
+        void queryClient.invalidateQueries({ queryKey: taskKeys.byProject(variables.id) })
       }
     },
   })
