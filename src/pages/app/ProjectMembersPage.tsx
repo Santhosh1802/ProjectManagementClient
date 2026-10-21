@@ -71,6 +71,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { toast } from "@/components/ui/toast"
+import { getApiErrorMessage } from "@/lib/apiError"
 import {
   Pagination,
   PaginationContent,
@@ -426,7 +427,7 @@ export default function ProjectMembersPage() {
         description: `Member role changed to ${formatRole(role)}.`,
       })
     } catch (error) {
-      const msg = error instanceof Error ? error.message : "Unable to update member role."
+      const msg = getApiErrorMessage(error, "Unable to update member role.")
       setActionError(msg)
       toast.add({
         type: "error",
@@ -475,7 +476,7 @@ export default function ProjectMembersPage() {
       })
       setMemberToDelete(null)
     } catch (error) {
-      const msg = error instanceof Error ? error.message : "Unable to remove member."
+      const msg = getApiErrorMessage(error, "Unable to remove member.")
       setActionError(msg)
       toast.add({
         type: "error",
@@ -534,7 +535,7 @@ export default function ProjectMembersPage() {
 
       dispatch(setProjectMembers(response))
     } catch (error) {
-      const msg = error instanceof Error ? error.message : "Unable to add project member."
+      const msg = getApiErrorMessage(error, "Unable to add project member.")
       setActionError(msg)
       toast.add({
         type: "error",

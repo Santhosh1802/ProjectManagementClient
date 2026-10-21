@@ -7,6 +7,7 @@ import {
   setBackendUnAvailable,
 } from "@/app/slice/appSlice"
 import { store } from "@/app/store"
+import { queryClient } from "@/lib/queryClient"
 
 const api = axios.create({
   baseURL: API,
@@ -46,9 +47,7 @@ api.interceptors.request.use(async (config) => {
 api.interceptors.response.use(
   (response) => {
     // Backend responded → server is available
-
     store.dispatch(setBackendAvailable())
-
     return response
   },
 
@@ -58,6 +57,18 @@ api.interceptors.response.use(
       store.dispatch(setBackendUnAvailable())
     } else {
       store.dispatch(setBackendAvailable())
+    }
+
+    // When session expires (401), and request is not the login or check endpoint itself
+    if (
+      error.response?.status === 401 &&
+      error.config?.url &&
+      !error.config.url.includes("/auth/login") &&
+      !error.config.url.includes("/auth/me")
+    ) {
+      // Avoid infinite loop if /me or /login itself returns 401
+      queryClient.cancelQueries()
+      queryClient.clear()
     }
 
     return Promise.reject(error)

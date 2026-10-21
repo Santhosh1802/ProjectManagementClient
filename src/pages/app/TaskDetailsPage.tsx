@@ -47,6 +47,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { toast } from "@/components/ui/toast"
+import { getApiErrorMessage } from "@/lib/apiError"
 
 import {
   deleteTask,
@@ -317,7 +318,7 @@ export default function TaskDetailsPage() {
         description: `Task status changed to ${status.replace("_", " ").toLowerCase()}.`,
       })
     } catch (error) {
-      const msg = error instanceof Error ? error.message : "Unable to update task status."
+      const msg = getApiErrorMessage(error, "Unable to update task status.")
       setActionError(msg)
       toast.add({
         type: "error",
@@ -352,7 +353,7 @@ export default function TaskDetailsPage() {
       setDeleteDialogOpen(false)
       navigate("/app/tasks", { replace: true })
     } catch (error) {
-      const msg = error instanceof Error ? error.message : "Unable to delete task."
+      const msg = getApiErrorMessage(error, "Unable to delete task.")
       setActionError(msg)
       toast.add({
         type: "error",
