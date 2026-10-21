@@ -256,17 +256,14 @@ export default function AppSidebar() {
                       tooltip={item.title}
                       isActive={active}
                       className={cn(
-                        "relative flex items-center rounded-md font-medium text-sidebar-foreground/80 transition-all duration-150",
+                        "relative flex items-center rounded-lg font-medium transition-all duration-150",
                         active
-                          ? "bg-primary/10 text-primary font-semibold shadow-2xs hover:bg-primary/15 hover:text-primary dark:bg-primary/20 dark:text-primary dark:hover:bg-primary/25"
-                          : "hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                          ? "bg-primary text-primary-foreground font-semibold shadow-xs hover:bg-primary/95 hover:text-primary-foreground"
+                          : "text-sidebar-foreground/80 hover:bg-sidebar-accent/80 hover:text-sidebar-foreground"
                       )}
                     >
-                      <Icon className={cn("size-4 shrink-0", active ? "text-primary" : "text-muted-foreground")} />
+                      <Icon className={cn("size-4 shrink-0 transition-colors", active ? "text-primary-foreground" : "text-muted-foreground")} />
                       <span className="truncate">{item.title}</span>
-                      {active && (
-                        <span className="ml-auto size-1.5 rounded-full bg-primary group-data-[collapsible=icon]:hidden" />
-                      )}
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )
@@ -293,17 +290,14 @@ export default function AppSidebar() {
                       tooltip={item.title}
                       isActive={active}
                       className={cn(
-                        "relative flex items-center rounded-md font-medium text-sidebar-foreground/80 transition-all duration-150",
+                        "relative flex items-center rounded-lg font-medium transition-all duration-150",
                         active
-                          ? "bg-primary/10 text-primary font-semibold shadow-2xs hover:bg-primary/15 hover:text-primary dark:bg-primary/20 dark:text-primary dark:hover:bg-primary/25"
-                          : "hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                          ? "bg-primary text-primary-foreground font-semibold shadow-xs hover:bg-primary/95 hover:text-primary-foreground"
+                          : "text-sidebar-foreground/80 hover:bg-sidebar-accent/80 hover:text-sidebar-foreground"
                       )}
                     >
-                      <Icon className={cn("size-4 shrink-0", active ? "text-primary" : "text-muted-foreground")} />
+                      <Icon className={cn("size-4 shrink-0 transition-colors", active ? "text-primary-foreground" : "text-muted-foreground")} />
                       <span className="truncate">{item.title}</span>
-                      {active && (
-                        <span className="ml-auto size-1.5 rounded-full bg-primary group-data-[collapsible=icon]:hidden" />
-                      )}
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )
