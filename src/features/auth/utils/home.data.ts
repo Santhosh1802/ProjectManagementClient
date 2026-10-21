@@ -1,54 +1,82 @@
 import {
+  Columns3,
   FolderKanban,
-  ListTodo,
+  Keyboard,
+  Palette,
+  ShieldCheck,
   Users,
 } from "lucide-react";
 
 export const features = [
   {
     icon: FolderKanban,
-    title: "Projects",
+    title: "Project Lifecycle & Ownership",
+    tag: "Core",
     description:
-      "Keep every project organized with clear ownership, timelines, status, and team members.",
+      "Manage projects from inception to completion with start dates, due dates, owner privileges, and status controls.",
   },
   {
-    icon: ListTodo,
-    title: "Tasks",
+    icon: Columns3,
+    title: "Kanban & Interactive Card Views",
+    tag: "Productivity",
     description:
-      "Break projects into manageable tasks, assign work, set priorities, and track progress.",
+      "Visualize tasks across TODO, IN_PROGRESS, and DONE stages with instant drag-style status updates and celebration confetti.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Granular RBAC & Role Guards",
+    tag: "Security",
+    description:
+      "Enforce multi-tiered roles across Global (ADMIN, USER) and Project levels (OWNER, MANAGER, MEMBER) with route protection.",
   },
   {
     icon: Users,
-    title: "Team collaboration",
+    title: "Scoped Member Visibility",
+    tag: "Access Control",
     description:
-      "Bring your team together around the same projects and give everyone clear responsibilities.",
+      "Members view only their assigned tasks, while Project Managers and Owners access the complete project roadmap.",
+  },
+  {
+    icon: Palette,
+    title: "5 VS Code Developer Themes",
+    tag: "Appearance",
+    description:
+      "Switch on the fly between Indigo, Oceanic Slate, Emerald Forest, Cyber Rose, and Monochrome Zinc in Light or Dark modes.",
+  },
+  {
+    icon: Keyboard,
+    title: "Power-User Shortcuts & Search",
+    tag: "Speed",
+    description:
+      "Navigate rapidly with Ctrl/Cmd + K global search, modal dialogs, and instant D theme toggling anywhere in the application.",
   },
 ];
 
 export const workflowSteps = [
   {
     number: "01",
-    title: "Create your project",
+    title: "Create Project & Assign Members",
     description:
-      "Define your project, timeline, owner, and the people working on it.",
+      "Initiate a project workspace, set timelines, and invite team members with MANAGER or MEMBER roles.",
   },
   {
     number: "02",
-    title: "Break work into tasks",
+    title: "Structure Tasks & Set Priorities",
     description:
-      "Turn the project into actionable tasks with priorities, assignees, and deadlines.",
+      "Create tasks with LOW, MEDIUM, HIGH, or CRITICAL priority and assign them to specific team members.",
   },
   {
     number: "03",
-    title: "Move work forward",
+    title: "Manage Progress in Real Time",
     description:
-      "Track progress, update task status, and keep your team aligned until the work is done.",
+      "Members work on their assigned tasks while managers track the full delivery pipeline across Kanban boards.",
   },
 ];
 
 export const productPrinciples = [
-  "Keep projects organized",
-  "Give every task an owner",
-  "Track work from start to finish",
-  "Keep the whole team aligned",
-];
+  "Clear Role-Based Access Control (Admin, Manager, Member)",
+  "Member task isolation with manager oversight",
+  "React Query cache invalidation for instant data freshness",
+  "Tailwind & shadcn/ui design tokens with 5 color themes",
+  "Desktop keyboard shortcuts and command search",
+];
