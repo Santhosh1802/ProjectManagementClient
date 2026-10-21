@@ -110,7 +110,7 @@ export function ThemeProvider({
         handleChange
       );
     };
-  }, [theme, applyTheme]);
+  }, [theme, colorTheme, applyTheme]);
 
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
