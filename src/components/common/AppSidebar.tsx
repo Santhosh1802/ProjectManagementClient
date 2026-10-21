@@ -258,11 +258,11 @@ export default function AppSidebar() {
                       className={cn(
                         "relative flex items-center rounded-lg font-medium transition-all duration-150",
                         active
-                          ? "bg-primary text-primary-foreground font-semibold shadow-xs hover:bg-primary/95 hover:text-primary-foreground"
+                          ? "!bg-primary !text-primary-foreground font-semibold shadow-xs hover:!bg-primary/90 hover:!text-primary-foreground data-[active=true]:!bg-primary data-[active=true]:!text-primary-foreground"
                           : "text-sidebar-foreground/80 hover:bg-sidebar-accent/80 hover:text-sidebar-foreground"
                       )}
                     >
-                      <Icon className={cn("size-4 shrink-0 transition-colors", active ? "text-primary-foreground" : "text-muted-foreground")} />
+                      <Icon className={cn("size-4 shrink-0 transition-colors", active ? "!text-primary-foreground" : "text-muted-foreground")} />
                       <span className="truncate">{item.title}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -292,11 +292,11 @@ export default function AppSidebar() {
                       className={cn(
                         "relative flex items-center rounded-lg font-medium transition-all duration-150",
                         active
-                          ? "bg-primary text-primary-foreground font-semibold shadow-xs hover:bg-primary/95 hover:text-primary-foreground"
+                          ? "!bg-primary !text-primary-foreground font-semibold shadow-xs hover:!bg-primary/90 hover:!text-primary-foreground data-[active=true]:!bg-primary data-[active=true]:!text-primary-foreground"
                           : "text-sidebar-foreground/80 hover:bg-sidebar-accent/80 hover:text-sidebar-foreground"
                       )}
                     >
-                      <Icon className={cn("size-4 shrink-0 transition-colors", active ? "text-primary-foreground" : "text-muted-foreground")} />
+                      <Icon className={cn("size-4 shrink-0 transition-colors", active ? "!text-primary-foreground" : "text-muted-foreground")} />
                       <span className="truncate">{item.title}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
