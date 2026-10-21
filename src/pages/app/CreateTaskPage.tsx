@@ -139,7 +139,6 @@ export default function CreateTaskPage() {
       taskPriority: values.taskPriority,
       projectId: values.projectId,
       assignedToId: values.assignedToId,
-      createdById: currentUser.id,
       dueDate: formatDueDateForSubmission(values.dueDate),
     })
 

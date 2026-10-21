@@ -7,7 +7,7 @@ export type TaskStatus =
   | "DONE"
   | "CANCELLED"
 
-export type TaskPriority = string
+export type TaskPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT"
 
 export interface TaskUser {
   id: string
@@ -70,7 +70,6 @@ export interface CreateTaskRequest {
   dueDate?: string | null
   projectId: string
   assignedToId: string
-  createdById: string
 }
 
 export interface GetTaskByIdRequest {

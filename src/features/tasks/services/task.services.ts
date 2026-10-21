@@ -31,8 +31,7 @@ export async function createTask(
       taskPriority: request.taskPriority,
       dueDate: request.dueDate,
       projectId: request.projectId,
-      assignedToId: request.assignedToId,
-      createdById: request.createdById,
+      assignedToId: request.assignedToId
     }
   )
 

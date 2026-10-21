@@ -9,6 +9,7 @@ import {
   Pencil,
   Trash2,
   UserPlus,
+  Loader2,
 } from "lucide-react"
 
 import {
@@ -36,6 +37,16 @@ import {
 } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { toast } from "@/components/ui/toast"
 
 import {
   deleteTask,
@@ -52,7 +63,9 @@ import { useAppDispatch } from "@/hooks/redux-hooks"
 import {
   removeTask,
   setSelectedTask,
+  updateTask as updateTaskInState,
 } from "@/features/tasks/slice/task.slice"
+import EditTaskModal from "@/features/tasks/components/EditTaskModal"
 
 const STATUS_OPTIONS = [
   {
@@ -230,6 +243,9 @@ export default function TaskDetailsPage() {
   const [actionError, setActionError] =
     useState<string | null>(null)
     
+  const [editTaskOpen, setEditTaskOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+
   const [now] = useState(() => Date.now())
 
   useEffect(() => {
@@ -294,25 +310,27 @@ export default function TaskDetailsPage() {
 
       setTask(updatedTask)
       dispatch(setSelectedTask(updatedTask))
+      dispatch(updateTaskInState(updatedTask))
+      toast.add({
+        type: "success",
+        title: "Status updated",
+        description: `Task status changed to ${status.replace("_", " ").toLowerCase()}.`,
+      })
     } catch (error) {
-      setActionError(
-        error instanceof Error
-          ? error.message
-          : "Unable to update task status.",
-      )
+      const msg = error instanceof Error ? error.message : "Unable to update task status."
+      setActionError(msg)
+      toast.add({
+        type: "error",
+        title: "Update failed",
+        description: msg,
+      })
     } finally {
       setStatusLoading(false)
     }
   }
 
-  const handleDelete = async () => {
+  const handleConfirmDelete = async () => {
     if (!task) return
-
-    const confirmed = window.confirm(
-      `Delete "${task.title}"? This action cannot be undone.`,
-    )
-
-    if (!confirmed) return
 
     try {
       setDeleteLoading(true)
@@ -325,16 +343,31 @@ export default function TaskDetailsPage() {
       dispatch(removeTask(task.id))
       dispatch(setSelectedTask(null))
 
-      navigate("/app/tasks")
+      toast.add({
+        type: "success",
+        title: "Task deleted",
+        description: `Task "${task.title}" was deleted successfully.`,
+      })
+
+      setDeleteDialogOpen(false)
+      navigate("/app/tasks", { replace: true })
     } catch (error) {
-      setActionError(
-        error instanceof Error
-          ? error.message
-          : "Unable to delete task.",
-      )
+      const msg = error instanceof Error ? error.message : "Unable to delete task."
+      setActionError(msg)
+      toast.add({
+        type: "error",
+        title: "Deletion failed",
+        description: msg,
+      })
     } finally {
       setDeleteLoading(false)
     }
+  }
+
+  const handleTaskUpdated = (updatedTask: Task) => {
+    setTask(updatedTask)
+    dispatch(setSelectedTask(updatedTask))
+    dispatch(updateTaskInState(updatedTask))
   }
 
   if (loading) {
@@ -413,11 +446,7 @@ export default function TaskDetailsPage() {
               <div className="flex flex-wrap gap-2">
                 <Button
                   variant="outline"
-                  onClick={() =>
-                    navigate(
-                      `/app/tasks/${task.id}/edit`,
-                    )
-                  }
+                  onClick={() => setEditTaskOpen(true)}
                 >
                   <Pencil className="mr-2 size-4" />
                   Edit
@@ -426,12 +455,10 @@ export default function TaskDetailsPage() {
                 <Button
                   variant="destructive"
                   disabled={deleteLoading}
-                  onClick={handleDelete}
+                  onClick={() => setDeleteDialogOpen(true)}
                 >
                   <Trash2 className="mr-2 size-4" />
-                  {deleteLoading
-                    ? "Deleting..."
-                    : "Delete"}
+                  Delete
                 </Button>
               </div>
       </div>
@@ -800,6 +827,43 @@ export default function TaskDetailsPage() {
           </Card>
         </aside>
       </div>
+
+      {/* Edit Task Modal */}
+      <EditTaskModal
+        task={task}
+        open={editTaskOpen}
+        onOpenChange={setEditTaskOpen}
+        onUpdated={handleTaskUpdated}
+      />
+
+      {/* Delete Task Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-2 text-destructive">
+              <Trash2 className="size-5 shrink-0" />
+              <AlertDialogTitle>Delete Task</AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="text-left pt-1.5 text-sm">
+              Are you sure you want to delete <span className="font-semibold text-foreground">"{task.title}"</span>? This will permanently remove the task and its history. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-3 pt-3 border-t">
+            <AlertDialogCancel disabled={deleteLoading}>
+              Cancel
+            </AlertDialogCancel>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDelete}
+              disabled={deleteLoading}
+              className="gap-2"
+            >
+              {deleteLoading && <Loader2 className="size-4 animate-spin" />}
+              {deleteLoading ? "Deleting..." : "Delete Task"}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </PageContainer>
   )
 }

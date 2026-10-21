@@ -307,6 +307,8 @@ export default function CreateTaskForm({
       <TaskDueDateTimePicker
         control={form.control}
         disabled={isSubmitting}
+        minDate={projectDetail?.startDate ? projectDetail.startDate.split("T")[0] : undefined}
+        maxDate={projectDetail?.dueDate ? projectDetail.dueDate.split("T")[0] : undefined}
       />
 
       {/* Actions */}

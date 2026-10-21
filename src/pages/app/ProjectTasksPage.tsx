@@ -430,7 +430,7 @@ export default function ProjectTasksPage() {
                 </Button>
               } />
               <DropdownMenuContent align="start">
-                {(["ALL", "LOW", "MEDIUM", "HIGH", "CRITICAL"] as const).map((pr) => (
+                {(["ALL", "LOW", "MEDIUM", "HIGH", "URGENT"] as const).map((pr) => (
                   <DropdownMenuItem
                     key={pr}
                     onClick={() => setPriorityFilter(pr)}
