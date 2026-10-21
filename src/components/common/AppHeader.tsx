@@ -13,6 +13,7 @@ import { getShortcut } from "@/config/keyboardShortcuts";
 import { useKeyboardShortcutsUI } from "@/context/KeyboardShortcutsContext";
 import { toAriaKeyShortcuts } from "@/lib/keyboard";
 
+import { useAppSelector } from "@/hooks/redux-hooks";
 import AppBreadcrumb from "./AppBreadcrumb";
 import ShortcutHint from "./ShortcutHint";
 
@@ -20,6 +21,7 @@ const searchShortcut = getShortcut("global.search");
 const helpShortcut = getShortcut("global.shortcuts");
 
 export default function AppHeader() {
+  const currentUser = useAppSelector((state) => state.auth.user);
   // Ctrl/Cmd + K is handled by the central keyboard shortcut system.
   const { openSearch, openShortcuts } = useKeyboardShortcutsUI();
 
@@ -120,13 +122,12 @@ export default function AppHeader() {
 
           {/* User */}
           <Avatar className="size-8">
-
             <AvatarFallback>
-              SK
+              {currentUser
+                ? `${currentUser.firstName?.[0] || ""}${currentUser.lastName?.[0] || ""}`.toUpperCase() || "U"
+                : "U"}
             </AvatarFallback>
-
           </Avatar>
-
         </div>
 
       </div>
