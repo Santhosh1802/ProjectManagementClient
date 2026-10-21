@@ -1,6 +1,7 @@
 import LogoWithVersion from "@/components/common/LogoWithVersion";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import ThemeColorSelector from "@/components/common/ThemeColorSelector";
 
 export default function NavBar() {
   return (
@@ -35,11 +36,16 @@ export default function NavBar() {
               Get started
             </Link>
           </Button>
+
+          <div className="border-l border-border/60 pl-3">
+            <ThemeColorSelector />
+          </div>
         </div>
 
         <div className="flex items-center gap-2 md:hidden">
+          <ThemeColorSelector />
+
           <Button
-            
             variant="ghost"
             size="sm"
           >
@@ -49,7 +55,6 @@ export default function NavBar() {
           </Button>
 
           <Button
-            
             size="sm"
           >
             <Link to="/register">

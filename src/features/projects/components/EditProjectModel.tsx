@@ -62,13 +62,14 @@ const editProjectSchema = z.object({
   name: z
     .string()
     .trim()
-    .min(1, "Project name is required.")
-    .max(100, "Project name must be 100 characters or less."),
+    .min(5, "Project name must be between 5 and 50 characters.")
+    .max(50, "Project name must be between 5 and 50 characters."),
 
   description: z
     .string()
     .trim()
-    .max(1000, "Description must be 1000 characters or less."),
+    .min(10, "Project description must be between 10 and 200 characters.")
+    .max(200, "Project description must be between 10 and 200 characters."),
 
   projectStatus: z.enum(["PLANNING", "ACTIVE", "COMPLETED", "ARCHIVED"]),
 
@@ -191,13 +192,14 @@ export default function EditProjectModal({
                       placeholder="Enter project name"
                       autoComplete="off"
                       autoFocus
-                      maxLength={100}
+                      minLength={5}
+                      maxLength={50}
                       disabled={saving}
                       aria-invalid={fieldState.invalid}
                     />
 
                     <FieldDescription>
-                      Choose a clear name your team will recognize.
+                      Choose a clear name between 5 and 50 characters.
                     </FieldDescription>
 
                     {fieldState.error && (
@@ -222,7 +224,8 @@ export default function EditProjectModal({
                       id="edit-project-description"
                       placeholder="Describe the purpose of this project..."
                       rows={5}
-                      maxLength={1000}
+                      minLength={10}
+                      maxLength={200}
                       disabled={saving}
                       aria-invalid={fieldState.invalid}
                       className="resize-none"
@@ -230,11 +233,11 @@ export default function EditProjectModal({
 
                     <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                       <FieldDescription>
-                        Help your team understand the project's purpose.
+                        Provide a summary between 10 and 200 characters.
                       </FieldDescription>
 
                       <span className="shrink-0 text-xs text-muted-foreground">
-                        {field.value?.length ?? 0}/1000
+                        {field.value?.length ?? 0}/200
                       </span>
                     </div>
 

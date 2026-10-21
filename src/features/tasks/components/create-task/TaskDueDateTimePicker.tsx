@@ -31,9 +31,6 @@ export default function TaskDueDateTimePicker({
           >
             <CalendarDays className="size-4 text-muted-foreground" />
             Due date & time
-            <span className="font-normal text-muted-foreground">
-              (optional)
-            </span>
           </label>
 
           <DatePicker

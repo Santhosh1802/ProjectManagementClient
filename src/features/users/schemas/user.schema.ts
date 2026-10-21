@@ -7,8 +7,9 @@ export const userSchema = z.object({
     .max(50, "First name must be at most 50 characters."),
   lastName: z
     .string()
-    .min(1, "Last name must be at least 1 character.")
-    .max(50, "Last name must be at most 50 characters."),
+    .max(50, "Last name must be at most 50 characters.")
+    .optional()
+    .or(z.literal("")),
   email: z.string().email("Enter a valid email address"),
   role: z.string(),
 })

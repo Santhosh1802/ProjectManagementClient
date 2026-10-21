@@ -77,6 +77,7 @@ export function ThemeProvider({
 
       root.classList.remove("light", "dark");
       root.classList.add(resolvedTheme);
+      root.setAttribute("data-mode", resolvedTheme);
       root.setAttribute("data-theme", currentColorTheme);
 
       restoreTransitions();

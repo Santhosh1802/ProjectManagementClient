@@ -1,378 +1,204 @@
-import { useState } from "react"
-import { Search, SlidersHorizontal, X, ArrowDownUp, Check } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Check, CircleDot, Shield, UserCheck } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import { Separator } from "@/components/ui/separator"
 
 import type {
-  SortField,
-  SortOrder,
   UserRole,
   UserStatus,
   VerificationStatus,
 } from "../types/user.types"
 
-
-
-interface UserFiltersProps {
-  keyword: string
+export interface UserFiltersState {
   role: UserRole | "all"
   status: UserStatus
   verification: VerificationStatus
-  sortBy: SortField
-  sortOrder: SortOrder
-  onKeywordChange: (value: string) => void
-  onRoleChange: (value: UserRole | "all") => void
-  onStatusChange: (value: UserStatus) => void
-  onVerificationChange: (value: VerificationStatus) => void
-  onSortByChange: (value: SortField) => void
-  onSortOrderChange: (value: SortOrder) => void
-  onReset: () => void
 }
 
-const selectClassName =
-  "h-10 rounded-lg border-border/70 bg-background shadow-none"
+interface UserFiltersProps {
+  filters: UserFiltersState
+  onApplyFilters: (filters: UserFiltersState) => void
+  onClose?: () => void
+}
+
+const ROLES: { label: string; value: UserRole | "all" }[] = [
+  { label: "All roles", value: "all" },
+  { label: "Admin", value: "ADMIN" },
+  { label: "Manager", value: "MANAGER" },
+  { label: "Member", value: "USER" },
+]
+
+const STATUSES: { label: string; value: UserStatus }[] = [
+  { label: "All statuses", value: "all" },
+  { label: "Active", value: "active" },
+  { label: "Inactive", value: "inactive" },
+]
+
+const VERIFICATIONS: { label: string; value: VerificationStatus }[] = [
+  { label: "All", value: "all" },
+  { label: "Verified", value: "verified" },
+  { label: "Unverified", value: "unverified" },
+]
 
 export default function UserFilters({
-  keyword,
-  role,
-  status,
-  verification,
-  sortBy,
-  sortOrder,
-  onKeywordChange,
-  onRoleChange,
-  onStatusChange,
-  onVerificationChange,
-  onSortByChange,
-  onSortOrderChange,
-  onReset,
+  filters,
+  onApplyFilters,
+  onClose,
 }: UserFiltersProps) {
-  const [open, setOpen] = useState(false)
+  const [draftFilters, setDraftFilters] = useState<UserFiltersState>(filters)
 
-  // Draft values: applied to the parent only when Apply is clicked.
-  const [draftRole, setDraftRole] = useState<UserRole | "all">(role)
-  const [draftStatus, setDraftStatus] = useState<UserStatus>(status)
-  const [draftVerification, setDraftVerification] =
-    useState<VerificationStatus>(verification)
-  const [draftSortBy, setDraftSortBy] = useState<SortField>(sortBy)
-  const [draftSortOrder, setDraftSortOrder] = useState<SortOrder>(sortOrder)
+  useEffect(() => {
+    setDraftFilters(filters)
+  }, [filters])
 
-  const activeFilterCount = [
-    role !== "all",
-    status !== "all",
-    verification !== "all",
-  ].filter(Boolean).length
+  const hasDraftFilters =
+    draftFilters.role !== "all" ||
+    draftFilters.status !== "all" ||
+    draftFilters.verification !== "all"
 
-  const hasCustomSort = sortBy !== "createdAt" || sortOrder !== "desc"
-
-  const hasAnyFilters =
-    keyword.trim() !== "" || activeFilterCount > 0 || hasCustomSort
-
-  function handleApply() {
-    onRoleChange(draftRole)
-    onStatusChange(draftStatus)
-    onVerificationChange(draftVerification)
-    onSortByChange(draftSortBy)
-    onSortOrderChange(draftSortOrder)
-    setOpen(false)
+  const updateDraft = <K extends keyof UserFiltersState>(
+    key: K,
+    value: UserFiltersState[K]
+  ) => {
+    setDraftFilters((prev) => ({
+      ...prev,
+      [key]: value,
+    }))
   }
 
-  function handleReset() {
-    onReset()
-
-    setDraftRole("all")
-    setDraftStatus("all")
-    setDraftVerification("all")
-    setDraftSortBy("createdAt")
-    setDraftSortOrder("desc")
-
-    setOpen(false)
+  const handleApply = () => {
+    onApplyFilters(draftFilters)
+    onClose?.()
   }
 
-  function handleOpenChange(nextOpen: boolean) {
-    if (nextOpen) {
-      setDraftRole(role)
-      setDraftStatus(status)
-      setDraftVerification(verification)
-      setDraftSortBy(sortBy)
-      setDraftSortOrder(sortOrder)
+  const handleReset = () => {
+    const cleared: UserFiltersState = {
+      role: "all",
+      status: "all",
+      verification: "all",
     }
-
-    setOpen(nextOpen)
+    setDraftFilters(cleared)
+    onApplyFilters(cleared)
+    onClose?.()
   }
-  
 
   return (
-    <section className="flex flex-col gap-3 sm:flex-row sm:items-center">
-      {/* Always-visible search */}
-      <div className="group relative w-full sm:max-w-sm">
-        <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-foreground" />
-
-        <Input
-          value={keyword}
-          onChange={(event) => onKeywordChange(event.target.value)}
-          placeholder="Search by name or email..."
-          aria-label="Search users by name or email"
-          aria-keyshortcuts="/"
-          data-page-search=""
-          className="h-10 rounded-lg border-border/70 bg-card pr-9 pl-9 shadow-none focus-visible:ring-2 focus-visible:ring-ring/20"
-        />
-
-        {keyword.length > 0 && (
+    <div className="flex flex-col gap-4">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b pb-2">
+        <span className="text-xs font-semibold text-foreground">Filter users</span>
+        {hasDraftFilters && (
           <button
             type="button"
-            onClick={() => onKeywordChange("")}
-            aria-label="Clear search"
-            className="absolute top-1/2 right-2 flex size-6 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            onClick={handleReset}
+            className="text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
-            <X className="size-3.5" />
+            Clear all
           </button>
         )}
       </div>
-      
 
-      {/* Filter popover */}
-      <Popover open={open} onOpenChange={handleOpenChange}>
-        <PopoverTrigger render={<Button
+      {/* Role */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+          <Shield className="size-3.5" />
+          Role
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {ROLES.map((r) => {
+            const active = draftFilters.role === r.value
+            return (
+              <Button
+                key={r.value}
+                type="button"
+                size="sm"
+                variant={active ? "secondary" : "outline"}
+                className="h-7 text-xs"
+                onClick={() => updateDraft("role", r.value)}
+              >
+                {active && <Check className="size-3 mr-1" />}
+                {r.label}
+              </Button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Account Status */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+          <CircleDot className="size-3.5" />
+          Account status
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {STATUSES.map((s) => {
+            const active = draftFilters.status === s.value
+            return (
+              <Button
+                key={s.value}
+                type="button"
+                size="sm"
+                variant={active ? "secondary" : "outline"}
+                className="h-7 text-xs"
+                onClick={() => updateDraft("status", s.value)}
+              >
+                {active && <Check className="size-3 mr-1" />}
+                {s.label}
+              </Button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Email Verification */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+          <UserCheck className="size-3.5" />
+          Email verification
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {VERIFICATIONS.map((v) => {
+            const active = draftFilters.verification === v.value
+            return (
+              <Button
+                key={v.value}
+                type="button"
+                size="sm"
+                variant={active ? "secondary" : "outline"}
+                className="h-7 text-xs"
+                onClick={() => updateDraft("verification", v.value)}
+              >
+                {active && <Check className="size-3 mr-1" />}
+                {v.label}
+              </Button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Footer / Apply Action */}
+      <div className="flex items-center justify-end gap-2 border-t pt-3">
+        {onClose && (
+          <Button
             type="button"
-            variant="outline"
-            className="h-7.5 w-full justify-between gap-1.5 rounded-md border-border/70 bg-card px-2.5 text-xs font-medium sm:w-auto sm:justify-center"
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs text-muted-foreground"
+            onClick={onClose}
           >
-            <span className="flex items-center gap-1.5">
-              <SlidersHorizontal className="size-3.5" />
-              Filters
-              {activeFilterCount > 0 && (
-                <span className="flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">
-                  {activeFilterCount}
-                </span>
-              )}
-            </span>
-
-            <span className="text-[11px] text-muted-foreground sm:hidden">
-              {activeFilterCount > 0
-                ? `${activeFilterCount} active`
-                : "Optional"}
-            </span>
-          </Button>}>
-          
-        </PopoverTrigger>
-
-        <PopoverContent
-          align="start"
-          sideOffset={8}
-          className="w-[calc(100vw-2rem)] max-w-95 rounded-xl border-border/70 p-0 shadow-xl sm:w-95"
-        >
-          {/* Popover header */}
-          <div className="flex items-center justify-between px-4 py-3.5">
-            <div className="flex items-center gap-2.5">
-              <div className="flex size-8 items-center justify-center rounded-lg bg-muted">
-                <SlidersHorizontal className="size-4" />
-              </div>
-
-              <div>
-                <h3 className="text-sm font-semibold">Filter users</h3>
-                <p className="text-xs text-muted-foreground">
-                  Refine your results
-                </p>
-              </div>
-            </div>
-
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="size-8 rounded-lg"
-              aria-label="Close filters"
-              onClick={() => setOpen(false)}
-            >
-              <X className="size-4" />
-            </Button>
-          </div>
-
-          <Separator />
-
-          {/* Filter fields */}
-          <div className="max-h-[65vh] space-y-4 overflow-y-auto p-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">
-                Role
-              </label>
-
-              <Select
-                value={draftRole}
-                onValueChange={(value) =>
-                  setDraftRole(value as UserRole | "all")
-                }
-              >
-                <SelectTrigger
-                  aria-label="Filter by role"
-                  className={selectClassName}
-                >
-                  <SelectValue placeholder="All roles" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All roles</SelectItem>
-                  <SelectItem value="ADMIN">Admin</SelectItem>
-                  <SelectItem value="MANAGER">Manager</SelectItem>
-                  <SelectItem value="USER">User</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">
-                Account status
-              </label>
-
-              <Select
-                value={draftStatus}
-                onValueChange={(value) => setDraftStatus(value as UserStatus)}
-              >
-                <SelectTrigger
-                  aria-label="Filter by account status"
-                  className={selectClassName}
-                >
-                  <SelectValue placeholder="All statuses" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All statuses</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">
-                Email verification
-              </label>
-
-              <Select
-                value={draftVerification}
-                onValueChange={(value) =>
-                  setDraftVerification(value as VerificationStatus)
-                }
-              >
-                <SelectTrigger
-                  aria-label="Filter by email verification"
-                  className={selectClassName}
-                >
-                  <SelectValue placeholder="All email statuses" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All email statuses</SelectItem>
-                  <SelectItem value="verified">Verified</SelectItem>
-                  <SelectItem value="unverified">Unverified</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <Separator />
-
-            {/* Sorting */}
-            <div className="flex items-center gap-2">
-              <ArrowDownUp className="size-4 text-muted-foreground" />
-              <span className="text-sm font-medium">Sort results</span>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">
-                Sort by
-              </label>
-
-              <Select
-                value={draftSortBy}
-                onValueChange={(value) => setDraftSortBy(value as SortField)}
-              >
-                <SelectTrigger
-                  aria-label="Sort users by"
-                  className={selectClassName}
-                >
-                  <SelectValue placeholder="Sort by" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="createdAt">Date created</SelectItem>
-                  <SelectItem value="firstName">First name</SelectItem>
-                  <SelectItem value="lastName">Last name</SelectItem>
-                  <SelectItem value="email">Email</SelectItem>
-                  <SelectItem value="lastLoginAt">Last login</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">
-                Direction
-              </label>
-
-              <Select
-                value={draftSortOrder}
-                onValueChange={(value) => setDraftSortOrder(value as SortOrder)}
-              >
-                <SelectTrigger
-                  aria-label="Sort direction"
-                  className={selectClassName}
-                >
-                  <SelectValue placeholder="Sort direction" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="desc">
-                    Descending (newest first)
-                  </SelectItem>
-                  <SelectItem value="asc">Ascending (oldest first)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Actions */}
-          <div className="flex items-center justify-between gap-3 p-3">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={handleReset}
-              className="rounded-lg text-muted-foreground"
-            >
-              <X className="mr-1.5 size-3.5" />
-              Reset all
-            </Button>
-
-            <Button type="button" onClick={handleApply} className="rounded-lg">
-              <Check className="mr-1.5 size-4" />
-              Apply filters
-            </Button>
-          </div>
-        </PopoverContent>
-      </Popover>
-
-      {/* Quick reset for the search field and applied filters */}
-      {hasAnyFilters && (
+            Cancel
+          </Button>
+        )}
         <Button
           type="button"
-          variant="ghost"
-          onClick={handleReset}
-          className="h-10 shrink-0 gap-1.5 rounded-lg text-muted-foreground"
+          size="sm"
+          className="h-7 text-xs"
+          onClick={handleApply}
         >
-          <X className="size-4" />
-          <span>Reset</span>
+          <Check className="size-3 mr-1" />
+          Apply filters
         </Button>
-      )}
-    </section>
+      </div>
+    </div>
   )
 }

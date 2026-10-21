@@ -86,38 +86,40 @@ export default function AssigneeSelect({
               open={open}
               onOpenChange={setOpen}
             >
-              <PopoverTrigger>
-                <Button
-                  id="task-assignee"
-                  type="button"
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={open}
-                  aria-invalid={fieldState.invalid}
-                  disabled={disabled}
-                  className="w-full justify-between font-normal"
-                >
-                  {selectedUser ? (
-                    <div className="flex min-w-0 items-center gap-2">
-                      <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
-                        {getInitials(selectedUser)}
-                      </div>
+              <PopoverTrigger
+                render={
+                  <Button
+                    id="task-assignee"
+                    type="button"
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={open}
+                    aria-invalid={fieldState.invalid}
+                    disabled={disabled}
+                    className="w-full justify-between font-normal"
+                  >
+                    {selectedUser ? (
+                      <div className="flex min-w-0 items-center gap-2">
+                        <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
+                          {getInitials(selectedUser)}
+                        </div>
 
-                      <div className="min-w-0 text-left">
-                        <p className="truncate text-xs">
-                          {getFullName(selectedUser)}
-                        </p>
+                        <div className="min-w-0 text-left">
+                          <p className="truncate text-xs">
+                            {getFullName(selectedUser)}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    <span className="text-muted-foreground">
-                      {disabled ? "Select a project first" : "Select an assignee"}
-                    </span>
-                  )}
+                    ) : (
+                      <span className="text-muted-foreground">
+                        {disabled ? "Select a project first" : "Select an assignee"}
+                      </span>
+                    )}
 
-                  <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
+                    <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
+                  </Button>
+                }
+              />
 
               <PopoverContent
                 align="start"

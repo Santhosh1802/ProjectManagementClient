@@ -70,7 +70,7 @@ export default function EditTaskModal({
       taskPriority: task.taskPriority,
       projectId: task.project.id,
       assignedToId: task.assignedTo.id,
-      dueDate: task.dueDate ? task.dueDate.slice(0, 16).replace("T", " ") : null,
+      dueDate: task.dueDate ? task.dueDate.slice(0, 16).replace("T", " ") : "",
     },
   })
 
@@ -83,7 +83,7 @@ export default function EditTaskModal({
         taskPriority: task.taskPriority,
         projectId: task.project.id,
         assignedToId: task.assignedTo.id,
-        dueDate: task.dueDate ? task.dueDate.slice(0, 16).replace("T", " ") : null,
+        dueDate: task.dueDate ? task.dueDate.slice(0, 16).replace("T", " ") : "",
       })
     }
   }, [open, task, reset])
@@ -195,6 +195,7 @@ export default function EditTaskModal({
               id="edit-task-title"
               placeholder="e.g. Design Landing Page"
               disabled={isSubmitting}
+              maxLength={100}
               {...register("title")}
             />
             {errors.title && (
@@ -205,13 +206,15 @@ export default function EditTaskModal({
           {/* Description */}
           <div className="space-y-1.5">
             <label htmlFor="edit-task-description" className="text-sm font-medium">
-              Description
+              Description <span className="text-destructive">*</span>
             </label>
             <Textarea
               id="edit-task-description"
-              placeholder="Provide context or instructions..."
+              placeholder="Provide context or instructions between 10 and 300 characters..."
               className="min-h-20"
               disabled={isSubmitting}
+              minLength={10}
+              maxLength={300}
               {...register("description")}
             />
             {errors.description && (

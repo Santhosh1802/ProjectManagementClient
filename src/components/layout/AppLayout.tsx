@@ -14,6 +14,7 @@ import { useAppSelector } from "@/hooks/redux-hooks";
 import AppSidebar from "../common/AppSidebar";
 import AppHeader from "../common/AppHeader";
 import KeyboardShortcutsProvider from "../common/KeyboardShortcutsProvider";
+import MobileQuickActionFAB from "../common/MobileQuickActionFAB";
 import type { RootState } from "@/app/store";
 
 import AppLoader from "@/components/common/AppLoader";
@@ -56,6 +57,8 @@ export default function AppLayout() {
             </div>
           </main>
         </SidebarInset>
+
+        <MobileQuickActionFAB />
       </KeyboardShortcutsProvider>
     </SidebarProvider>
   );

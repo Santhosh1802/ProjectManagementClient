@@ -4,6 +4,7 @@ import { FolderDot, CheckSquare, Loader2 } from "lucide-react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Kbd } from "@/components/ui/kbd";
 
 import { useAppSelector } from "@/hooks/redux-hooks";
 import { searchUsers } from "@/features/users/services/users.service";
@@ -204,6 +205,23 @@ export default function GlobalSearch({
             </CommandGroup>
           )}
         </CommandList>
+        <div className="flex items-center justify-between border-t border-border/60 bg-muted/30 px-3 py-2 text-[11px] text-muted-foreground select-none">
+          <div className="flex items-center gap-2">
+            <span className="flex items-center gap-1">
+              <Kbd className="h-4 min-w-4 px-1 text-[9px]">↑</Kbd>
+              <Kbd className="h-4 min-w-4 px-1 text-[9px]">↓</Kbd>
+              <span className="hidden sm:inline">Navigate</span>
+            </span>
+            <span className="flex items-center gap-1">
+              <Kbd className="h-4 min-w-4 px-1 text-[9px]">↵</Kbd>
+              <span className="hidden sm:inline">Select</span>
+            </span>
+          </div>
+          <span className="flex items-center gap-1">
+            <Kbd className="h-4 min-w-4 px-1 text-[9px]">Esc</Kbd>
+            <span>Close</span>
+          </span>
+        </div>
       </Command>
     </CommandDialog>
   );

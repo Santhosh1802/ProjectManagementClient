@@ -3,6 +3,7 @@ import { Plus } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 
 import { Button } from "@/components/ui/button"
+import { Kbd } from "@/components/ui/kbd"
 import PageContainer from "@/components/common/PageContainer"
 import PageHeader from "@/components/common/PageHeader"
 
@@ -183,10 +184,14 @@ export default function ProjectPage() {
         actions={
           <Button
             onClick={handleCreateProject}
-            className="w-fit sm:w-auto"
+            className="w-fit sm:w-auto gap-2"
           >
             <Plus className="size-4" />
-            Create Project
+            <span>Create Project</span>
+            <span className="hidden sm:inline-flex items-center gap-0.5 ml-1 opacity-75">
+              <Kbd className="h-4 min-w-4 px-1 text-[9px] bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30 font-mono">C</Kbd>
+              <Kbd className="h-4 min-w-4 px-1 text-[9px] bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30 font-mono">P</Kbd>
+            </span>
           </Button>
         }
       />

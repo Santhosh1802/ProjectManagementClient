@@ -77,85 +77,85 @@ export default function UserWorkspaceOverview({
       {/* ----------------------------------------- */}
       {/* Metrics Row */}
       {/* ----------------------------------------- */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-4">
         {/* Total Owned Projects */}
-        <Card className="rounded-xl border border-border shadow-xs">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        <Card className="rounded-xl border border-border shadow-xs p-3 sm:p-4">
+          <div className="flex items-center justify-between gap-1 pb-1 sm:pb-2">
+            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">
               Owned Projects
-            </CardTitle>
-            <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <FolderKanban className="size-4" />
+            </span>
+            <div className="flex size-6 sm:size-8 shrink-0 items-center justify-center rounded-md sm:rounded-lg bg-primary/10 text-primary">
+              <FolderKanban className="size-3 sm:size-4" />
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
+          </div>
+          <div>
+            <div className="text-xl sm:text-2xl font-bold tracking-tight">
               {loadingProjects ? "..." : ownedProjects.length}
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Created & managed by you
+            <p className="mt-0.5 sm:mt-1 text-[10px] sm:text-xs text-muted-foreground truncate">
+              Created & managed
             </p>
-          </CardContent>
+          </div>
         </Card>
 
         {/* Active Projects */}
-        <Card className="rounded-xl border border-border shadow-xs">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        <Card className="rounded-xl border border-border shadow-xs p-3 sm:p-4">
+          <div className="flex items-center justify-between gap-1 pb-1 sm:pb-2">
+            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">
               Active Projects
-            </CardTitle>
-            <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-              <Layers className="size-4" />
+            </span>
+            <div className="flex size-6 sm:size-8 shrink-0 items-center justify-center rounded-md sm:rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+              <Layers className="size-3 sm:size-4" />
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
+          </div>
+          <div>
+            <div className="text-xl sm:text-2xl font-bold tracking-tight">
               {loadingProjects ? "..." : activeProjectsCount}
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Currently in progress
+            <p className="mt-0.5 sm:mt-1 text-[10px] sm:text-xs text-muted-foreground truncate">
+              In progress
             </p>
-          </CardContent>
+          </div>
         </Card>
 
         {/* Tasks Assigned */}
-        <Card className="rounded-xl border border-border shadow-xs">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        <Card className="rounded-xl border border-border shadow-xs p-3 sm:p-4">
+          <div className="flex items-center justify-between gap-1 pb-1 sm:pb-2">
+            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">
               Assigned Tasks
-            </CardTitle>
-            <div className="flex size-8 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
-              <Briefcase className="size-4" />
+            </span>
+            <div className="flex size-6 sm:size-8 shrink-0 items-center justify-center rounded-md sm:rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
+              <Briefcase className="size-3 sm:size-4" />
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
+          </div>
+          <div>
+            <div className="text-xl sm:text-2xl font-bold tracking-tight">
               {loadingTasks ? "..." : totalTasks}
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Assigned to your account
+            <p className="mt-0.5 sm:mt-1 text-[10px] sm:text-xs text-muted-foreground truncate">
+              Assigned to you
             </p>
-          </CardContent>
+          </div>
         </Card>
 
         {/* Completed Projects */}
-        <Card className="rounded-xl border border-border shadow-xs">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Completed Projects
-            </CardTitle>
-            <div className="flex size-8 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
-              <CheckCircle2 className="size-4" />
+        <Card className="rounded-xl border border-border shadow-xs p-3 sm:p-4">
+          <div className="flex items-center justify-between gap-1 pb-1 sm:pb-2">
+            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">
+              Completed
+            </span>
+            <div className="flex size-6 sm:size-8 shrink-0 items-center justify-center rounded-md sm:rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
+              <CheckCircle2 className="size-3 sm:size-4" />
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
+          </div>
+          <div>
+            <div className="text-xl sm:text-2xl font-bold tracking-tight">
               {loadingProjects ? "..." : completedProjectsCount}
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Successfully finished
+            <p className="mt-0.5 sm:mt-1 text-[10px] sm:text-xs text-muted-foreground truncate">
+              Finished
             </p>
-          </CardContent>
+          </div>
         </Card>
       </div>
 

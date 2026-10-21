@@ -264,27 +264,27 @@ export default function ProjectTasksPage() {
 
       {/* Project metrics summary cards */}
       {project && (
-        <div className="mb-6 grid gap-3 sm:grid-cols-3">
+        <div className="mb-6 grid grid-cols-3 gap-2 sm:gap-3">
           <Card>
-            <CardContent className="flex items-center gap-3 p-4">
-              <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10">
-                <Kanban className="size-5 text-primary" />
+            <CardContent className="flex flex-col sm:flex-row items-start sm:items-center gap-1.5 sm:gap-3 p-2.5 sm:p-4">
+              <div className="flex size-7 sm:size-10 items-center justify-center rounded-lg bg-primary/10">
+                <Kanban className="size-3.5 sm:size-5 text-primary" />
               </div>
               <div className="min-w-0">
-                <p className="text-xs text-muted-foreground">Total Tasks</p>
-                <p className="truncate text-base font-semibold">{totalElements}</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Total Tasks</p>
+                <p className="truncate text-sm sm:text-base font-semibold">{totalElements}</p>
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="flex items-center gap-3 p-4">
-              <div className="flex size-10 items-center justify-center rounded-lg bg-green-500/10">
-                <Check className="size-5 text-green-600" />
+            <CardContent className="flex flex-col sm:flex-row items-start sm:items-center gap-1.5 sm:gap-3 p-2.5 sm:p-4">
+              <div className="flex size-7 sm:size-10 items-center justify-center rounded-lg bg-green-500/10">
+                <Check className="size-3.5 sm:size-5 text-green-600" />
               </div>
               <div className="min-w-0">
-                <p className="text-xs text-muted-foreground">Completed Tasks</p>
-                <p className="truncate text-base font-semibold">
+                <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Completed</p>
+                <p className="truncate text-sm sm:text-base font-semibold">
                   {tasks.filter((t) => t.taskStatus === "DONE").length}
                 </p>
               </div>
@@ -292,13 +292,13 @@ export default function ProjectTasksPage() {
           </Card>
 
           <Card>
-            <CardContent className="flex items-center gap-3 p-4">
-              <div className="flex size-10 items-center justify-center rounded-lg bg-amber-500/10">
-                <CalendarDays className="size-5 text-amber-600" />
+            <CardContent className="flex flex-col sm:flex-row items-start sm:items-center gap-1.5 sm:gap-3 p-2.5 sm:p-4">
+              <div className="flex size-7 sm:size-10 items-center justify-center rounded-lg bg-amber-500/10">
+                <CalendarDays className="size-3.5 sm:size-5 text-amber-600" />
               </div>
               <div className="min-w-0">
-                <p className="text-xs text-muted-foreground">In Progress</p>
-                <p className="truncate text-base font-semibold">
+                <p className="text-[10px] sm:text-xs text-muted-foreground truncate">In Progress</p>
+                <p className="truncate text-sm sm:text-base font-semibold">
                   {tasks.filter((t) => t.taskStatus === "IN_PROGRESS").length}
                 </p>
               </div>

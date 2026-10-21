@@ -111,9 +111,9 @@ export default function TransferOwnershipDialog({
           trigger ? (
             trigger as React.ReactElement
           ) : (
-            <Button variant="outline" size="sm" className="gap-2">
-              <ArrowRightLeft className="size-4" />
-              Transfer Ownership
+            <Button variant="outline" size="sm" className="h-8 gap-1.5 px-2.5 text-xs">
+              <ArrowRightLeft className="size-3.5" />
+              <span>Transfer Ownership</span>
             </Button>
           )
         }

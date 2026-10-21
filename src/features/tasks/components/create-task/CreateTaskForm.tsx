@@ -65,7 +65,7 @@ export default function CreateTaskForm({
       taskPriority: "MEDIUM",
       projectId: defaultProjectId ?? "",
       assignedToId: "",
-      dueDate: null,
+      dueDate: "",
     },
   })
 
@@ -189,7 +189,7 @@ export default function CreateTaskForm({
         taskPriority: "MEDIUM",
         projectId: defaultProjectId ?? "",
         assignedToId: "",
-        dueDate: null,
+        dueDate: "",
       })
     } catch (error) {
       form.setError("root", {
@@ -233,12 +233,13 @@ export default function CreateTaskForm({
           placeholder="e.g. Implement authentication"
           autoComplete="off"
           disabled={isSubmitting}
+          maxLength={100}
           aria-invalid={!!errors.title}
           {...register("title")}
         />
 
         <FieldDescription>
-          Give the task a clear and descriptive title.
+          Give the task a title between 1 and 100 characters.
         </FieldDescription>
 
         {errors.title && (
@@ -259,12 +260,14 @@ export default function CreateTaskForm({
           placeholder="Describe what needs to be completed..."
           className="min-h-24 resize-y"
           disabled={isSubmitting}
+          minLength={10}
+          maxLength={300}
           aria-invalid={!!errors.description}
           {...register("description")}
         />
 
         <FieldDescription>
-          Optional. Provide additional information about the task.
+          Provide description between 10 and 300 characters.
         </FieldDescription>
 
         {errors.description && (

@@ -4,6 +4,7 @@ import ErrorState from "@/components/common/ErrorState"
 import PageContainer from "@/components/common/PageContainer"
 import PageHeader from "@/components/common/PageHeader"
 import { Button } from "@/components/ui/button"
+import { Kbd } from "@/components/ui/kbd"
 import { Plus } from "lucide-react"
 import confetti from "canvas-confetti"
 import { toast } from "@/components/ui/toast"
@@ -554,9 +555,13 @@ export default function TaskPage() {
         onRefresh={() => void refetch()}
         isRefreshing={queryFetching}
         actions={
-          <Button onClick={() => navigate("/app/tasks/create")}>
-            <Plus className="size-4 mr-2" />
-            Create task
+          <Button onClick={() => navigate("/app/tasks/create")} className="gap-2">
+            <Plus className="size-4" />
+            <span>Create task</span>
+            <span className="hidden sm:inline-flex items-center gap-0.5 ml-1 opacity-75">
+              <Kbd className="h-4 min-w-4 px-1 text-[9px] bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30 font-mono">C</Kbd>
+              <Kbd className="h-4 min-w-4 px-1 text-[9px] bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30 font-mono">T</Kbd>
+            </span>
           </Button>
         }
       />

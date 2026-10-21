@@ -65,36 +65,38 @@ export default function ProjectSelect({
               open={open}
               onOpenChange={setOpen}
             >
-              <PopoverTrigger>
-                <Button
-                  id="task-project"
-                  type="button"
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={open}
-                  aria-invalid={fieldState.invalid}
-                  disabled={disabled}
-                  className="w-full justify-between font-normal"
-                >
-                  {selectedProject ? (
-                    <div className="flex min-w-0 items-center gap-2">
-                      <div className="flex size-6 shrink-0 items-center justify-center rounded-md bg-primary/10">
-                        <FolderKanban className="size-4 text-primary" />
+              <PopoverTrigger
+                render={
+                  <Button
+                    id="task-project"
+                    type="button"
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={open}
+                    aria-invalid={fieldState.invalid}
+                    disabled={disabled}
+                    className="w-full justify-between font-normal"
+                  >
+                    {selectedProject ? (
+                      <div className="flex min-w-0 items-center gap-2">
+                        <div className="flex size-6 shrink-0 items-center justify-center rounded-md bg-primary/10">
+                          <FolderKanban className="size-4 text-primary" />
+                        </div>
+
+                        <span className="truncate">
+                          {selectedProject.name}
+                        </span>
                       </div>
-
-                      <span className="truncate">
-                        {selectedProject.name}
+                    ) : (
+                      <span className="text-muted-foreground">
+                        Select a project
                       </span>
-                    </div>
-                  ) : (
-                    <span className="text-muted-foreground">
-                      Select a project
-                    </span>
-                  )}
+                    )}
 
-                  <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
+                    <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
+                  </Button>
+                }
+              />
 
               <PopoverContent
                 align="start"

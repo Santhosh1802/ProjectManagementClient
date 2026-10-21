@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom"
 
 
 import { Button } from "@/components/ui/button"
+import { Kbd } from "@/components/ui/kbd"
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -32,7 +33,6 @@ import UserEmptyState from "@/features/users/components/UserEmptyState"
 import UserToolbar from "@/features/users/components/UserToolbar"
 import UserList from "@/features/users/components/UserList"
 import UserListSkeleton from "@/features/users/components/UserListSkeleton"
-import UserScopeTabs from "@/features/users/components/UserScopeTabs"
 import UserTable from "@/features/users/components/UserTable"
 import UserTableSkeleton from "@/features/users/components/UserTableSkeleton"
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
@@ -40,8 +40,6 @@ import PageContainer from "@/components/common/PageContainer"
 import PageHeader from "@/components/common/PageHeader"
 import ErrorState from "@/components/common/ErrorState"
 import { Loader2, Plus, Trash2 } from "lucide-react"
-
-const PAGE_SIZE = 10
 
 export default function UsersPage() {
   const navigate = useNavigate()
@@ -53,13 +51,14 @@ export default function UsersPage() {
   const [sortBy, setSortBy] = useState<SortField>("createdAt")
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
   const [view, setView] = useState<UserView>("table")
+  const [pageSize, setPageSize] = useState(10)
 
   const [pendingDelete, setPendingDelete] = useState<User | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
 
   const searchParams: UserSearchRequest = {
     page,
-    size: PAGE_SIZE,
+    size: pageSize,
     keyword: keyword.trim() || undefined,
     role: role === "all" ? undefined : role,
     isActive: status === "all" ? undefined : status === "active",
@@ -126,11 +125,6 @@ export default function UsersPage() {
           : "Could not delete this user. Please try again."
       )
     }
-  }
-
-  const handleStatusChange = (nextStatus: UserStatus) => {
-    setStatus(nextStatus)
-    resetPage()
   }
 
   const renderResults = () => {
@@ -215,22 +209,16 @@ export default function UsersPage() {
         onRefresh={() => void refetch()}
         isRefreshing={isFetching}
         actions={
-          <Button onClick={() => navigate("/app/users/create")}>
-            <Plus className="mr-2 size-4" />
-            Create user
+          <Button onClick={() => navigate("/app/users/create")} className="gap-2">
+            <Plus className="size-4" />
+            <span>Create user</span>
+            <span className="hidden sm:inline-flex items-center gap-0.5 ml-1 opacity-75">
+              <Kbd className="h-4 min-w-4 px-1 text-[9px] bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30 font-mono">C</Kbd>
+              <Kbd className="h-4 min-w-4 px-1 text-[9px] bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30 font-mono">U</Kbd>
+            </span>
           </Button>
         }
       />
-
-      <UserScopeTabs
-        value={status}
-        onChange={handleStatusChange}
-        counts={{
-          all: totalElements,
-        }}
-      />
-
-
 
       <UserToolbar
         keyword={keyword}
@@ -240,6 +228,11 @@ export default function UsersPage() {
         sortBy={sortBy}
         sortOrder={sortOrder}
         view={view}
+        pageSize={pageSize}
+        onPageSizeChange={(newSize) => {
+          setPageSize(newSize)
+          resetPage()
+        }}
         onKeywordChange={(value) => {
           setKeyword(value)
           resetPage()
@@ -258,6 +251,14 @@ export default function UsersPage() {
         onViewChange={setView}
       />
 
+      {/* Showing counter matching ProjectPage / TaskPage */}
+      {!loading && !error && users.length > 0 && (
+        <div className="text-sm text-muted-foreground">
+          Showing <span className="font-medium text-foreground">{users.length}</span> of{" "}
+          <span className="font-medium text-foreground">{totalElements}</span> users
+        </div>
+      )}
+
         {actionError && (
           <p role="alert" className="text-sm text-destructive">
             {actionError}
@@ -268,8 +269,8 @@ export default function UsersPage() {
         {!loading && !error && users.length > 0 && (
           <div className="flex flex-col gap-4 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted-foreground">
-              Showing {page * PAGE_SIZE + 1}–
-              {Math.min((page + 1) * PAGE_SIZE, totalElements)} of{" "}
+              Showing {page * pageSize + 1}–
+              {Math.min((page + 1) * pageSize, totalElements)} of{" "}
               {totalElements.toLocaleString("en-IN")} users
             </p>
 

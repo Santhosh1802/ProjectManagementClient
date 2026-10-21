@@ -6,7 +6,7 @@ describe("Task Zod Schemas", () => {
     it("validates valid task creation inputs", () => {
       const validData = {
         title: "Build landing page",
-        description: "Set up hero section",
+        description: "Set up hero section with responsive components",
         taskStatus: "TODO" as const,
         taskPriority: "HIGH" as const,
         projectId: "proj-123",
@@ -21,6 +21,7 @@ describe("Task Zod Schemas", () => {
     it("rejects empty title", () => {
       const invalidData = {
         title: "   ",
+        description: "Valid description for testing",
         taskStatus: "TODO" as const,
         taskPriority: "MEDIUM" as const,
         projectId: "proj-123",
@@ -37,6 +38,7 @@ describe("Task Zod Schemas", () => {
     it("rejects invalid status", () => {
       const invalidData = {
         title: "Valid Title",
+        description: "Valid description for testing",
         taskStatus: "INVALID_STATUS" as any,
         taskPriority: "LOW" as const,
         projectId: "proj-123",
@@ -52,12 +54,12 @@ describe("Task Zod Schemas", () => {
     it("validates required fields for edit", () => {
       const validEdit = {
         title: "Updated Task Title",
-        description: "New details",
+        description: "New updated details for the task",
         taskStatus: "IN_PROGRESS" as const,
         taskPriority: "URGENT" as const,
         projectId: "proj-1",
         assignedToId: "user-2",
-        dueDate: null,
+        dueDate: "2026-11-15 14:30",
       }
 
       const result = editTaskSchema.safeParse(validEdit)

@@ -5,15 +5,14 @@ export const createProjectSchema = z
     name: z
       .string()
       .trim()
-      .min(1, "Project name is required.")
-      .max(100, "Project name must be 100 characters or less."),
+      .min(5, "Project name must be between 5 and 50 characters.")
+      .max(50, "Project name must be between 5 and 50 characters."),
 
     description: z
       .string()
       .trim()
-      .min(10,"Description must be at-least 10 characters or more.")
-      .max(1000, "Description must be 1000 characters or less.")
-      .or(z.literal("")),
+      .min(10, "Project description must be between 10 and 200 characters.")
+      .max(200, "Project description must be between 10 and 200 characters."),
 
     startDate: z
       .string()

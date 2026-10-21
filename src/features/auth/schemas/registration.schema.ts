@@ -8,8 +8,9 @@ export const registrationSchema = z
         .max(50, "First name must be at most of 50 characters."),
       lastName: z
         .string()
-        .min(1, "Last name must be at least 1 character.")
-        .max(50, "Last name must be at most of 50 characters."),
+        .max(50, "Last name must be at most 50 characters.")
+        .optional()
+        .or(z.literal("")),
       email: z.email().nonempty("Email is required"),
       password: z
         .string()

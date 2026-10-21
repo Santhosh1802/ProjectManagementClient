@@ -77,9 +77,9 @@ function UserDetailsSkeleton() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-4">
         {[1, 2, 3, 4].map((i) => (
-          <Skeleton key={i} className="h-24 rounded-xl" />
+          <Skeleton key={i} className="h-20 sm:h-24 rounded-xl" />
         ))}
       </div>
 
@@ -233,18 +233,6 @@ export default function UserDetailsPage() {
 
   return (
     <PageContainer className="space-y-6">
-      {/* Breadcrumbs */}
-      <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-        <Link
-          to="/app/users"
-          className="transition-colors hover:text-foreground"
-        >
-          Users
-        </Link>
-        <span>/</span>
-        <span className="text-foreground">{fullName}</span>
-      </div>
-
       <PageHeader
         title={fullName}
         description="Comprehensive user profile, workspace projects, and task activity."
@@ -328,85 +316,85 @@ export default function UserDetailsPage() {
       {/* ----------------------------------------- */}
       {/* Insights & Metrics Cards */}
       {/* ----------------------------------------- */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-4">
         {/* Owned Projects */}
-        <Card className="rounded-xl border border-border shadow-xs">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        <Card className="rounded-xl border border-border shadow-xs p-3 sm:p-4">
+          <div className="flex items-center justify-between gap-1 pb-1 sm:pb-2">
+            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">
               Owned Projects
-            </CardTitle>
-            <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <FolderKanban className="size-4" />
+            </span>
+            <div className="flex size-6 sm:size-8 shrink-0 items-center justify-center rounded-md sm:rounded-lg bg-primary/10 text-primary">
+              <FolderKanban className="size-3 sm:size-4" />
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
+          </div>
+          <div>
+            <div className="text-xl sm:text-2xl font-bold tracking-tight">
               {loadingProjects ? "..." : ownedProjects.length}
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {activeProjectsCount} active · {completedProjectsCount} completed
+            <p className="mt-0.5 sm:mt-1 text-[10px] sm:text-xs text-muted-foreground truncate">
+              {activeProjectsCount} active · {completedProjectsCount} done
             </p>
-          </CardContent>
+          </div>
         </Card>
 
         {/* Assigned Tasks */}
-        <Card className="rounded-xl border border-border shadow-xs">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        <Card className="rounded-xl border border-border shadow-xs p-3 sm:p-4">
+          <div className="flex items-center justify-between gap-1 pb-1 sm:pb-2">
+            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">
               Assigned Tasks
-            </CardTitle>
-            <div className="flex size-8 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
-              <Briefcase className="size-4" />
+            </span>
+            <div className="flex size-6 sm:size-8 shrink-0 items-center justify-center rounded-md sm:rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
+              <Briefcase className="size-3 sm:size-4" />
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
+          </div>
+          <div>
+            <div className="text-xl sm:text-2xl font-bold tracking-tight">
               {loadingAssignedTasks ? "..." : totalAssignedTasks}
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Tasks assigned to user
+            <p className="mt-0.5 sm:mt-1 text-[10px] sm:text-xs text-muted-foreground truncate">
+              Tasks assigned
             </p>
-          </CardContent>
+          </div>
         </Card>
 
         {/* Tasks Created */}
-        <Card className="rounded-xl border border-border shadow-xs">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        <Card className="rounded-xl border border-border shadow-xs p-3 sm:p-4">
+          <div className="flex items-center justify-between gap-1 pb-1 sm:pb-2">
+            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">
               Created Tasks
-            </CardTitle>
-            <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-              <ListTodo className="size-4" />
+            </span>
+            <div className="flex size-6 sm:size-8 shrink-0 items-center justify-center rounded-md sm:rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+              <ListTodo className="size-3 sm:size-4" />
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
+          </div>
+          <div>
+            <div className="text-xl sm:text-2xl font-bold tracking-tight">
               {loadingCreatedTasks ? "..." : totalCreatedTasks}
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Authored by this user
+            <p className="mt-0.5 sm:mt-1 text-[10px] sm:text-xs text-muted-foreground truncate">
+              Authored by user
             </p>
-          </CardContent>
+          </div>
         </Card>
 
         {/* Last Login */}
-        <Card className="rounded-xl border border-border shadow-xs">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        <Card className="rounded-xl border border-border shadow-xs p-3 sm:p-4">
+          <div className="flex items-center justify-between gap-1 pb-1 sm:pb-2">
+            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">
               Last Login
-            </CardTitle>
-            <div className="flex size-8 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
-              <Clock className="size-4" />
+            </span>
+            <div className="flex size-6 sm:size-8 shrink-0 items-center justify-center rounded-md sm:rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
+              <Clock className="size-3 sm:size-4" />
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-sm font-semibold truncate">
+          </div>
+          <div>
+            <div className="text-xs sm:text-sm font-semibold truncate">
               {user.lastLoginAt ? formatDateTime(user.lastLoginAt) : "Never"}
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Member since {formatDate(user.createdAt)}
+            <p className="mt-0.5 sm:mt-1 text-[10px] sm:text-xs text-muted-foreground truncate">
+              Since {formatDate(user.createdAt)}
             </p>
-          </CardContent>
+          </div>
         </Card>
       </div>
 

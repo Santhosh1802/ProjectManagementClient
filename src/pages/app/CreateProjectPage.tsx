@@ -631,17 +631,19 @@ Remove member
 
                           autoComplete="off"
 
-                          maxLength={100}
+                          minLength={5}
+
+                          maxLength={50}
 
                           aria-invalid={fieldState.invalid}
                         />
                         <div className="flex items-center justify-between gap-4">
                           <FieldDescription>
-                            Choose a clear name your team will recognize.
+                            Choose a clear name between 5 and 50 characters.
                           </FieldDescription>
 
                           <span className="shrink-0 text-xs text-muted-foreground">
-                            {projectName?.length ?? 0}/100
+                            {projectName?.length ?? 0}/50
                           </span>
                         </div>
                         {fieldState.error && (
@@ -654,7 +656,7 @@ Remove member
 
  Description
 
-           ======================================== */}{" "}
+            ======================================== */}{" "}
                   <Controller
                     name="description"
 
@@ -675,21 +677,20 @@ Remove member
 
                           rows={5}
 
-                          maxLength={1000}
+                          minLength={10}
+
+                          maxLength={200}
 
                           aria-invalid={fieldState.invalid}
-                        />{" "}
+                        />
                         <div className="flex items-center justify-between gap-4">
-                          {" "}
                           <FieldDescription>
-                            Help your team understand the project's
-                            purpose.{" "}
-                          </FieldDescription>{" "}
+                            Provide a summary between 10 and 200 characters.
+                          </FieldDescription>
+
                           <span className="shrink-0 text-xs text-muted-foreground">
-                            {" "}
-                            {description?.length ?? 0}
-                            /1000{" "}
-                          </span>{" "}
+                            {description?.length ?? 0}/200
+                          </span>
                         </div>{" "}
                         {fieldState.error && (
                           <FieldError errors={[fieldState.error]} />
