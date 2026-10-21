@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import {
   ArrowLeft,
@@ -70,24 +70,9 @@ function getPaginationItems(
   return result
 }
 
-import { useAppDispatch, useAppSelector } from "@/hooks/redux-hooks"
-import type { RootState } from "@/app/store"
-import { getProjectById } from "@/features/projects/services/projects.services"
-import { setSelectedProject } from "@/features/projects/slice/projectSlice"
-import {
-  getTasksByProject,
-  deleteTask,
-  updateTaskStatus,
-} from "@/features/tasks/services/task.services"
-import {
-  setTasks,
-  setTaskLoading,
-  setTaskError,
-  setTaskPage,
-  setTaskPageSize,
-  removeTask,
-  updateTask,
-} from "@/features/tasks/slice/task.slice"
+import { useTasksByProjectQuery, useUpdateTaskStatusMutation, useDeleteTaskMutation } from "@/features/tasks/hooks/useTasksQuery"
+import { useProjectDetailQuery } from "@/features/projects/hooks/useProjectsQuery"
+import { getApiErrorMessage } from "@/lib/apiError"
 import PageSizeSelector from "@/components/common/PageSizeSelector"
 import type {
   Task,
@@ -109,16 +94,10 @@ type SortOrder = "asc" | "desc"
 
 export default function ProjectTasksPage() {
   const navigate = useNavigate()
-  const dispatch = useAppDispatch()
   const { projectId } = useParams<{ projectId: string }>()
 
-  const project = useAppSelector(
-    (state: RootState) => state.project.selectedProject
-  )
-
-  const { tasks, page, size, totalElements, totalPages, loading, error } =
-    useAppSelector((state: RootState) => state.task)
-
+  const [page, setPage] = useState(0)
+  const [size, setSize] = useState(10)
   const [view, setView] = useState<TaskView>("card")
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL")
@@ -126,73 +105,27 @@ export default function ProjectTasksPage() {
   const [sortBy, setSortBy] = useState<SortField>("createdAt")
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc")
 
-  // Load project details if not present or ID mismatch
-  useEffect(() => {
-    if (!projectId) return
+  // Load project details via React Query
+  const { data: project } = useProjectDetailQuery(projectId)
 
-    let cancelled = false
+  // Fetch project tasks with pagination via React Query
+  const {
+    data: tasksPageData,
+    isLoading: loading,
+    error: queryError,
+  } = useTasksByProjectQuery({
+    projectId: projectId || "",
+    page,
+    size,
+  })
 
-    async function loadProject() {
-      try {
-        const projectData = await getProjectById({ id: projectId || "" })
-        if (!cancelled) {
-          dispatch(setSelectedProject(projectData))
-        }
-      } catch {
-        // Handled silently
-      }
-    }
+  const updateStatusMutation = useUpdateTaskStatusMutation()
+  const deleteTaskMutation = useDeleteTaskMutation(projectId)
 
-    if (!project || project.id !== projectId) {
-      loadProject()
-    }
-
-    return () => {
-      cancelled = true
-    }
-  }, [projectId, project, dispatch])
-
-  // Fetch project tasks with pagination
-  useEffect(() => {
-    if (!projectId) return
-
-    let cancelled = false
-
-    async function fetchTasks() {
-      try {
-        dispatch(setTaskLoading(true))
-        dispatch(setTaskError(null))
-
-        const response = await getTasksByProject({
-          projectId: projectId || "",
-          page,
-          size: size || 10,
-        })
-
-        if (!cancelled) {
-          dispatch(setTasks(response))
-        }
-      } catch (err) {
-        if (!cancelled) {
-          dispatch(
-            setTaskError(
-              err instanceof Error ? err.message : "Unable to load project tasks."
-            )
-          )
-        }
-      } finally {
-        if (!cancelled) {
-          dispatch(setTaskLoading(false))
-        }
-      }
-    }
-
-    fetchTasks()
-
-    return () => {
-      cancelled = true
-    }
-  }, [projectId, page, size, dispatch])
+  const tasks = tasksPageData?.content ?? []
+  const totalElements = tasksPageData?.totalElements ?? 0
+  const totalPages = tasksPageData?.totalPages ?? 0
+  const error = queryError ? getApiErrorMessage(queryError, "Unable to load project tasks.") : null
 
   // Client-side filtering & sorting for the loaded tasks
   const filteredTasks = useMemo(() => {
@@ -242,18 +175,17 @@ export default function ProjectTasksPage() {
     if (!confirmed) return
 
     try {
-      await deleteTask({ id: task.id })
-      dispatch(removeTask(task.id))
+      await deleteTaskMutation.mutateAsync({ id: task.id })
       toast.add({
         type: "success",
         title: "Task deleted",
         description: `"${task.title}" was removed.`,
       })
-    } catch {
+    } catch (err) {
       toast.add({
         type: "error",
         title: "Delete failed",
-        description: "Failed to delete task.",
+        description: getApiErrorMessage(err, "Failed to delete task."),
       })
     }
   }
@@ -262,19 +194,11 @@ export default function ProjectTasksPage() {
     const previousTask = tasks.find((t) => t.id === taskId)
     if (!previousTask) return
 
-    const optimisticTask: Task = {
-      ...previousTask,
-      taskStatus: newStatus,
-      updatedAt: new Date().toISOString(),
-    }
-    dispatch(updateTask(optimisticTask))
-
     try {
-      const updated = await updateTaskStatus({
+      await updateStatusMutation.mutateAsync({
         id: taskId,
         status: newStatus,
       })
-      dispatch(updateTask(updated))
       if (newStatus === "DONE") {
         try {
           confetti({
@@ -292,18 +216,17 @@ export default function ProjectTasksPage() {
         description: `"${previousTask.title}" updated successfully.`,
       })
     } catch (err) {
-      dispatch(updateTask(previousTask))
       toast.add({
         type: "error",
         title: "Status update failed",
-        description: err instanceof Error ? err.message : "Failed to update status",
+        description: getApiErrorMessage(err, "Failed to update status"),
       })
     }
   }
 
   const handlePageChange = (nextPage: number) => {
     if (nextPage < 0 || nextPage >= totalPages) return
-    dispatch(setTaskPage(nextPage))
+    setPage(nextPage)
   }
 
   return (
@@ -625,10 +548,10 @@ export default function ProjectTasksPage() {
                   {totalElements.toLocaleString("en-IN")} tasks
                 </p>
                 <PageSizeSelector
-                  value={size || 10}
+                  value={size}
                   onChange={(newSize) => {
-                    dispatch(setTaskPageSize(newSize))
-                    dispatch(setTaskPage(0))
+                    setSize(newSize)
+                    setPage(0)
                   }}
                   options={[10, 20, 50, 100]}
                 />

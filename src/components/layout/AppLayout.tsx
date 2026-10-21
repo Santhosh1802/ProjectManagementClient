@@ -16,6 +16,8 @@ import AppHeader from "../common/AppHeader";
 import KeyboardShortcutsProvider from "../common/KeyboardShortcutsProvider";
 import type { RootState } from "@/app/store";
 
+import AppLoader from "@/components/common/AppLoader";
+
 export default function AppLayout() {
   const location = useLocation();
 
@@ -27,7 +29,7 @@ export default function AppLayout() {
   );
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <AppLoader message="Verifying session..." fullScreen />;
   }
 
   if (!isAuthenticated) {
