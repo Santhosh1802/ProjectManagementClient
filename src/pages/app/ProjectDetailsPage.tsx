@@ -48,6 +48,8 @@ import type { Task } from "@/features/tasks/types/task.types"
 
 import { useAppDispatch, useAppSelector } from "@/hooks/redux-hooks"
 import EditProjectModal from "@/features/projects/components/EditProjectModel"
+import TransferOwnershipDialog from "@/features/projects/components/TransferOwnershipDialog"
+import DeleteProjectDialog from "@/features/projects/components/DeleteProjectDialog"
 import TaskCard from "@/features/tasks/components/TaskCard"
 
 import { getProjectPermissions } from "@/features/projects/utils/projectPermission"
@@ -448,6 +450,18 @@ export default function ProjectDetailsPage() {
             <span>{isDetailsRefreshing ? "Refreshing..." : "Refresh"}</span>
           </Button>
 
+          {permissions?.canChangeOwner && (
+            <TransferOwnershipDialog
+              project={project}
+              members={members}
+              onTransferred={(updatedProject) => {
+                dispatch(setSelectedProject(updatedProject))
+                void refetchProject()
+                void refetchMembers()
+              }}
+            />
+          )}
+
           {permissions?.canEditProject && (
             <Button onClick={() => setEditProjectOpen(true)}>
               <Pencil className="size-4" />
@@ -823,6 +837,25 @@ export default function ProjectDetailsPage() {
           </div>
         </div>
       </div>
+      {/* ======================================================
+          DANGER ZONE
+          ====================================================== */}
+
+      {permissions?.canDeleteProject && (
+        <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="font-semibold text-destructive">Danger Zone</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Permanently delete this project and all associated tasks and memberships.
+              </p>
+            </div>
+
+            <DeleteProjectDialog project={project} />
+          </div>
+        </div>
+      )}
+
       {permissions?.canEditProject && (
         <EditProjectModal
           key={`${project.id}-${editProjectOpen}`}

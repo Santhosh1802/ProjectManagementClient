@@ -62,6 +62,16 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { toast } from "@/components/ui/toast"
+import {
   Pagination,
   PaginationContent,
   PaginationEllipsis,
@@ -196,6 +206,7 @@ export default function ProjectMembersPage() {
 
   const [actionLoading, setActionLoading] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
+  const [memberToDelete, setMemberToDelete] = useState<ProjectMember | null>(null)
 
   /*
    * ------------------------------------------------------------
@@ -409,10 +420,19 @@ export default function ProjectMembersPage() {
       })
 
       dispatch(updateProjectMember(updatedMember))
+      toast.add({
+        type: "success",
+        title: "Role updated",
+        description: `Member role changed to ${formatRole(role)}.`,
+      })
     } catch (error) {
-      setActionError(
-        error instanceof Error ? error.message : "Unable to update member role."
-      )
+      const msg = error instanceof Error ? error.message : "Unable to update member role."
+      setActionError(msg)
+      toast.add({
+        type: "error",
+        title: "Failed to update role",
+        description: msg,
+      })
     } finally {
       setActionLoading(false)
     }
@@ -424,11 +444,12 @@ export default function ProjectMembersPage() {
    * ------------------------------------------------------------
    */
 
-  async function handleRemoveMember(member: ProjectMember) {
-    if (!permissions.canManageMembers) return
+  async function handleConfirmRemoveMember() {
+    if (!permissions.canManageMembers || !memberToDelete) return
 
-    if (member.user?.id === project?.owner?.id) {
+    if (memberToDelete.user?.id === project?.owner?.id) {
       setActionError("The project owner cannot be removed.")
+      setMemberToDelete(null)
       return
     }
 
@@ -437,18 +458,30 @@ export default function ProjectMembersPage() {
       setActionError(null)
 
       await deleteProjectMember({
-        id: member.id,
+        id: memberToDelete.id,
       })
 
-      dispatch(removeProjectMember(member.id))
+      dispatch(removeProjectMember(memberToDelete.id))
 
       if (members.length === 1 && page > 0) {
         dispatch(setProjectMemberPage(page - 1))
       }
+
+      const name = getUserName(memberToDelete)
+      toast.add({
+        type: "success",
+        title: "Member removed",
+        description: `${name || "Member"} was removed from the project.`,
+      })
+      setMemberToDelete(null)
     } catch (error) {
-      setActionError(
-        error instanceof Error ? error.message : "Unable to remove member."
-      )
+      const msg = error instanceof Error ? error.message : "Unable to remove member."
+      setActionError(msg)
+      toast.add({
+        type: "error",
+        title: "Removal failed",
+        description: msg,
+      })
     } finally {
       setActionLoading(false)
     }
@@ -475,6 +508,13 @@ export default function ProjectMembersPage() {
 
       dispatch(addProjectMember(createdMember))
 
+      const userName = getUserNameFromUser(selectedUser)
+      toast.add({
+        type: "success",
+        title: "Member added",
+        description: `${userName} has been added as a ${formatRole(selectedRole)}.`,
+      })
+
       setSelectedUser(null)
       setSelectedRole("MEMBER")
       setMemberSearch("")
@@ -494,9 +534,13 @@ export default function ProjectMembersPage() {
 
       dispatch(setProjectMembers(response))
     } catch (error) {
-      setActionError(
-        error instanceof Error ? error.message : "Unable to add project member."
-      )
+      const msg = error instanceof Error ? error.message : "Unable to add project member."
+      setActionError(msg)
+      toast.add({
+        type: "error",
+        title: "Failed to add member",
+        description: msg,
+      })
     } finally {
       setActionLoading(false)
     }
@@ -786,7 +830,7 @@ export default function ProjectMembersPage() {
 
                               <DropdownMenuItem
                                 variant="destructive"
-                                onClick={() => handleRemoveMember(member)}
+                                onClick={() => setMemberToDelete(member)}
                               >
                                 <Trash2 className="size-4" />
                                 Remove member
@@ -1046,6 +1090,46 @@ export default function ProjectMembersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Remove Member Confirmation Dialog */}
+      <AlertDialog
+        open={Boolean(memberToDelete)}
+        onOpenChange={(open) => {
+          if (!open && !actionLoading) {
+            setMemberToDelete(null)
+          }
+        }}
+      >
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-2 text-destructive">
+              <Trash2 className="size-5 shrink-0" />
+              <AlertDialogTitle>Remove Project Member</AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="text-left pt-1.5 text-sm">
+              Are you sure you want to remove{" "}
+              <span className="font-semibold text-foreground">
+                {memberToDelete ? getUserName(memberToDelete) : "this member"}
+              </span>{" "}
+              from the project? They will immediately lose access to all tasks and project resources.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-3 pt-3 border-t">
+            <AlertDialogCancel disabled={actionLoading}>
+              Cancel
+            </AlertDialogCancel>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmRemoveMember}
+              disabled={actionLoading}
+              className="gap-2"
+            >
+              {actionLoading && <Loader2 className="size-4 animate-spin" />}
+              {actionLoading ? "Removing..." : "Remove Member"}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </PageContainer>
   )
 }
