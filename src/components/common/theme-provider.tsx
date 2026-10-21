@@ -59,9 +59,12 @@ export function ThemeProvider({
   const theme = useAppSelector(
     (state) => state.theme.theme
   );
+  const colorTheme = useAppSelector(
+    (state) => state.theme.colorTheme || "indigo"
+  );
 
   const applyTheme = React.useCallback(
-    (currentTheme: Theme) => {
+    (currentTheme: Theme, currentColorTheme: string) => {
       const root = document.documentElement;
 
       const resolvedTheme =
@@ -74,6 +77,7 @@ export function ThemeProvider({
 
       root.classList.remove("light", "dark");
       root.classList.add(resolvedTheme);
+      root.setAttribute("data-theme", currentColorTheme);
 
       restoreTransitions();
     },
@@ -81,7 +85,7 @@ export function ThemeProvider({
   );
 
   React.useEffect(() => {
-    applyTheme(theme);
+    applyTheme(theme, colorTheme);
 
     if (theme !== "system") {
       return;
@@ -92,7 +96,7 @@ export function ThemeProvider({
     );
 
     const handleChange = () => {
-      applyTheme("system");
+      applyTheme("system", colorTheme);
     };
 
     mediaQuery.addEventListener(
