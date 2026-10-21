@@ -11,7 +11,11 @@ interface RoleGuardProps {
 export default function RoleGuard({
   allowedRoles,
 }: RoleGuardProps) {
-  const user = useAppSelector((state) => state.auth.user)
+  const { user, isLoading } = useAppSelector((state) => state.auth)
+
+  if (isLoading) {
+    return null
+  }
 
   const role = user?.user_role?.toUpperCase()
 

@@ -1,5 +1,6 @@
 import api from "@/config/api";
 import type { LoginForm, RegistrationForm } from "../types/auth.types";
+import type { ApiResponse, User } from "@/features/users/types/user.types";
 
 export async function registerUser(request:RegistrationForm) {
     const response = await api.post("/auth/register", request)
@@ -12,9 +13,8 @@ export async function LoginUser(request:LoginForm) {
 }
 
 export async function isLoggedIn() {
-    const response = await api.get("/auth/me");
+    const response = await api.get<ApiResponse<User>>("/auth/me");
     return response;
-    
 }
 
 export async function LogoutUser() {
