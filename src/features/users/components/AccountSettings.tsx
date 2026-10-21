@@ -38,6 +38,7 @@ import { updateUser, updateUserPassword } from "../services/users.service"
 import { useAppDispatch, useAppSelector } from "@/hooks/redux-hooks"
 import { setUser } from "../slice/user.slice"
 import { setAuthUser } from "@/features/auth/slice/authSlice"
+import { toast } from "@/components/ui/toast"
 
 /* -------------------------------------------------- */
 /* Password Validation Schema */
@@ -132,8 +133,18 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
         )
       }
       resetProfile(data)
+      toast.add({
+        type: "success",
+        title: "Profile saved",
+        description: "Your personal information was updated successfully.",
+      })
     } catch (error) {
-      console.error("Failed to update profile:", error)
+      const msg = error instanceof Error ? error.message : "Failed to update profile."
+      toast.add({
+        type: "error",
+        title: "Update failed",
+        description: msg,
+      })
     }
   }
 
@@ -177,10 +188,20 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
       })
       resetPassword()
       setPasswordSuccessMessage("Password updated successfully.")
+      toast.add({
+        type: "success",
+        title: "Password changed",
+        description: "Your password has been changed successfully.",
+      })
       setTimeout(() => setPasswordSuccessMessage(null), 4000)
     } catch (error) {
-      console.error("Failed to update password:", error)
-      setPasswordErrorMessage("Failed to update password. Please check your current password.")
+      const msg = error instanceof Error ? error.message : "Failed to update password. Please check your current password."
+      setPasswordErrorMessage(msg)
+      toast.add({
+        type: "error",
+        title: "Password change failed",
+        description: msg,
+      })
     }
   }
 

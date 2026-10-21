@@ -1,8 +1,9 @@
 import { AlertTriangle, Loader2, Trash2 } from "lucide-react"
+import { useNavigate } from "react-router-dom"
+import { useState } from "react"
 
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -22,27 +23,57 @@ import {
 } from "@/components/ui/card"
 
 import { Button } from "@/components/ui/button"
+import { toast } from "@/components/ui/toast"
+import { deleteUser } from "@/features/users/services/users.service"
+import { LogoutUser } from "@/features/auth/services/auth.service"
+import { logout } from "@/features/auth/slice/authSlice"
+import { useAppDispatch, useAppSelector } from "@/hooks/redux-hooks"
 
-import { useState } from "react"
+interface DangerZoneProps {
+  userId?: string
+}
 
-export default function DangerZone() {
+export default function DangerZone({ userId }: DangerZoneProps) {
   const [isDeleting, setIsDeleting] = useState(false)
+  const [open, setOpen] = useState(false)
+  const navigate = useNavigate()
+  const dispatch = useAppDispatch()
+  const currentAuthUser = useAppSelector((state) => state.auth.user)
+  const targetUserId = userId || currentAuthUser?.id
 
   async function handleDeleteAccount() {
+    if (!targetUserId) return
+
     try {
       setIsDeleting(true)
+      await deleteUser({ id: targetUserId })
 
-      /*
-       * TODO:
-       *
-       * await deleteUser({
-       *   id: userId,
-       * });
-       */
+      toast.add({
+        type: "success",
+        title: "Account deleted",
+        description: "Your account and data have been removed.",
+      })
 
-      console.log("Deleting user...")
+      // If user is deleting their own account, log out and redirect to login
+      if (currentAuthUser?.id === targetUserId) {
+        try {
+          await LogoutUser()
+        } catch {
+          // ignore network failure on logout
+        }
+        dispatch(logout())
+        navigate("/login", { replace: true })
+      }
+      setOpen(false)
     } catch (error) {
-      console.error("Failed to delete account:", error)
+      toast.add({
+        type: "error",
+        title: "Deletion failed",
+        description:
+          error instanceof Error
+            ? error.message
+            : "An unexpected error occurred while deleting your account.",
+      })
     } finally {
       setIsDeleting(false)
     }
@@ -97,12 +128,12 @@ export default function DangerZone() {
           {/* Confirmation Dialog */}
           {/* ------------------------------------- */}
 
-          <AlertDialog>
+          <AlertDialog open={open} onOpenChange={setOpen}>
             <AlertDialogTrigger
               render={
                 <Button
                   variant="destructive"
-                  className="shrink-0 sm:self-center"
+                  className="shrink-0 sm:self-center gap-2"
                 />
               }
             >
@@ -110,26 +141,30 @@ export default function DangerZone() {
               Delete Account
             </AlertDialogTrigger>
 
-            <AlertDialogContent>
+            <AlertDialogContent className="sm:max-w-md">
               <AlertDialogHeader>
-                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <div className="flex items-center gap-2 text-destructive">
+                  <AlertTriangle className="size-5 shrink-0" />
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                </div>
 
-                <AlertDialogDescription>
+                <AlertDialogDescription className="text-left pt-1.5 text-sm">
                   This action cannot be undone. This will permanently delete
                   your account and remove your associated workspace data from
                   our systems.
                 </AlertDialogDescription>
               </AlertDialogHeader>
 
-              <AlertDialogFooter>
+              <AlertDialogFooter className="gap-3 pt-3 border-t">
                 <AlertDialogCancel disabled={isDeleting}>
                   Cancel
                 </AlertDialogCancel>
 
-                <AlertDialogAction
+                <Button
+                  variant="destructive"
                   disabled={isDeleting}
                   onClick={handleDeleteAccount}
-                  className=" bg-destructive hover:bg-destructive/90"
+                  className="gap-2"
                 >
                   {isDeleting ? (
                     <>
@@ -142,7 +177,7 @@ export default function DangerZone() {
                       Yes, Delete Account
                     </>
                   )}
-                </AlertDialogAction>
+                </Button>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>

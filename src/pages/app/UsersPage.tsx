@@ -5,7 +5,6 @@ import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -40,7 +39,7 @@ import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, Pagi
 import PageContainer from "@/components/common/PageContainer"
 import PageHeader from "@/components/common/PageHeader"
 import ErrorState from "@/components/common/ErrorState"
-import { Plus } from "lucide-react"
+import { Loader2, Plus, Trash2 } from "lucide-react"
 
 const PAGE_SIZE = 10
 
@@ -349,13 +348,18 @@ export default function UsersPage() {
         open={Boolean(pendingDelete)}
         onOpenChange={(open) => !open && !deleting && setPendingDelete(null)}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className="sm:max-w-md">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this user?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete {pendingDelete?.firstName}{" "}
-              {pendingDelete?.lastName} and remove their account from the
-              workspace. This action cannot be undone.
+            <div className="flex items-center gap-2 text-destructive">
+              <Trash2 className="size-5 shrink-0" />
+              <AlertDialogTitle>Delete User</AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="text-left pt-1.5 text-sm">
+              This will permanently delete{" "}
+              <span className="font-semibold text-foreground">
+                {pendingDelete?.firstName} {pendingDelete?.lastName}
+              </span>{" "}
+              and remove their account from the workspace. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           {actionError && (
@@ -363,17 +367,20 @@ export default function UsersPage() {
               {actionError}
             </p>
           )}
-          <AlertDialogFooter>
+          <AlertDialogFooter className="gap-3 pt-3 border-t">
             <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
+            <Button
+              variant="destructive"
               onClick={(event) => {
                 event.preventDefault()
                 void handleDelete()
               }}
               disabled={deleting}
+              className="gap-2"
             >
-              {deleting ? "Deleting…" : "Delete user"}
-            </AlertDialogAction>
+              {deleting && <Loader2 className="size-4 animate-spin" />}
+              {deleting ? "Deleting…" : "Delete User"}
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
