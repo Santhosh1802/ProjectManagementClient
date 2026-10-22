@@ -48,6 +48,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { toast } from "@/components/ui/toast"
 import { getApiErrorMessage } from "@/lib/apiError"
+import { TaskCommentsSection } from "@/features/comments/components/TaskCommentsSection"
 
 import {
   deleteTask,
@@ -600,6 +601,13 @@ export default function TaskDetailsPage() {
                   </div>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Comments Section */}
+          <Card>
+            <CardContent className="pt-6">
+              <TaskCommentsSection taskId={task.id} />
             </CardContent>
           </Card>
 

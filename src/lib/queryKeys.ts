@@ -27,3 +27,8 @@ export const userKeys = {
   details: () => [...userKeys.all, "detail"] as const,
   detail: (id: string | number) => [...userKeys.details(), id] as const,
 }
+
+export const commentKeys = {
+  all: ["comments"] as const,
+  byTask: (taskId: string | number) => [...commentKeys.all, "by-task", String(taskId)] as const,
+}
