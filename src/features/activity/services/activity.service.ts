@@ -1,5 +1,5 @@
-import api from '@/lib/api';
-import type { ActivityLog } from '../types/activity.types';
+import api from "@/config/api"
+import type { ActivityLog } from "../types/activity.types"
 
 export const activityService = {
   getTaskActivity: async (taskId: string): Promise<ActivityLog[]> => {
