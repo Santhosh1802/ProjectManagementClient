@@ -49,6 +49,7 @@ import {
 import { toast } from "@/components/ui/toast"
 import { getApiErrorMessage } from "@/lib/apiError"
 import { TaskCommentsSection } from "@/features/comments/components/TaskCommentsSection"
+import { TaskActivityTimeline } from "@/features/activity/components/TaskActivityTimeline"
 
 import {
   deleteTask,
@@ -610,6 +611,9 @@ export default function TaskDetailsPage() {
               <TaskCommentsSection taskId={task.id} />
             </CardContent>
           </Card>
+
+          {/* Activity History Timeline */}
+          <TaskActivityTimeline taskId={task.id} />
 
           {/* Project */}
           <Card>

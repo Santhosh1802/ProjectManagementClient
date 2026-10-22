@@ -32,3 +32,10 @@ export const commentKeys = {
   all: ["comments"] as const,
   byTask: (taskId: string | number) => [...commentKeys.all, "by-task", String(taskId)] as const,
 }
+
+export const activityKeys = {
+  all: ["activity"] as const,
+  byTask: (taskId: string | number) => [...activityKeys.all, "task", String(taskId)] as const,
+  byProject: (projectId: string | number) => [...activityKeys.all, "project", String(projectId)] as const,
+}
+
