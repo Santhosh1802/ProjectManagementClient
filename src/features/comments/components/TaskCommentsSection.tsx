@@ -64,13 +64,19 @@ export const TaskCommentsSection: React.FC<TaskCommentsSectionProps> = ({
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
         <input type="hidden" {...register("taskId")} value={taskId} />
         <div>
+          <label htmlFor="task-comment-input" className="sr-only">
+            Add a comment
+          </label>
           <textarea
+            id="task-comment-input"
+            aria-label="Add a comment"
             {...register("content")}
             placeholder="Write a comment..."
             rows={3}
             className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50"
             disabled={isSubmitting || createMutation.isPending}
           />
+
           {errors.content && (
             <p className="mt-1 text-xs text-destructive">
               {errors.content.message}
