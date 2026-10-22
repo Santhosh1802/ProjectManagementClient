@@ -20,7 +20,7 @@ import type {
   UpdateTaskDetailsRequest,
   UpdateTaskStatusRequest,
 } from "../types/task.types"
-import { taskKeys, projectKeys } from "@/lib/queryKeys"
+import { taskKeys, projectKeys, activityKeys } from "@/lib/queryKeys"
 
 export function useTasksQuery(request: GetTasksRequest = {}, options?: { enabled?: boolean }) {
   return useQuery({
@@ -83,11 +83,14 @@ export function useUpdateTaskStatusMutation() {
       void queryClient.invalidateQueries({ queryKey: taskKeys.all })
       if (data?.id) {
         void queryClient.invalidateQueries({ queryKey: taskKeys.detail(data.id) })
+        void queryClient.invalidateQueries({ queryKey: activityKeys.byTask(data.id) })
       }
       if (data?.project?.id) {
         void queryClient.invalidateQueries({ queryKey: projectKeys.detail(data.project.id) })
+        void queryClient.invalidateQueries({ queryKey: activityKeys.byProject(data.project.id) })
       }
     },
+
   })
 }
 
