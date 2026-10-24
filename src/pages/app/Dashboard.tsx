@@ -211,7 +211,11 @@ export default function Dashboard() {
                 onValueChange={(val) => val && setSelectedProjectId(val)}
               >
                 <SelectTrigger size="sm" className="w-full h-8 text-xs">
-                  <SelectValue placeholder="All Projects" />
+                  <SelectValue placeholder="All Projects">
+                    {selectedProjectId === "ALL"
+                      ? "All Accessible Projects"
+                      : (availableProjects.find((p) => p.id === selectedProjectId)?.name || selectedProjectId)}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ALL">All Accessible Projects</SelectItem>
