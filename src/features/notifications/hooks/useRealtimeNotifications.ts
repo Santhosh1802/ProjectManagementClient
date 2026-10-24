@@ -3,7 +3,7 @@ import { Client } from "@stomp/stompjs"
 import SockJS from "sockjs-client"
 import { useQueryClient } from "@tanstack/react-query"
 import { getWebSocketUrl } from "@/config/config"
-import { notificationKeys, taskKeys, projectKeys, activityKeys } from "@/lib/queryKeys"
+import { notificationKeys, taskKeys, projectKeys, activityKeys, analyticsKeys } from "@/lib/queryKeys"
 import type { NotificationItem } from "../types/notification.types"
 
 interface UseRealtimeNotificationsOptions {
@@ -51,7 +51,8 @@ export function useRealtimeNotifications({ isAuthenticated }: UseRealtimeNotific
             // Invalidate notification queries to refresh bell badge & panel
             void queryClient.invalidateQueries({ queryKey: notificationKeys.all })
 
-            // Invalidate related resource queries
+            // Invalidate related resource and analytics queries
+            void queryClient.invalidateQueries({ queryKey: analyticsKeys.all })
             if (notification.taskId) {
               void queryClient.invalidateQueries({ queryKey: taskKeys.detail(notification.taskId) })
               void queryClient.invalidateQueries({ queryKey: activityKeys.byTask(notification.taskId) })

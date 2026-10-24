@@ -46,4 +46,12 @@ export const notificationKeys = {
   unreadCount: () => [...notificationKeys.all, "unread-count"] as const,
 }
 
+export const analyticsKeys = {
+  all: ["analytics"] as const,
+  overview: () => [...analyticsKeys.all, "overview"] as const,
+  project: (projectId?: string | null) => [...analyticsKeys.all, "project", projectId] as const,
+  workload: (projectId?: string | null) => [...analyticsKeys.all, "workload", projectId] as const,
+}
+
+
 
