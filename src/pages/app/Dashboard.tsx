@@ -445,7 +445,19 @@ export default function Dashboard() {
                 onValueChange={(val) => val && setPriorityFilter(val)}
               >
                 <SelectTrigger size="sm" className="h-7 text-[11px]">
-                  <SelectValue placeholder="All" />
+                  <SelectValue placeholder="All">
+                    {priorityFilter === "ALL"
+                      ? "All Priorities"
+                      : priorityFilter === "URGENT"
+                      ? "Urgent"
+                      : priorityFilter === "HIGH"
+                      ? "High"
+                      : priorityFilter === "MEDIUM"
+                      ? "Medium"
+                      : priorityFilter === "LOW"
+                      ? "Low"
+                      : priorityFilter}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ALL">All Priorities</SelectItem>

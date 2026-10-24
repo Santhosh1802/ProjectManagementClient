@@ -169,7 +169,11 @@ export default function TransferOwnershipDialog({
                 onValueChange={(val) => setSelectedOwnerId(val ?? "")}
               >
                 <SelectTrigger id="new-owner-select" className="w-full h-10 px-3">
-                  <SelectValue placeholder="Choose a member from this project..." />
+                  <SelectValue placeholder="Choose a member from this project...">
+                    {selectedMember
+                      ? `${selectedMember.user.firstName} ${selectedMember.user.lastName || ""} (${selectedMember.projectRole})`.trim()
+                      : undefined}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="max-h-56">
                   {eligibleMembers.map((member) => (
