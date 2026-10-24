@@ -155,26 +155,30 @@ export default function Dashboard() {
     ? (projectAnalyticsData?.completionPercentage ?? 0)
     : (overviewData?.completionPercentage ?? 0)
 
-  /* Task Status Chart Data */
-  const taskStatusChartData = useMemo(() => {
-    const statusMap = isProjectScoped
+  /* Task Status Map & Chart Data */
+  const statusMap = useMemo(() => {
+    return isProjectScoped
       ? (projectAnalyticsData?.tasksByStatus ?? {})
       : (overviewData?.tasksByStatus ?? {})
+  }, [isProjectScoped, projectAnalyticsData?.tasksByStatus, overviewData?.tasksByStatus])
 
+  const taskStatusChartData = useMemo(() => {
     return [
       { status: "DONE", count: statusMap["DONE"] || 0, fill: "var(--color-chart-2)" },
       { status: "IN_PROGRESS", count: statusMap["IN_PROGRESS"] || 0, fill: "var(--color-chart-1)" },
       { status: "TODO", count: statusMap["TODO"] || 0, fill: "var(--color-chart-4)" },
       { status: "CANCELLED", count: statusMap["CANCELLED"] || 0, fill: "var(--color-chart-5)" },
     ].filter((d) => d.count > 0)
-  }, [isProjectScoped, projectAnalyticsData?.tasksByStatus, overviewData?.tasksByStatus])
+  }, [statusMap])
 
-  /* Priority Distribution Chart Data */
-  const priorityChartData = useMemo(() => {
-    const priorityMap = isProjectScoped
+  /* Priority Map & Distribution Chart Data */
+  const priorityMap = useMemo(() => {
+    return isProjectScoped
       ? (projectAnalyticsData?.tasksByPriority ?? {})
       : (overviewData?.tasksByPriority ?? {})
+  }, [isProjectScoped, projectAnalyticsData?.tasksByPriority, overviewData?.tasksByPriority])
 
+  const priorityChartData = useMemo(() => {
     const list = [
       { priority: "URGENT", count: priorityMap["URGENT"] || 0 },
       { priority: "HIGH", count: priorityMap["HIGH"] || 0 },
@@ -185,7 +189,7 @@ export default function Dashboard() {
       return list.filter((p) => p.priority === priorityFilter)
     }
     return list
-  }, [isProjectScoped, projectAnalyticsData?.tasksByPriority, overviewData?.tasksByPriority, priorityFilter])
+  }, [priorityMap, priorityFilter])
 
   const projectProgressList = overviewData?.projectProgress ?? []
   const overdueTasksList = overviewData?.overdueTasksList ?? []
