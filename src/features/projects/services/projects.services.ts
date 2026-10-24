@@ -71,7 +71,8 @@ export async function searchProjects(
   if (scope === "ALL") {
     const page = request.page ?? 0
     const size = request.size ?? 10
-    const fetchLimit = Math.max(100, (page + 1) * size * 2)
+    // Backend imposes @Max(100) on size parameter
+    const fetchLimit = Math.min(100, Math.max(size, (page + 1) * size * 2))
 
     const [ownedRes, sharedRes] = await Promise.all([
       api.get<ApiResponse<PageResponse<Project>>>("/projects", {
