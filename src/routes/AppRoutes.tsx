@@ -33,6 +33,7 @@ const CreateTaskPage = lazy(() => import("@/pages/app/CreateTaskPage"))
 const TaskDetailsPage = lazy(() => import("@/pages/app/TaskDetailsPage"))
 
 const Settings = lazy(() => import("@/pages/app/Settings"))
+const NotificationsPage = lazy(() => import("@/pages/app/NotificationsPage"))
 const AppNotFoundPage = lazy(() => import("@/pages/app/AppNotFoundPage"))
 
 export default function AppRoutes() {
@@ -75,8 +76,12 @@ export default function AppRoutes() {
             <Route path="users/create" element={<CreateUserPage />} />
             <Route path="users/:userId" element={<UserDetailsPage />} />
           </Route>
+          <Route path="notifications" element={<NotificationsPage />} />
           <Route path="settings" element={<Settings />} />
           <Route path="*" element={<AppNotFoundPage />} />
+        </Route>
+        <Route path="/notifications" element={<AppLayout />}>
+          <Route index element={<NotificationsPage />} />
         </Route>
       </Routes>
     </Suspense>

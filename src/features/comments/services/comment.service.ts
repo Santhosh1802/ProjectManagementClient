@@ -22,3 +22,15 @@ export async function createComment(
   const response = await api.post<{ data: TaskComment }>("/comments", request)
   return response.data.data
 }
+
+export async function updateComment(
+  commentId: string,
+  request: { content: string }
+): Promise<TaskComment> {
+  const response = await api.put<{ data: TaskComment }>(`/comments/${commentId}`, request)
+  return response.data.data
+}
+
+export async function deleteComment(commentId: string): Promise<void> {
+  await api.delete(`/comments/${commentId}`)
+}

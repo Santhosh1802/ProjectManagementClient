@@ -2,6 +2,7 @@ import { z } from "zod"
 
 export const createCommentSchema = z.object({
   taskId: z.string().uuid("Invalid task ID"),
+  parentCommentId: z.string().uuid("Invalid parent comment ID").optional().nullable(),
   content: z
     .string()
     .trim()

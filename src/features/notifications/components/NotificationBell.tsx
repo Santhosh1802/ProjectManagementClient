@@ -34,7 +34,7 @@ export const NotificationBell: React.FC = () => {
   const [open, setOpen] = useState(false)
 
   const { data: unreadCount = 0 } = useUnreadNotificationsCountQuery()
-  const { data: notificationsPage, isLoading, isError, refetch } = useNotificationsQuery(0, 15)
+  const { data: notificationsPage, isLoading, isError, refetch } = useNotificationsQuery(false, 0, 15)
   const markAsReadMutation = useMarkNotificationAsReadMutation()
   const markAllAsReadMutation = useMarkAllNotificationsAsReadMutation()
 
@@ -184,6 +184,20 @@ export const NotificationBell: React.FC = () => {
               </div>
             ))
           )}
+        </div>
+
+        <div className="p-2 border-t border-border/70 bg-muted/20 text-center">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full text-xs text-primary font-medium hover:underline h-8"
+            onClick={() => {
+              setOpen(false)
+              navigate("/app/notifications")
+            }}
+          >
+            View all notifications
+          </Button>
         </div>
       </DropdownMenuContent>
     </DropdownMenu>

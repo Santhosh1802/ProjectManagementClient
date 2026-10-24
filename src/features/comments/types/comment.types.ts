@@ -8,14 +8,22 @@ export interface CommentAuthor {
 export interface TaskComment {
   id: string
   taskId: string
+  parentCommentId?: string | null
   content: string
   author: CommentAuthor
+  isDeleted?: boolean
+  replies?: TaskComment[] | null
   createdAt: string
   updatedAt: string
 }
 
 export interface CreateCommentRequest {
   taskId: string
+  parentCommentId?: string | null
+  content: string
+}
+
+export interface UpdateCommentRequest {
   content: string
 }
 

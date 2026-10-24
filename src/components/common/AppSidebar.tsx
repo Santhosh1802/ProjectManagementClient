@@ -1,4 +1,5 @@
 import {
+  Bell,
   Check,
   CheckSquare,
   ChevronUp,
@@ -99,6 +100,12 @@ const dashboardNavigation: NavigationItem[] = [
     url: "/app/tasks",
     icon: CheckSquare,
     shortcut: ["G", "T"],
+  },
+  {
+    title: "Notifications",
+    url: "/app/notifications",
+    icon: Bell,
+    shortcut: ["G", "N"],
   },
 ]
 
