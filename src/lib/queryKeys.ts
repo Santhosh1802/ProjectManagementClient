@@ -39,3 +39,11 @@ export const activityKeys = {
   byProject: (projectId: string | number) => [...activityKeys.all, "project", String(projectId)] as const,
 }
 
+export const notificationKeys = {
+  all: ["notifications"] as const,
+  lists: () => [...notificationKeys.all, "list"] as const,
+  list: (page = 0, size = 20) => [...notificationKeys.lists(), { page, size }] as const,
+  unreadCount: () => [...notificationKeys.all, "unread-count"] as const,
+}
+
+

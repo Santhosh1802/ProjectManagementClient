@@ -74,10 +74,11 @@ describe("handleRealtimeDomainEvent", () => {
 
     const unknownEnvelope = {
       eventId: "e-99",
-      eventType: "UNKNOWN_FUTURE_EVENT" as unknown as import("./realtimeBoundary").DomainEventType,
+      eventType: "UNKNOWN_FUTURE_EVENT" as unknown as import("./realtimeBoundary").RealtimeEventType,
       occurredAt: new Date().toISOString(),
       payload: {},
     }
+
 
 
     expect(() => handleRealtimeDomainEvent(unknownEnvelope, mockQueryClient)).not.toThrow()

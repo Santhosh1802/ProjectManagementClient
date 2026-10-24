@@ -17,6 +17,8 @@ import { useAppSelector } from "@/hooks/redux-hooks";
 import AppBreadcrumb from "./AppBreadcrumb";
 import ShortcutHint from "./ShortcutHint";
 import ThemeColorSelector from "./ThemeColorSelector";
+import { NotificationBell } from "@/features/notifications/components/NotificationBell";
+
 
 const searchShortcut = getShortcut("global.search");
 const helpShortcut = getShortcut("global.shortcuts");
@@ -123,8 +125,12 @@ export default function AppHeader() {
             <Keyboard className="size-4" />
           </Button>
 
+          {/* Notification Bell */}
+          <NotificationBell />
+
           {/* Theme & Color Selector */}
           <ThemeColorSelector />
+
 
           {/* User Avatar with subtle theme border */}
           <Avatar className="size-8 ring-1 ring-primary/25 transition-all hover:ring-primary/60">

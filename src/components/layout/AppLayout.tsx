@@ -15,9 +15,10 @@ import AppSidebar from "../common/AppSidebar";
 import AppHeader from "../common/AppHeader";
 import KeyboardShortcutsProvider from "../common/KeyboardShortcutsProvider";
 import MobileQuickActionFAB from "../common/MobileQuickActionFAB";
-import type { RootState } from "@/app/store";
-
 import AppLoader from "@/components/common/AppLoader";
+import type { RootState } from "@/app/store";
+import { useRealtimeNotifications } from "@/features/notifications/hooks/useRealtimeNotifications";
+
 
 export default function AppLayout() {
   const location = useLocation();
@@ -28,6 +29,9 @@ export default function AppLayout() {
   } = useAppSelector(
     (state:RootState) => state.auth
   );
+
+  useRealtimeNotifications({ isAuthenticated });
+
 
   if (isLoading) {
     return <AppLoader message="Verifying session..." fullScreen />;
