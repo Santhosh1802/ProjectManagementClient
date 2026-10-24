@@ -76,7 +76,11 @@ export default function TaskStatusSelect({
               aria-invalid={fieldState.invalid}
               className="w-full"
             >
-              <SelectValue placeholder="Select status" />
+              <SelectValue placeholder="Select status">
+                {field.value
+                  ? statuses.find((s) => s.value === field.value)?.label ?? field.value
+                  : undefined}
+              </SelectValue>
             </SelectTrigger>
 
             <SelectContent>

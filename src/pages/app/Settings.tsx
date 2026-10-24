@@ -116,7 +116,15 @@ export default function Settings() {
               <div className="max-w-md">
                 <Select value={theme} onValueChange={handleThemeChange}>
                   <SelectTrigger id="theme">
-                    <SelectValue placeholder="Select theme" />
+                    <SelectValue placeholder="Select theme">
+                      {theme === "light"
+                        ? "Light"
+                        : theme === "dark"
+                        ? "Dark"
+                        : theme === "system"
+                        ? "System"
+                        : theme}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="light">

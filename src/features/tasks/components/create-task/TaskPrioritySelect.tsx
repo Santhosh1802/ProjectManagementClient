@@ -64,7 +64,11 @@ export default function TaskPrioritySelect({
               aria-invalid={fieldState.invalid}
               className="w-full"
             >
-              <SelectValue placeholder="Select priority" />
+              <SelectValue placeholder="Select priority">
+                {field.value
+                  ? priorities.find((p) => p.value === field.value)?.label ?? field.value
+                  : undefined}
+              </SelectValue>
             </SelectTrigger>
 
             <SelectContent>
