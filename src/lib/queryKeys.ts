@@ -18,6 +18,10 @@ export const taskKeys = {
     [...taskKeys.all, "by-assigned", userId, params] as const,
   byCreatedBy: (userId: string | number, params?: unknown) =>
     [...taskKeys.all, "by-created", userId, params] as const,
+  dependencies: (taskId: string | number) =>
+    [...taskKeys.all, "dependencies", String(taskId)] as const,
+  projectDependencies: (projectId: string | number) =>
+    [...taskKeys.all, "project-dependencies", String(projectId)] as const,
 }
 
 export const userKeys = {

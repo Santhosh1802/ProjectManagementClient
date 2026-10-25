@@ -122,3 +122,57 @@ export function useDeleteTaskMutation(projectId?: string) {
     },
   })
 }
+
+export function useTaskDependenciesQuery(taskId: string | undefined, options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: taskKeys.dependencies(taskId ?? ""),
+    queryFn: () => (taskId ? import("../services/task.services").then(m => m.getTaskDependencies(taskId)) : Promise.reject("No taskId")),
+    enabled: Boolean(taskId) && (options?.enabled ?? true),
+  })
+}
+
+export function useProjectDependenciesQuery(projectId: string | undefined, options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: taskKeys.projectDependencies(projectId ?? ""),
+    queryFn: () => (projectId ? import("../services/task.services").then(m => m.getProjectDependencies(projectId)) : Promise.reject("No projectId")),
+    enabled: Boolean(projectId) && (options?.enabled ?? true),
+  })
+}
+
+export function useCreateTaskDependencyMutation(taskId: string, projectId?: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (request: import("../types/task.types").CreateTaskDependencyRequest) =>
+      import("../services/task.services").then(m => m.createTaskDependency(request)),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: taskKeys.dependencies(taskId) })
+      if (projectId) {
+        void queryClient.invalidateQueries({ queryKey: taskKeys.projectDependencies(projectId) })
+      }
+      void queryClient.invalidateQueries({ queryKey: taskKeys.all })
+      void queryClient.invalidateQueries({ queryKey: activityKeys.byTask(taskId) })
+      if (projectId) {
+        void queryClient.invalidateQueries({ queryKey: activityKeys.byProject(projectId) })
+      }
+    },
+  })
+}
+
+export function useRemoveTaskDependencyMutation(taskId: string, projectId?: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (dependencyId: string) =>
+      import("../services/task.services").then(m => m.removeTaskDependency(dependencyId)),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: taskKeys.dependencies(taskId) })
+      if (projectId) {
+        void queryClient.invalidateQueries({ queryKey: taskKeys.projectDependencies(projectId) })
+      }
+      void queryClient.invalidateQueries({ queryKey: taskKeys.all })
+      void queryClient.invalidateQueries({ queryKey: activityKeys.byTask(taskId) })
+      if (projectId) {
+        void queryClient.invalidateQueries({ queryKey: activityKeys.byProject(projectId) })
+      }
+    },
+  })
+}

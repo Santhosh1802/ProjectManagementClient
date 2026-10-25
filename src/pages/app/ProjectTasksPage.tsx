@@ -84,6 +84,8 @@ import TaskCard from "@/features/tasks/components/TaskCard"
 import TaskList from "@/features/tasks/components/TaskList"
 import TaskTable from "@/features/tasks/components/TaskTable"
 import TaskKanbanBoard from "@/features/tasks/components/TaskKanbanBoard"
+import ProjectPlanningTimeline from "@/features/tasks/components/ProjectPlanningTimeline"
+import { useProjectDependenciesQuery } from "@/features/tasks/hooks/useTasksQuery"
 import { toast } from "@/components/ui/toast"
 import confetti from "canvas-confetti"
 
@@ -126,6 +128,23 @@ export default function ProjectTasksPage() {
   const totalElements = tasksPageData?.totalElements ?? 0
   const totalPages = tasksPageData?.totalPages ?? 0
   const error = queryError ? getApiErrorMessage(queryError, "Unable to load project tasks.") : null
+
+  const { data: projectDependencies = [] } = useProjectDependenciesQuery(projectId, {
+    enabled: Boolean(projectId),
+  })
+
+  const blockedTaskIds = useMemo(() => {
+    const taskMap = new Map<string, Task>()
+    tasks.forEach((t) => taskMap.set(t.id, t))
+    const blocked = new Set<string>()
+    for (const edge of projectDependencies) {
+      const source = taskMap.get(edge.sourceTaskId)
+      if (source && source.taskStatus !== "DONE") {
+        blocked.add(edge.targetTaskId)
+      }
+    }
+    return blocked
+  }, [tasks, projectDependencies])
 
   // Client-side filtering & sorting for the loaded tasks
   const filteredTasks = useMemo(() => {
@@ -454,6 +473,15 @@ export default function ProjectTasksPage() {
           >
             <Kanban className="size-4" />
           </Button>
+          <Button
+            variant={view === "timeline" ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => setView("timeline")}
+            className="size-8 p-0"
+            title="Planning Timeline"
+          >
+            <CalendarDays className="size-4" />
+          </Button>
         </div>
       </div>
 
@@ -500,6 +528,7 @@ export default function ProjectTasksPage() {
                 <TaskCard
                   key={task.id}
                   task={task}
+                  isBlocked={blockedTaskIds.has(task.id)}
                   onView={(t: Task) => navigate(`/app/tasks/${t.id}`)}
                   onDelete={handleTaskDelete}
                   onStatusChange={(t: Task) => {
@@ -536,6 +565,15 @@ export default function ProjectTasksPage() {
               onAddTask={(status: TaskStatus) =>
                 navigate(`/app/tasks/create?projectId=${projectId}&status=${status}`)
               }
+            />
+          )}
+
+          {view === "timeline" && (
+            <ProjectPlanningTimeline
+              tasks={tasks}
+              dependencies={projectDependencies}
+              projectStartDate={project?.startDate}
+              projectDueDate={project?.dueDate}
             />
           )}
 

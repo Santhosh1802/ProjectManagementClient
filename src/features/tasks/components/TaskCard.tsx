@@ -26,6 +26,7 @@ import { Separator } from "@/components/ui/separator"
 
 interface TaskCardProps {
   task: Task
+  isBlocked?: boolean
   onView?: (task: Task) => void
   onEdit?: (task: Task) => void
   onDelete?: (task: Task) => void
@@ -62,6 +63,7 @@ function isOverdue(date: string | null, status: string) {
 
 export default function TaskCard({
   task,
+  isBlocked = false,
   onView,
   onEdit,
   onDelete,
@@ -78,6 +80,11 @@ export default function TaskCard({
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <StatusBadge status={task.taskStatus} showDot />
             <StatusBadge status={task.taskPriority} />
+            {isBlocked && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-semibold text-destructive">
+                Blocked
+              </span>
+            )}
           </div>
 
           <DropdownMenu>

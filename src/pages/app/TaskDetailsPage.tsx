@@ -69,6 +69,8 @@ import {
   updateTask as updateTaskInState,
 } from "@/features/tasks/slice/task.slice"
 import EditTaskModal from "@/features/tasks/components/EditTaskModal"
+import TaskDependenciesSection from "@/features/tasks/components/TaskDependenciesSection"
+import { useTasksByProjectQuery } from "@/features/tasks/hooks/useTasksQuery"
 
 const STATUS_OPTIONS = [
   {
@@ -250,6 +252,12 @@ export default function TaskDetailsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
 
   const [now] = useState(() => Date.now())
+
+  const { data: projectTasksData } = useTasksByProjectQuery(
+    { projectId: task?.project?.id ?? "", page: 0, size: 100 },
+    { enabled: Boolean(task?.project?.id) }
+  )
+  const projectTasks = projectTasksData?.content ?? []
 
   useEffect(() => {
     let cancelled = false
@@ -604,6 +612,13 @@ export default function TaskDetailsPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Dependencies Section */}
+          <TaskDependenciesSection
+            task={task}
+            projectTasks={projectTasks}
+            canManage={true}
+          />
 
           {/* Comments Section */}
           <Card>

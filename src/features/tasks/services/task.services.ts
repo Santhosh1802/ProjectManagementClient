@@ -201,3 +201,56 @@ export async function deleteTask(
 
   return response.data.data
 }
+
+/**
+ * Create a task dependency.
+ * POST /api/task-dependencies
+ */
+export async function createTaskDependency(
+  request: import("../types/task.types").CreateTaskDependencyRequest
+): Promise<import("../types/task.types").TaskDependencySummary> {
+  const response = await api.post<ApiResponse<import("../types/task.types").TaskDependencySummary>>(
+    "/task-dependencies",
+    request
+  )
+  return response.data.data
+}
+
+/**
+ * Remove a task dependency.
+ * DELETE /api/task-dependencies/{dependencyId}
+ */
+export async function removeTaskDependency(
+  dependencyId: string
+): Promise<boolean> {
+  const response = await api.delete<ApiResponse<boolean>>(
+    `/task-dependencies/${dependencyId}`
+  )
+  return response.data.data
+}
+
+/**
+ * Get dependencies for a single task.
+ * GET /api/task-dependencies/task/{taskId}
+ */
+export async function getTaskDependencies(
+  taskId: string
+): Promise<import("../types/task.types").TaskDependenciesResponse> {
+  const response = await api.get<ApiResponse<import("../types/task.types").TaskDependenciesResponse>>(
+    `/task-dependencies/task/${taskId}`
+  )
+  return response.data.data
+}
+
+/**
+ * Get all dependencies across a project.
+ * GET /api/task-dependencies/project/{projectId}
+ */
+export async function getProjectDependencies(
+  projectId: string
+): Promise<import("../types/task.types").ProjectDependencyEdge[]> {
+  const response = await api.get<ApiResponse<import("../types/task.types").ProjectDependencyEdge[]>>(
+    `/task-dependencies/project/${projectId}`
+  )
+  return response.data.data
+}

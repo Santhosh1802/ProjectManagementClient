@@ -124,7 +124,45 @@ export type TaskPageResponse = PageResponse<Task>
 
 // features/tasks/types/task.types.ts
 
-export type TaskView = "kanban" | "card" | "list" | "table"
+export type TaskView = "kanban" | "card" | "list" | "table" | "timeline"
+
+export type DependencyType = "FINISH_TO_START" | "BLOCKED_BY"
+
+export interface TaskDependencySummary {
+  dependencyId: string
+  taskId: string
+  taskTitle: string
+  taskStatus: TaskStatus
+  taskPriority: TaskPriority
+  dueDate: string | null
+  dependencyType: DependencyType
+  createdById: string | null
+  createdByName: string
+  createdAt: string
+}
+
+export interface TaskDependenciesResponse {
+  taskId: string
+  isBlocked: boolean
+  blockedBy: TaskDependencySummary[]
+  blocking: TaskDependencySummary[]
+}
+
+export interface ProjectDependencyEdge {
+  dependencyId: string
+  sourceTaskId: string
+  sourceTaskTitle: string
+  targetTaskId: string
+  targetTaskTitle: string
+  dependencyType: DependencyType
+  createdAt: string
+}
+
+export interface CreateTaskDependencyRequest {
+  taskId: string
+  dependsOnTaskId: string
+  dependencyType: DependencyType
+}
 
 export type TaskScope =
   | "ALL"
