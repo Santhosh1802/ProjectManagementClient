@@ -28,6 +28,8 @@ import type {
 import PageSizeSelector from "@/components/common/PageSizeSelector"
 import { ProjectViewSwitcher } from "./ProjectsViewSwitcher"
 import { ProjectFilters } from "./ProjectFilters"
+import SavedViewsBar from "@/features/savedviews/components/SavedViewsBar"
+import type { SavedView } from "@/features/savedviews/types/savedView.types"
 
 interface ProjectToolbarProps {
   filters: ProjectFiltersState
@@ -40,6 +42,9 @@ interface ProjectToolbarProps {
   ) => void
   pageSize?: number
   onPageSizeChange?: (pageSize: number) => void
+  activeViewId?: string | null
+  onApplySavedView?: (view: SavedView) => void
+  onClearActiveSavedView?: () => void
 }
 
 export function ProjectToolbar({
@@ -49,6 +54,9 @@ export function ProjectToolbar({
   onViewChange,
   pageSize,
   onPageSizeChange,
+  activeViewId,
+  onApplySavedView,
+  onClearActiveSavedView,
 }: ProjectToolbarProps) {
   const [filterModalOpen, setFilterModalOpen] = useState(false)
   const [sortModalOpen, setSortModalOpen] = useState(false)
@@ -110,6 +118,24 @@ export function ProjectToolbar({
 
         {/* Actions */}
         <div className="flex flex-wrap items-center gap-2">
+          {/* Saved Views Bar */}
+          {onApplySavedView && onClearActiveSavedView && (
+            <SavedViewsBar
+              target="PROJECTS"
+              currentFiltersJson={JSON.stringify({
+                status: filters.status,
+                ownerId: filters.ownerId,
+                dueDate: filters.dueDate,
+                scope: filters.scope,
+              })}
+              currentSortBy={filters.sortBy}
+              currentSortOrder={filters.sortOrder}
+              activeViewId={activeViewId}
+              onApplyView={onApplySavedView}
+              onClearActiveView={onClearActiveSavedView}
+            />
+          )}
+
           {/* Filter Trigger Button */}
           <Button
             type="button"

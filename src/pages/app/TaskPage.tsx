@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useSearchParams } from "react-router-dom"
 import ErrorState from "@/components/common/ErrorState"
 import PageContainer from "@/components/common/PageContainer"
 import PageHeader from "@/components/common/PageHeader"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Kbd } from "@/components/ui/kbd"
-import { Plus } from "lucide-react"
+import { Plus, X } from "lucide-react"
 import confetti from "canvas-confetti"
 import { toast } from "@/components/ui/toast"
+import type { SavedView } from "@/features/savedviews/types/savedView.types"
 
 import { useQuery } from "@tanstack/react-query"
 import { taskKeys } from "@/lib/queryKeys"
@@ -178,7 +180,48 @@ export default function TaskPage() {
     canViewAllTasks ? "ALL" : "ASSIGNED_TO_ME"
   )
 
-  const [filters, setFilters] = useState<TaskFiltersState>(DEFAULT_FILTERS)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [activeSavedViewId, setActiveSavedViewId] = useState<string | null>(null)
+
+  // Initialize filters from URL search params on mount
+  const [filters, setFilters] = useState<TaskFiltersState>(() => {
+    const qSearch = searchParams.get("search") || ""
+    const qStatus = (searchParams.get("status") || "ALL") as TaskFiltersState["status"]
+    const qPriority = (searchParams.get("priority") || "ALL") as TaskFiltersState["priority"]
+    const qProjectIds = searchParams.get("projectIds") ? searchParams.get("projectIds")!.split(",") : []
+    const qOverdue = searchParams.get("overdue") === "true"
+    const qUnassigned = searchParams.get("unassigned") === "true"
+    const qSortBy = (searchParams.get("sortBy") || "createdAt") as TaskFiltersState["sortBy"]
+    const qSortOrder = (searchParams.get("sortOrder") || "desc") as TaskFiltersState["sortOrder"]
+
+    return {
+      search: qSearch,
+      status: qStatus,
+      priority: qPriority,
+      projectIds: qProjectIds,
+      overdue: qOverdue,
+      unassigned: qUnassigned,
+      sortBy: qSortBy,
+      sortOrder: qSortOrder,
+    }
+  })
+
+  // Synchronize active filters with URL query parameters
+  useEffect(() => {
+    const nextParams = new URLSearchParams()
+    if (filters.search) nextParams.set("search", filters.search)
+    if (filters.status !== "ALL") nextParams.set("status", filters.status)
+    if (filters.priority !== "ALL") nextParams.set("priority", filters.priority)
+    if (filters.projectIds && filters.projectIds.length > 0) {
+      nextParams.set("projectIds", filters.projectIds.join(","))
+    }
+    if (filters.overdue) nextParams.set("overdue", "true")
+    if (filters.unassigned) nextParams.set("unassigned", "true")
+    if (filters.sortBy !== "createdAt") nextParams.set("sortBy", filters.sortBy)
+    if (filters.sortOrder !== "desc") nextParams.set("sortOrder", filters.sortOrder)
+
+    setSearchParams(nextParams, { replace: true })
+  }, [filters, setSearchParams])
 
 
   const {
@@ -307,11 +350,23 @@ export default function TaskPage() {
         selectedProjectIds.length === 0 ||
         selectedProjectIds.includes(task.project.id)
 
+      const matchesOverdue =
+        !filters.overdue ||
+        (task.dueDate &&
+          new Date(task.dueDate).getTime() < Date.now() &&
+          task.taskStatus !== "DONE" &&
+          task.taskStatus !== "CANCELLED")
+
+      const matchesUnassigned =
+        !filters.unassigned || !task.assignedTo
+
       return (
         matchesSearch &&
         matchesStatus &&
         matchesPriority &&
-        matchesProject
+        matchesProject &&
+        matchesOverdue &&
+        matchesUnassigned
       )
     })
 
@@ -369,11 +424,14 @@ export default function TaskPage() {
     filters.status !== "ALL" ||
     filters.priority !== "ALL" ||
     (filters.projectIds && filters.projectIds.length > 0) ||
+    Boolean(filters.overdue) ||
+    Boolean(filters.unassigned) ||
     filters.sortBy !== "createdAt" ||
     filters.sortOrder !== "desc"
 
   const handleFiltersChange = (nextFilters: TaskFiltersState) => {
     setFilters(nextFilters)
+    setActiveSavedViewId(null)
 
     if (page !== 0) {
       dispatch(setTaskPage(0))
@@ -382,7 +440,35 @@ export default function TaskPage() {
 
   const handleResetFilters = () => {
     setFilters(DEFAULT_FILTERS)
+    setActiveSavedViewId(null)
 
+    if (page !== 0) {
+      dispatch(setTaskPage(0))
+    }
+  }
+
+  const handleApplySavedView = (view: SavedView) => {
+    try {
+      const parsed = JSON.parse(view.filtersJson)
+      const nextFilters: TaskFiltersState = {
+        ...DEFAULT_FILTERS,
+        ...parsed,
+        sortBy: (view.sortBy as TaskFiltersState["sortBy"]) || "createdAt",
+        sortOrder: (view.sortOrder as TaskFiltersState["sortOrder"]) || "desc",
+      }
+      setFilters(nextFilters)
+      setActiveSavedViewId(view.id)
+      if (page !== 0) {
+        dispatch(setTaskPage(0))
+      }
+    } catch (e) {
+      console.error("Failed to parse saved view filters:", e)
+    }
+  }
+
+  const handleClearActiveSavedView = () => {
+    setActiveSavedViewId(null)
+    setFilters(DEFAULT_FILTERS)
     if (page !== 0) {
       dispatch(setTaskPage(0))
     }
@@ -592,7 +678,95 @@ export default function TaskPage() {
             dispatch(setTaskPageSize(newSize))
             dispatch(setTaskPage(0))
           }}
+          activeViewId={activeSavedViewId}
+          onApplySavedView={handleApplySavedView}
+          onClearActiveSavedView={handleClearActiveSavedView}
         />
+
+        {/* Active Filter Chips */}
+        {hasActiveFilters && (
+          <div className="flex flex-wrap items-center gap-1.5 pt-1">
+            <span className="text-xs text-muted-foreground mr-1">Active filters:</span>
+            {filters.search && (
+              <Badge variant="secondary" className="gap-1 text-xs py-0.5">
+                <span>Keyword: "{filters.search}"</span>
+                <button
+                  type="button"
+                  onClick={() => handleFiltersChange({ ...filters, search: "" })}
+                  className="hover:text-destructive"
+                >
+                  <X className="size-3" />
+                </button>
+              </Badge>
+            )}
+            {filters.status !== "ALL" && (
+              <Badge variant="secondary" className="gap-1 text-xs py-0.5">
+                <span>Status: {filters.status.replace("_", " ")}</span>
+                <button
+                  type="button"
+                  onClick={() => handleFiltersChange({ ...filters, status: "ALL" })}
+                  className="hover:text-destructive"
+                >
+                  <X className="size-3" />
+                </button>
+              </Badge>
+            )}
+            {filters.priority !== "ALL" && (
+              <Badge variant="secondary" className="gap-1 text-xs py-0.5">
+                <span>Priority: {filters.priority}</span>
+                <button
+                  type="button"
+                  onClick={() => handleFiltersChange({ ...filters, priority: "ALL" })}
+                  className="hover:text-destructive"
+                >
+                  <X className="size-3" />
+                </button>
+              </Badge>
+            )}
+            {filters.overdue && (
+              <Badge variant="destructive" className="gap-1 text-xs py-0.5">
+                <span>Overdue Only</span>
+                <button
+                  type="button"
+                  onClick={() => handleFiltersChange({ ...filters, overdue: false })}
+                >
+                  <X className="size-3" />
+                </button>
+              </Badge>
+            )}
+            {filters.unassigned && (
+              <Badge variant="secondary" className="gap-1 text-xs py-0.5">
+                <span>Unassigned Only</span>
+                <button
+                  type="button"
+                  onClick={() => handleFiltersChange({ ...filters, unassigned: false })}
+                  className="hover:text-destructive"
+                >
+                  <X className="size-3" />
+                </button>
+              </Badge>
+            )}
+            {filters.projectIds && filters.projectIds.length > 0 && (
+              <Badge variant="secondary" className="gap-1 text-xs py-0.5">
+                <span>Projects ({filters.projectIds.length})</span>
+                <button
+                  type="button"
+                  onClick={() => handleFiltersChange({ ...filters, projectIds: [] })}
+                  className="hover:text-destructive"
+                >
+                  <X className="size-3" />
+                </button>
+              </Badge>
+            )}
+            <button
+              type="button"
+              onClick={handleResetFilters}
+              className="text-xs text-primary hover:underline ml-1 font-medium"
+            >
+              Reset all
+            </button>
+          </div>
+        )}
 
         {/* Result information */}
         {!loading && (

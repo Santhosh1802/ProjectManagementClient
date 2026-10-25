@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react"
-import { Check, CircleDot, Signal } from "lucide-react"
+import { Check, CircleDot, Signal, AlertTriangle, UserCheck } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Label } from "@/components/ui/label"
 
 import type {
   TaskFilters as TaskFiltersState,
@@ -45,7 +47,9 @@ export default function TaskFilters({
 
   const hasDraftFilters =
     draftFilters.status !== "ALL" ||
-    draftFilters.priority !== "ALL"
+    draftFilters.priority !== "ALL" ||
+    Boolean(draftFilters.overdue) ||
+    Boolean(draftFilters.unassigned)
 
   const updateDraft = <K extends keyof TaskFiltersState>(
     key: K,
@@ -67,6 +71,8 @@ export default function TaskFilters({
       ...draftFilters,
       status: "ALL",
       priority: "ALL",
+      overdue: false,
+      unassigned: false,
     }
     setDraftFilters(cleared)
     onApplyFilters(cleared)
@@ -138,6 +144,42 @@ export default function TaskFilters({
               </Button>
             )
           })}
+        </div>
+      </div>
+
+      {/* Quick Attributes (Overdue, Unassigned) */}
+      <div className="space-y-2.5 border-t pt-3">
+        <div className="text-xs font-medium text-muted-foreground">Attributes</div>
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="filter-overdue"
+              checked={Boolean(draftFilters.overdue)}
+              onCheckedChange={(checked) => updateDraft("overdue", Boolean(checked))}
+            />
+            <Label
+              htmlFor="filter-overdue"
+              className="text-xs font-normal cursor-pointer flex items-center gap-1.5"
+            >
+              <AlertTriangle className="size-3 text-destructive" />
+              <span>Overdue tasks only</span>
+            </Label>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="filter-unassigned"
+              checked={Boolean(draftFilters.unassigned)}
+              onCheckedChange={(checked) => updateDraft("unassigned", Boolean(checked))}
+            />
+            <Label
+              htmlFor="filter-unassigned"
+              className="text-xs font-normal cursor-pointer flex items-center gap-1.5"
+            >
+              <UserCheck className="size-3 text-muted-foreground" />
+              <span>Unassigned tasks only</span>
+            </Label>
+          </div>
         </div>
       </div>
 

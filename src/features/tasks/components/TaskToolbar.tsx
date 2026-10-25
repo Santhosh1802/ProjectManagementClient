@@ -18,6 +18,8 @@ import PageSizeSelector from "@/components/common/PageSizeSelector"
 import ProjectMultiSelect, { type ProjectOption } from "./ProjectMultiSelect"
 import TaskFilters from "./TaskFilters"
 import TaskViewSwitcher from "./TaskViewSwitcher"
+import SavedViewsBar from "@/features/savedviews/components/SavedViewsBar"
+import type { SavedView } from "@/features/savedviews/types/savedView.types"
 
 interface TaskToolbarProps {
   filters: TaskFiltersState
@@ -28,6 +30,9 @@ interface TaskToolbarProps {
   projectsLoading?: boolean
   pageSize?: number
   onPageSizeChange?: (pageSize: number) => void
+  activeViewId?: string | null
+  onApplySavedView?: (view: SavedView) => void
+  onClearActiveSavedView?: () => void
 }
 
 export default function TaskToolbar({
@@ -39,6 +44,9 @@ export default function TaskToolbar({
   projectsLoading = false,
   pageSize,
   onPageSizeChange,
+  activeViewId,
+  onApplySavedView,
+  onClearActiveSavedView,
 }: TaskToolbarProps) {
   const [filterModalOpen, setFilterModalOpen] = useState(false)
   const [sortModalOpen, setSortModalOpen] = useState(false)
@@ -74,7 +82,9 @@ export default function TaskToolbar({
 
   const hasFilters =
     filters.status !== "ALL" ||
-    filters.priority !== "ALL"
+    filters.priority !== "ALL" ||
+    Boolean(filters.overdue) ||
+    Boolean(filters.unassigned)
 
   return (
     <div className="flex flex-col gap-3">
@@ -93,6 +103,25 @@ export default function TaskToolbar({
 
         {/* Actions */}
         <div className="flex flex-wrap items-center gap-2">
+          {/* Saved Views Bar */}
+          {onApplySavedView && onClearActiveSavedView && (
+            <SavedViewsBar
+              target="TASKS"
+              currentFiltersJson={JSON.stringify({
+                status: filters.status,
+                priority: filters.priority,
+                projectIds: filters.projectIds,
+                overdue: filters.overdue,
+                unassigned: filters.unassigned,
+              })}
+              currentSortBy={filters.sortBy}
+              currentSortOrder={filters.sortOrder}
+              activeViewId={activeViewId}
+              onApplyView={onApplySavedView}
+              onClearActiveView={onClearActiveSavedView}
+            />
+          )}
+
           {/* Project Multi-select Filter */}
           <ProjectMultiSelect
             projects={projects}

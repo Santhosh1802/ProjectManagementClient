@@ -57,5 +57,15 @@ export const analyticsKeys = {
   workload: (projectId?: string | null) => [...analyticsKeys.all, "workload", projectId] as const,
 }
 
+export const savedViewKeys = {
+  all: ["saved-views"] as const,
+  byTarget: (target?: string) => [...savedViewKeys.all, target || "ALL"] as const,
+}
+
+export const searchKeys = {
+  all: ["search"] as const,
+  global: (keyword: string) => [...searchKeys.all, "global", keyword] as const,
+}
+
 
 

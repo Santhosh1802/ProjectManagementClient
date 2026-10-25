@@ -188,6 +188,33 @@ export interface TaskFilters {
   status: TaskStatusFilter
   priority: TaskPriorityFilter
   projectIds?: string[]
+  assignedToId?: string
+  createdById?: string
+  unassigned?: boolean
+  overdue?: boolean
+  dueBefore?: string | null
+  dueAfter?: string | null
+  createdBefore?: string | null
+  createdAfter?: string | null
   sortBy: TaskSortField
   sortOrder: TaskSortOrder
 }
+
+export interface TaskSearchParams {
+  keyword?: string
+  statuses?: TaskStatus[]
+  priorities?: TaskPriority[]
+  projectIds?: string[]
+  assignedToId?: string
+  createdById?: string
+  unassigned?: boolean
+  overdue?: boolean
+  dueBefore?: string
+  dueAfter?: string
+  createdBefore?: string
+  createdAfter?: string
+  sortBy?: string
+  sortOrder?: string
+  page?: number
+  size?: number
+}

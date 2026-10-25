@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react"
-import { Plus } from "lucide-react"
-import { useNavigate } from "react-router-dom"
+import { Plus, X } from "lucide-react"
+import { useNavigate, useSearchParams } from "react-router-dom"
 
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Kbd } from "@/components/ui/kbd"
 import PageContainer from "@/components/common/PageContainer"
 import PageHeader from "@/components/common/PageHeader"
@@ -11,6 +12,7 @@ import type {
   ProjectFilters,
   ProjectView,
 } from "@/features/projects/types/project.types"
+import type { SavedView } from "@/features/savedviews/types/savedView.types"
 
 import { ProjectToolbar } from "@/features/projects/components/ProjectToolbar"
 import { ProjectCard } from "@/features/projects/components/ProjectCard"
@@ -79,17 +81,42 @@ export default function ProjectPage() {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
 
-  const [view, setView] = useState<ProjectView>("card")
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [activeSavedViewId, setActiveSavedViewId] = useState<string | null>(null)
 
-  const [filters, setFilters] = useState<ProjectFilters>({
-    scope: "ALL",
-    search: "",
-    status: "ALL",
-    ownerId: "ALL",
-    dueDate: "ALL",
-    sortBy: "createdAt",
-    sortOrder: "desc",
+  const [filters, setFilters] = useState<ProjectFilters>(() => {
+    const qScope = (searchParams.get("scope") || "ALL") as ProjectFilters["scope"]
+    const qSearch = searchParams.get("search") || ""
+    const qStatus = (searchParams.get("status") || "ALL") as ProjectFilters["status"]
+    const qOwnerId = searchParams.get("ownerId") || "ALL"
+    const qDueDate = (searchParams.get("dueDate") || "ALL") as ProjectFilters["dueDate"]
+    const qSortBy = (searchParams.get("sortBy") || "createdAt") as ProjectFilters["sortBy"]
+    const qSortOrder = (searchParams.get("sortOrder") || "desc") as ProjectFilters["sortOrder"]
+
+    return {
+      scope: qScope,
+      search: qSearch,
+      status: qStatus,
+      ownerId: qOwnerId,
+      dueDate: qDueDate,
+      sortBy: qSortBy,
+      sortOrder: qSortOrder,
+    }
   })
+
+  // Synchronize active filters with URL query parameters
+  useEffect(() => {
+    const nextParams = new URLSearchParams()
+    if (filters.search) nextParams.set("search", filters.search)
+    if (filters.scope !== "ALL") nextParams.set("scope", filters.scope)
+    if (filters.status !== "ALL") nextParams.set("status", filters.status)
+    if (filters.ownerId !== "ALL") nextParams.set("ownerId", filters.ownerId)
+    if (filters.dueDate !== "ALL") nextParams.set("dueDate", filters.dueDate)
+    if (filters.sortBy !== "createdAt") nextParams.set("sortBy", filters.sortBy)
+    if (filters.sortOrder !== "desc") nextParams.set("sortOrder", filters.sortOrder)
+
+    setSearchParams(nextParams, { replace: true })
+  }, [filters, setSearchParams])
 
   const projects = useAppSelector(
     (state) => state.project.projects
@@ -160,6 +187,8 @@ export default function ProjectPage() {
     }
   }, [dispatch, queryError])
 
+  const [view, setView] = useState<ProjectView>("card")
+
   const handleCreateProject = () => {
     navigate("/app/projects/create")
   }
@@ -168,9 +197,52 @@ export default function ProjectPage() {
     nextFilters: ProjectFilters
   ) => {
     setFilters(nextFilters)
+    setActiveSavedViewId(null)
     if (page !== 0) {
       dispatch(setProjectPage(0))
     }
+  }
+
+  const handleApplySavedView = (savedView: SavedView) => {
+    try {
+      const parsed = JSON.parse(savedView.filtersJson)
+      const nextFilters: ProjectFilters = {
+        scope: parsed.scope || "ALL",
+        search: parsed.search || "",
+        status: parsed.status || "ALL",
+        ownerId: parsed.ownerId || "ALL",
+        dueDate: parsed.dueDate || "ALL",
+        sortBy: (savedView.sortBy as ProjectFilters["sortBy"]) || "createdAt",
+        sortOrder: (savedView.sortOrder as ProjectFilters["sortOrder"]) || "desc",
+      }
+      setFilters(nextFilters)
+      setActiveSavedViewId(savedView.id)
+      if (page !== 0) {
+        dispatch(setProjectPage(0))
+      }
+    } catch (e) {
+      console.error("Failed to parse project saved view:", e)
+    }
+  }
+
+  const handleClearActiveSavedView = () => {
+    setActiveSavedViewId(null)
+    setFilters({
+      scope: "ALL",
+      search: "",
+      status: "ALL",
+      ownerId: "ALL",
+      dueDate: "ALL",
+      sortBy: "createdAt",
+      sortOrder: "desc",
+    })
+    if (page !== 0) {
+      dispatch(setProjectPage(0))
+    }
+  }
+
+  const handleResetAllFilters = () => {
+    handleClearActiveSavedView()
   }
 
   return (
@@ -226,7 +298,72 @@ export default function ProjectPage() {
           dispatch(setProjectPageSize(newSize))
           dispatch(setProjectPage(0))
         }}
+        activeViewId={activeSavedViewId}
+        onApplySavedView={handleApplySavedView}
+        onClearActiveSavedView={handleClearActiveSavedView}
       />
+
+      {/* Active Filter Chips */}
+      {hasFilters && (
+        <div className="flex flex-wrap items-center gap-1.5 pt-1">
+          <span className="text-xs text-muted-foreground mr-1">Active filters:</span>
+          {filters.search && (
+            <Badge variant="secondary" className="gap-1 text-xs py-0.5">
+              <span>Keyword: "{filters.search}"</span>
+              <button
+                type="button"
+                onClick={() => handleFiltersChange({ ...filters, search: "" })}
+                className="hover:text-destructive"
+              >
+                <X className="size-3" />
+              </button>
+            </Badge>
+          )}
+          {filters.scope !== "ALL" && (
+            <Badge variant="secondary" className="gap-1 text-xs py-0.5">
+              <span>Scope: {filters.scope}</span>
+              <button
+                type="button"
+                onClick={() => handleFiltersChange({ ...filters, scope: "ALL" })}
+                className="hover:text-destructive"
+              >
+                <X className="size-3" />
+              </button>
+            </Badge>
+          )}
+          {filters.status !== "ALL" && (
+            <Badge variant="secondary" className="gap-1 text-xs py-0.5">
+              <span>Status: {filters.status}</span>
+              <button
+                type="button"
+                onClick={() => handleFiltersChange({ ...filters, status: "ALL" })}
+                className="hover:text-destructive"
+              >
+                <X className="size-3" />
+              </button>
+            </Badge>
+          )}
+          {filters.dueDate !== "ALL" && (
+            <Badge variant="secondary" className="gap-1 text-xs py-0.5">
+              <span>Due: {filters.dueDate.replace("_", " ")}</span>
+              <button
+                type="button"
+                onClick={() => handleFiltersChange({ ...filters, dueDate: "ALL" })}
+                className="hover:text-destructive"
+              >
+                <X className="size-3" />
+              </button>
+            </Badge>
+          )}
+          <button
+            type="button"
+            onClick={handleResetAllFilters}
+            className="text-xs text-primary hover:underline ml-1 font-medium"
+          >
+            Reset all
+          </button>
+        </div>
+      )}
 
       {/* Count */}
 

@@ -254,3 +254,16 @@ export async function getProjectDependencies(
   )
   return response.data.data
 }
+
+/**
+ * Search tasks with advanced multi-factor filtering.
+ * GET /api/tasks/search
+ */
+export async function searchTasks(
+  params: import("../types/task.types").TaskSearchParams
+): Promise<TaskPageResponse> {
+  const response = await api.get<ApiResponse<TaskPageResponse>>("/tasks/search", {
+    params,
+  })
+  return response.data.data
+}
