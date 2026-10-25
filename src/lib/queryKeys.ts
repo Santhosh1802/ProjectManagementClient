@@ -67,5 +67,12 @@ export const searchKeys = {
   global: (keyword: string) => [...searchKeys.all, "global", keyword] as const,
 }
 
+export const workflowKeys = {
+  all: ["workflow-rules"] as const,
+  byProject: (projectId: string) => [...workflowKeys.all, "by-project", projectId] as const,
+  detail: (ruleId: string) => [...workflowKeys.all, "detail", ruleId] as const,
+  executions: (ruleId: string) => [...workflowKeys.all, "executions", ruleId] as const,
+}
+
 
 

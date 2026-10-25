@@ -52,6 +52,7 @@ import TransferOwnershipDialog from "@/features/projects/components/TransferOwne
 import DeleteProjectDialog from "@/features/projects/components/DeleteProjectDialog"
 import TaskCard from "@/features/tasks/components/TaskCard"
 import TeamWorkloadPlanningView from "@/features/tasks/components/TeamWorkloadPlanningView"
+import { WorkflowRulesList } from "@/features/workflow/components/WorkflowRulesList"
 
 import { getProjectPermissions } from "@/features/projects/utils/projectPermission"
 import PageContainer from "@/components/common/PageContainer"
@@ -719,6 +720,17 @@ export default function ProjectDetailsPage() {
             members={members}
           />
         </div>
+      </div>
+
+      {/* ======================================================
+          WORKFLOW AUTOMATION RULES
+          ====================================================== */}
+      <div className="rounded-xl border bg-card p-5">
+        <WorkflowRulesList
+          projectId={project.id}
+          canManage={Boolean(permissions?.canEditProject || permissions?.canManageMembers)}
+          members={members}
+        />
       </div>
 
       {/* ======================================================
