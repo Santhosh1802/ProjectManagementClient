@@ -19,6 +19,19 @@ vi.mock("@/features/projects/hooks/useProjectsQuery", () => ({
     isLoading: false,
     error: null,
   }),
+  useProjectMembersQuery: () => ({
+    data: {
+      content: [
+        {
+          id: "member-1",
+          user: { id: "user-1", firstName: "Alice", lastName: "Smith" },
+          projectRole: "DEVELOPER",
+        },
+      ],
+    },
+    isLoading: false,
+    error: null,
+  }),
 }))
 
 vi.mock("@/features/workflow/hooks/useWorkflowRulesQuery", () => ({
