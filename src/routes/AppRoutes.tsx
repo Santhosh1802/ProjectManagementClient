@@ -28,6 +28,7 @@ const ProjectTasksPage = lazy(() => import("@/pages/app/ProjectTasksPage"))
 const UsersPage = lazy(() => import("@/pages/app/UsersPage"))
 const CreateUserPage = lazy(() => import("@/pages/app/CreateUserPage"))
 const CreateProjectPage = lazy(() => import("@/pages/app/CreateProjectPage"))
+const WorkflowRuleEditorPage = lazy(() => import("@/pages/app/WorkflowRuleEditorPage"))
 const TaskPage = lazy(() => import("@/pages/app/TaskPage"))
 const CreateTaskPage = lazy(() => import("@/pages/app/CreateTaskPage"))
 const TaskDetailsPage = lazy(() => import("@/pages/app/TaskDetailsPage"))
@@ -57,6 +58,10 @@ export default function AppRoutes() {
           <Route path="projects" element={<ProjectPage />} />
           <Route path="projects/create" element={<CreateProjectPage />} />
           <Route path="projects/:projectId" element={<ProjectDetailsPage />} />
+          <Route
+            path="projects/:projectId/rules/editor"
+            element={<WorkflowRuleEditorPage />}
+          />
           <Route
             path="projects/:projectId/members"
             element={<ProjectMembersPage />}

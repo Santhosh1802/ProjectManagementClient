@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -30,12 +31,9 @@ import {
 } from "lucide-react"
 import {
   useWorkflowRulesQuery,
-  useCreateWorkflowRuleMutation,
-  useUpdateWorkflowRuleMutation,
   useToggleWorkflowRuleMutation,
   useDeleteWorkflowRuleMutation,
 } from "../hooks/useWorkflowRulesQuery"
-import { WorkflowRuleModal } from "./WorkflowRuleModal"
 import { WorkflowExecutionHistoryDialog } from "./WorkflowExecutionHistoryDialog"
 import type { WorkflowRule, RuleCondition, RuleAction } from "../types/workflow.types"
 import type { ProjectMember } from "@/features/projects/types/project.types"
@@ -49,17 +47,12 @@ interface WorkflowRulesListProps {
 export function WorkflowRulesList({
   projectId,
   canManage,
-  members = [],
 }: WorkflowRulesListProps) {
+  const navigate = useNavigate()
   const { data: rules = [], isLoading, isError, error } = useWorkflowRulesQuery(projectId)
 
-  const createMutation = useCreateWorkflowRuleMutation(projectId)
-  const updateMutation = useUpdateWorkflowRuleMutation(projectId)
   const toggleMutation = useToggleWorkflowRuleMutation(projectId)
   const deleteMutation = useDeleteWorkflowRuleMutation(projectId)
-
-  const [modalOpen, setModalOpen] = useState(false)
-  const [editingRule, setEditingRule] = useState<WorkflowRule | null>(null)
 
   const [historyOpen, setHistoryOpen] = useState(false)
   const [selectedRuleForHistory, setSelectedRuleForHistory] = useState<WorkflowRule | null>(null)
@@ -67,13 +60,11 @@ export function WorkflowRulesList({
   const [ruleToDelete, setRuleToDelete] = useState<WorkflowRule | null>(null)
 
   const handleCreate = () => {
-    setEditingRule(null)
-    setModalOpen(true)
+    navigate(`/app/projects/${projectId}/rules/editor`)
   }
 
   const handleEdit = (rule: WorkflowRule) => {
-    setEditingRule(rule)
-    setModalOpen(true)
+    navigate(`/app/projects/${projectId}/rules/editor?ruleId=${rule.id}`)
   }
 
   const handleHistory = (rule: WorkflowRule) => {
@@ -277,25 +268,7 @@ export function WorkflowRulesList({
         </div>
       )}
 
-      {/* Modal Dialogs */}
-      <WorkflowRuleModal
-        open={modalOpen}
-        onOpenChange={setModalOpen}
-        rule={editingRule}
-        projectId={projectId}
-        members={members}
-        isSubmitting={createMutation.isPending || updateMutation.isPending}
-        onSubmit={async (data) => {
-          if (editingRule) {
-            await updateMutation.mutateAsync({
-              ruleId: editingRule.id,
-              request: data,
-            })
-          } else {
-            await createMutation.mutateAsync(data)
-          }
-        }}
-      />
+      {/* History and Delete Dialogs */}
 
       <WorkflowExecutionHistoryDialog
         open={historyOpen}
