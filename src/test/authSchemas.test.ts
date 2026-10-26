@@ -71,4 +71,52 @@ describe("Auth Zod Schemas", () => {
       expect(result.success).toBe(false)
     })
   })
+
+  describe("Recovery & Verification Schemas", () => {
+    it("validates forgotPasswordSchema", async () => {
+      const { forgotPasswordSchema } = await import(
+        "../features/auth/schemas/recovery.schema"
+      )
+      expect(forgotPasswordSchema.safeParse({ email: "user@example.com" }).success).toBe(true)
+      expect(forgotPasswordSchema.safeParse({ email: "invalid-email" }).success).toBe(false)
+      expect(forgotPasswordSchema.safeParse({ email: "" }).success).toBe(false)
+    })
+
+    it("validates resetPasswordSchema password rules and match", async () => {
+      const { resetPasswordSchema } = await import(
+        "../features/auth/schemas/recovery.schema"
+      )
+      // Valid matching complex password
+      expect(
+        resetPasswordSchema.safeParse({
+          newPassword: "StrongPassword123!",
+          confirmPassword: "StrongPassword123!",
+        }).success
+      ).toBe(true)
+
+      // Mismatch
+      expect(
+        resetPasswordSchema.safeParse({
+          newPassword: "StrongPassword123!",
+          confirmPassword: "DifferentPassword123!",
+        }).success
+      ).toBe(false)
+
+      // Weak password
+      expect(
+        resetPasswordSchema.safeParse({
+          newPassword: "weakpassword",
+          confirmPassword: "weakpassword",
+        }).success
+      ).toBe(false)
+    })
+
+    it("validates resendVerificationSchema", async () => {
+      const { resendVerificationSchema } = await import(
+        "../features/auth/schemas/recovery.schema"
+      )
+      expect(resendVerificationSchema.safeParse({ email: "dev@company.com" }).success).toBe(true)
+      expect(resendVerificationSchema.safeParse({ email: "" }).success).toBe(false)
+    })
+  })
 })

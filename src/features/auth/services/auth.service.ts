@@ -21,3 +21,23 @@ export async function LogoutUser() {
     const response = await api.post("/auth/logout");
     return response;
 }
+
+export async function forgotPassword(email: string) {
+    const response = await api.post<ApiResponse<string>>("/auth/forgot-password", { email });
+    return response.data;
+}
+
+export async function resetPassword(token: string, newPassword: string) {
+    const response = await api.post<ApiResponse<string>>("/auth/reset-password", { token, newPassword });
+    return response.data;
+}
+
+export async function verifyEmail(token: string) {
+    const response = await api.post<ApiResponse<string>>("/auth/verify-email", { token });
+    return response.data;
+}
+
+export async function resendVerification(email: string) {
+    const response = await api.post<ApiResponse<string>>("/auth/resend-verification", { email });
+    return response.data;
+}

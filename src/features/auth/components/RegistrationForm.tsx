@@ -37,6 +37,7 @@ import { registrationSchema } from "../schemas/registration.schema"
 import { registerUser } from "../services/auth.service"
 import { handleClick } from "../utils/confettiSideCannon";
 import { useNavigate } from "react-router-dom"
+import OAuthButtons from "./OAuthButtons";
 
 export default function RegistrationForm() {
   const navigate = useNavigate()
@@ -383,6 +384,10 @@ export default function RegistrationForm() {
             />
           </FieldGroup>
         </form>
+
+        <div className="mt-4">
+          <OAuthButtons />
+        </div>
       </CardContent>
       <CardFooter className="flex flex-col gap-2">
         <Field>

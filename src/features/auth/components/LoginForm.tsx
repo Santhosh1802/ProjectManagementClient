@@ -34,14 +34,17 @@ import type { LoginForm } from "../types/auth.types"
 import axios from "axios"
 import { LoginUser } from "../services/auth.service"
 import { loginSchema } from "../schemas/login.schema"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useSearchParams } from "react-router-dom"
 import { setAuthUser, type AuthUser } from "../slice/authSlice";
 import { useAppDispatch } from "@/hooks/redux-hooks";
-
+import OAuthButtons from "./OAuthButtons";
 
 export default function LoginForm() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const dispatch = useAppDispatch();
+  const oauthError = searchParams.get("error")
+
   const { formState, control, handleSubmit, reset } = useForm<
     z.infer<typeof loginSchema>
   >({
@@ -57,7 +60,18 @@ export default function LoginForm() {
   const [serverError, setServerError] = useState<{
     status?: number
     message: string
-  } | null>(null)
+  } | null>(() => {
+    if (oauthError) {
+      if (oauthError === "unverified_provider_email") {
+        return { message: "Your email is not verified on your OAuth provider account. Please verify it there first." }
+      }
+      if (oauthError === "account_deactivated") {
+        return { message: "Your account has been deactivated. Please contact support." }
+      }
+      return { message: `OAuth sign-in was unsuccessful (${oauthError}). Please try again or use your password.` }
+    }
+    return null
+  })
   function handleShowPasswordToggle() {
     if (showPassword) {
       setShowPassword(false)
@@ -199,7 +213,17 @@ export default function LoginForm() {
               control={control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="login-password">Password</FieldLabel>
+                  <div className="flex items-center justify-between">
+                    <FieldLabel htmlFor="login-password">Password</FieldLabel>
+                    <Button
+                      type="button"
+                      variant="link"
+                      className="px-0 text-xs text-zinc-400 hover:text-primary h-auto font-normal underline"
+                      onClick={() => navigate("/forgot-password")}
+                    >
+                      Forgot password?
+                    </Button>
+                  </div>
                   <div className="relative flex flex-row">
                     <Input
                       {...field}
@@ -231,6 +255,10 @@ export default function LoginForm() {
             />
           </FieldGroup>
         </form>
+
+        <div className="mt-4">
+          <OAuthButtons />
+        </div>
       </CardContent>
       <CardFooter className="flex flex-col gap-2">
         <Field>

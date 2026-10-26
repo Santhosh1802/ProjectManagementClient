@@ -12,6 +12,9 @@ import UserDetailsPage from "@/pages/app/UserDetailsPage"
 const HomePage = lazy(() => import("@/pages/public/HomePage"))
 const LoginPage = lazy(() => import("@/pages/public/LoginPage"))
 const RegisterPage = lazy(() => import("@/pages/public/RegisterPage"))
+const ForgotPasswordPage = lazy(() => import("@/pages/public/ForgotPasswordPage"))
+const ResetPasswordPage = lazy(() => import("@/pages/public/ResetPasswordPage"))
+const VerifyEmailPage = lazy(() => import("@/pages/public/VerifyEmailPage"))
 const TermsOfService = lazy(() => import("@/pages/public/TermsOfService"))
 const Policies = lazy(() => import("@/pages/public/Policies"))
 const PublicNotFoundPage = lazy(
@@ -46,6 +49,9 @@ export default function AppRoutes() {
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/verify-email" element={<VerifyEmailPage />} />
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/privacy" element={<Policies />} />
           <Route path="*" element={<PublicNotFoundPage />} />

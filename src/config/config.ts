@@ -9,3 +9,11 @@ export const getWebSocketUrl = (): string => {
   return "/ws"
 }
 
+export const getOAuthUrl = (provider: "google" | "github"): string => {
+  const backendUrl = import.meta.env.VITE_BACKEND_URL
+  if (backendUrl) {
+    return backendUrl.replace(/\/api\/?$/, "") + `/oauth2/authorization/${provider}`
+  }
+  return `/oauth2/authorization/${provider}`
+}
+
