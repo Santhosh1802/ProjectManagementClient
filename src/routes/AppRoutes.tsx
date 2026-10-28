@@ -17,6 +17,7 @@ const ResetPasswordPage = lazy(() => import("@/pages/public/ResetPasswordPage"))
 const VerifyEmailPage = lazy(() => import("@/pages/public/VerifyEmailPage"))
 const TermsOfService = lazy(() => import("@/pages/public/TermsOfService"))
 const Policies = lazy(() => import("@/pages/public/Policies"))
+const AcceptInvitationPage = lazy(() => import("@/pages/public/AcceptInvitationPage"))
 const PublicNotFoundPage = lazy(
   () => import("@/pages/public/PublicNotFoundPage")
 )
@@ -35,6 +36,7 @@ const WorkflowRuleEditorPage = lazy(() => import("@/pages/app/WorkflowRuleEditor
 const TaskPage = lazy(() => import("@/pages/app/TaskPage"))
 const CreateTaskPage = lazy(() => import("@/pages/app/CreateTaskPage"))
 const TaskDetailsPage = lazy(() => import("@/pages/app/TaskDetailsPage"))
+const OrganizationSettingsPage = lazy(() => import("@/pages/app/OrganizationSettingsPage"))
 
 const Settings = lazy(() => import("@/pages/app/Settings"))
 const NotificationsPage = lazy(() => import("@/pages/app/NotificationsPage"))
@@ -52,6 +54,7 @@ export default function AppRoutes() {
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/verify-email" element={<VerifyEmailPage />} />
+          <Route path="/invite/accept" element={<AcceptInvitationPage />} />
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/privacy" element={<Policies />} />
           <Route path="*" element={<PublicNotFoundPage />} />
@@ -79,6 +82,7 @@ export default function AppRoutes() {
           <Route path="tasks" element={<TaskPage />} />
           <Route path="tasks/create" element={<CreateTaskPage />} />
           <Route path="tasks/:taskId" element={<TaskDetailsPage />} />
+          <Route path="organization/settings" element={<OrganizationSettingsPage />} />
           <Route element={<RoleGuard allowedRoles={ROUTE_ROLES.userManagement} />}>
             <Route path="users" element={<UsersPage />} />
           </Route>

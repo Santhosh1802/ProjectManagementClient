@@ -7,6 +7,8 @@ import userReducer from "../features/users/slice/user.slice"
 import projectReducer from "@/features/projects/slice/projectSlice"
 import taskReducer from "@/features/tasks/slice/task.slice"
 import projectMemberReducer from "@/features/projects/slice/projectMemberSlice"
+import workspaceReducer from "@/features/workspaces/slice/workspaceSlice"
+
 const rootReducer = combineReducers({
   app: appReducer,
   theme: themeReducer,
@@ -15,6 +17,7 @@ const rootReducer = combineReducers({
   project: projectReducer,
   projectMember: projectMemberReducer,
   task: taskReducer,
+  workspaces: workspaceReducer,
 })
 
 export default rootReducer

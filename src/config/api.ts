@@ -41,6 +41,14 @@ api.interceptors.request.use(async (config) => {
     config.headers.set("X-XSRF-TOKEN", token)
   }
 
+  const activeWorkspaceId =
+    store.getState().workspaces?.activeWorkspace?.id ??
+    localStorage.getItem("devflow_active_workspace_id")
+
+  if (activeWorkspaceId) {
+    config.headers.set("X-Workspace-Id", activeWorkspaceId)
+  }
+
   return config
 })
 

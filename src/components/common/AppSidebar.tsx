@@ -69,6 +69,8 @@ import { useKeyboardShortcutsUI } from "@/context/KeyboardShortcutsContext"
 import { formatShortcutKey, toAriaKeyShortcuts } from "@/lib/keyboard"
 import { clearTasks } from "@/features/tasks/slice/task.slice";
 import { clearProjectMembers } from "@/features/projects/slice/projectMemberSlice";
+import { clearWorkspaces } from "@/features/workspaces/slice/workspaceSlice";
+import { WorkspaceSwitcher } from "@/features/workspaces/components/WorkspaceSwitcher";
 import { queryClient } from "@/lib/queryClient"
 
 const shortcutsHelpKeys = getShortcut("global.shortcuts")?.keys ?? ["mod", "/"]
@@ -192,6 +194,7 @@ export default function AppSidebar() {
       dispatch(clearProjects())
       dispatch(clearTasks())
       dispatch(clearProjectMembers())
+      dispatch(clearWorkspaces())
       navigate("/login", { replace: true })
     }
   }
@@ -225,7 +228,7 @@ export default function AppSidebar() {
       {/* Header */}
       {/* ----------------------------------------- */}
 
-      <SidebarHeader className="border-b border-sidebar-border/60 p-2.5">
+      <SidebarHeader className="border-b border-sidebar-border/60 p-2.5 space-y-2">
         <div className="flex items-center justify-between gap-2">
           <SidebarMenu className="flex-1">
             <SidebarMenuItem>
@@ -251,7 +254,7 @@ export default function AppSidebar() {
                       DevFlow
                       <span className="inline-block size-1.5 rounded-full bg-primary animate-pulse" />
                     </span>
-                    <span className="text-[10px] text-muted-foreground font-medium">Project Workspace</span>
+                    <span className="text-[10px] text-muted-foreground font-medium">SaaS Platform</span>
                   </div>
 
                   <Badge
@@ -277,6 +280,9 @@ export default function AppSidebar() {
             </Button>
           )}
         </div>
+
+        {/* Workspace Switcher */}
+        <WorkspaceSwitcher />
       </SidebarHeader>
 
       {/* ----------------------------------------- */}
