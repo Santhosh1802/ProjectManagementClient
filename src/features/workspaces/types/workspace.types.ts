@@ -1,6 +1,7 @@
 export type WorkspaceType = "PERSONAL" | "ORGANIZATION"
 export type WorkspaceRole = "OWNER" | "ADMIN" | "MEMBER"
 export type WorkspaceStatus = "ACTIVE" | "SUSPENDED" | "ARCHIVED"
+export type PlanTier = "FREE" | "PRO" | "ENTERPRISE"
 export type WorkspaceMemberStatus = "ACTIVE" | "SUSPENDED"
 export type InvitationStatus = "PENDING" | "ACCEPTED" | "EXPIRED" | "REVOKED"
 
@@ -11,6 +12,10 @@ export interface Workspace {
   ownerId: string
   ownerName: string
   status: WorkspaceStatus
+  planTier?: PlanTier
+  maxProjects?: number
+  maxMembers?: number
+  maxWorkflowRules?: number
   currentUserRole: WorkspaceRole
   memberCount: number
   projectCount: number

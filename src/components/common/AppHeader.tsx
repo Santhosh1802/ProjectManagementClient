@@ -7,11 +7,12 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import {
   Avatar,
   AvatarFallback,
+  AvatarImage,
 } from "@/components/ui/avatar";
 
 import { getShortcut } from "@/config/keyboardShortcuts";
 import { useKeyboardShortcutsUI } from "@/context/KeyboardShortcutsContext";
-import { toAriaKeyShortcuts } from "@/lib/keyboard";
+import { formatShortcutKey, toAriaKeyShortcuts } from "@/lib/keyboard";
 
 import { useAppSelector } from "@/hooks/redux-hooks";
 import AppBreadcrumb from "./AppBreadcrumb";
@@ -35,12 +36,16 @@ export default function AppHeader() {
   const helpAriaKeyShortcuts = toAriaKeyShortcuts(helpKeys);
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center border-b border-border/70 bg-background/80 backdrop-blur-md transition-colors after:pointer-events-none after:absolute after:bottom-0 after:left-0 after:h-[1.5px] after:w-full after:bg-gradient-to-r after:from-transparent after:via-primary/35 after:to-transparent">
+    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center border-b border-border/70 bg-background/85 backdrop-blur-md transition-colors after:pointer-events-none after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-full after:bg-gradient-to-r after:from-primary/60 after:via-secondary after:to-primary/60">
 
       <div className="flex w-full min-w-0 items-center gap-2 px-3 sm:gap-3 sm:px-4">
 
         {/* Sidebar Toggle */}
-        <SidebarTrigger className="-ml-1 shrink-0" />
+        <SidebarTrigger
+          className="-ml-1 shrink-0"
+          title={`Toggle sidebar (${formatShortcutKey("mod")}+B)`}
+          aria-keyshortcuts={toAriaKeyShortcuts(["mod", "b"])}
+        />
 
         <Separator
           orientation="vertical"
@@ -92,7 +97,7 @@ export default function AppHeader() {
               Search...
             </span>
 
-            <ShortcutHint keys={searchKeys} keyClassName="bg-background/80 border-border/80" />
+            <ShortcutHint keys={searchKeys} decorative />
           </button>
 
 
@@ -115,14 +120,20 @@ export default function AppHeader() {
           {/* Keyboard Shortcuts Help */}
           <Button
             variant="ghost"
-            size="icon"
+            size="sm"
             onClick={openShortcuts}
-            aria-keyshortcuts={helpAriaKeyShortcuts}
+            aria-keyshortcuts={`${helpAriaKeyShortcuts} ?`}
             aria-label="Keyboard shortcuts"
-            className="size-8 text-muted-foreground hover:text-primary hidden sm:flex"
-            title="Keyboard shortcuts"
+            className="hidden h-8 w-8 gap-1.5 px-0 text-muted-foreground hover:text-primary sm:inline-flex lg:w-auto lg:px-2"
+            title={`Keyboard shortcuts (? or ${formatShortcutKey("mod")}+/)`}
           >
             <Keyboard className="size-4" />
+            <ShortcutHint
+              keys={["?"]}
+              compact
+              decorative
+              className="hidden lg:inline-flex"
+            />
           </Button>
 
           {/* Notification Bell */}
@@ -134,6 +145,9 @@ export default function AppHeader() {
 
           {/* User Avatar with subtle theme border */}
           <Avatar className="size-8 ring-1 ring-primary/25 transition-all hover:ring-primary/60">
+            {currentUser?.avatarUrl && (
+              <AvatarImage src={currentUser.avatarUrl} alt={currentUser.firstName} />
+            )}
             <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
               {currentUser
                 ? `${currentUser.firstName?.[0] || ""}${currentUser.lastName?.[0] || ""}`.toUpperCase() || "U"

@@ -30,6 +30,7 @@ import {
   setProjectMemberLoading,
   setProjectMemberError,
   setProjectMemberPage,
+  setProjectMemberPageSize,
 } from "@/features/projects/slice/projectMemberSlice"
 
 import {
@@ -37,6 +38,7 @@ import {
   setTaskLoading,
   setTaskError,
   setTaskPage,
+  setTaskPageSize,
 } from "@/features/tasks/slice/task.slice"
 
 import type {
@@ -53,11 +55,13 @@ import DeleteProjectDialog from "@/features/projects/components/DeleteProjectDia
 import TaskCard from "@/features/tasks/components/TaskCard"
 import TeamWorkloadPlanningView from "@/features/tasks/components/TeamWorkloadPlanningView"
 import { WorkflowRulesList } from "@/features/workflow/components/WorkflowRulesList"
+import { ProjectStorageSection } from "@/features/projects/components/ProjectStorageSection"
 
 import { getProjectPermissions } from "@/features/projects/utils/projectPermission"
 import PageContainer from "@/components/common/PageContainer"
 import ErrorState from "@/components/common/ErrorState"
 import StatusBadge from "@/components/common/StatusBadge"
+import DataPagination from "@/components/common/DataPagination"
 
 /* ============================================================
    Helpers
@@ -120,57 +124,6 @@ function getInitials(firstName: string, lastName: string) {
   return `${first}${last}`.toUpperCase()
 }
 
-// Unused functions removed to fix lint
-
-/* ============================================================
-   Pagination
-   ============================================================ */
-
-interface PaginationProps {
-  page: number
-  totalPages: number
-  first: boolean
-  last: boolean
-  onPrevious: () => void
-  onNext: () => void
-}
-
-function Pagination({
-  page,
-  totalPages,
-  first,
-  last,
-  onPrevious,
-  onNext,
-}: PaginationProps) {
-  if (totalPages <= 1) {
-    return null
-  }
-
-  return (
-    <div className="mt-5 flex items-center justify-between border-t pt-4">
-      <p className="text-xs text-muted-foreground">
-        Page {page + 1} of {totalPages}
-      </p>
-
-      <div className="flex items-center gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={first}
-          onClick={onPrevious}
-        >
-          Previous
-        </Button>
-
-        <Button variant="outline" size="sm" disabled={last} onClick={onNext}>
-          Next
-        </Button>
-      </div>
-    </div>
-  )
-}
-
 /* ============================================================
    Page
    ============================================================ */
@@ -203,8 +156,6 @@ export default function ProjectDetailsPage() {
     size: memberPageSize,
     totalElements: totalMembers,
     totalPages: memberTotalPages,
-    first: memberFirst,
-    last: memberLast,
     loading: membersLoading,
     error: membersError,
   } = useAppSelector((state) => state.projectMember)
@@ -219,8 +170,6 @@ export default function ProjectDetailsPage() {
     size: taskPageSize,
     totalElements: totalTasks,
     totalPages: taskTotalPages,
-    first: taskFirst,
-    last: taskLast,
     loading: tasksLoading,
     error: tasksError,
   } = useAppSelector((state) => state.task)
@@ -683,21 +632,20 @@ export default function ProjectDetailsPage() {
                 ))}
               </div>
 
-              <Pagination
+              <DataPagination
+                className="mt-5"
+                compact
                 page={memberPage}
                 totalPages={memberTotalPages}
-                first={memberFirst}
-                last={memberLast}
-                onPrevious={() =>
-                  dispatch(setProjectMemberPage(Math.max(0, memberPage - 1)))
-                }
-                onNext={() =>
-                  dispatch(
-                    setProjectMemberPage(
-                      Math.min(memberTotalPages - 1, memberPage + 1)
-                    )
-                  )
-                }
+                totalElements={totalMembers}
+                pageSize={memberPageSize}
+                pageSizeOptions={[6, 10, 20, 50]}
+                itemLabel="members"
+                onPageChange={(nextPage) => dispatch(setProjectMemberPage(nextPage))}
+                onPageSizeChange={(nextSize) => {
+                  dispatch(setProjectMemberPageSize(nextSize))
+                  dispatch(setProjectMemberPage(0))
+                }}
               />
             </>
           )}
@@ -732,6 +680,14 @@ export default function ProjectDetailsPage() {
           members={members}
         />
       </div>
+
+      {/* ======================================================
+          PROJECT FILES & STORAGE QUOTA
+          ====================================================== */}
+      <ProjectStorageSection
+        projectId={project.id}
+        canManage={Boolean(permissions?.canEditProject || permissions?.canManageMembers)}
+      />
 
       {/* ======================================================
           TASKS
@@ -813,19 +769,20 @@ export default function ProjectDetailsPage() {
                 ))}
               </div>
 
-              <Pagination
+              <DataPagination
+                className="mt-5"
+                compact
                 page={taskPage}
                 totalPages={taskTotalPages}
-                first={taskFirst}
-                last={taskLast}
-                onPrevious={() =>
-                  dispatch(setTaskPage(Math.max(0, taskPage - 1)))
-                }
-                onNext={() =>
-                  dispatch(
-                    setTaskPage(Math.min(taskTotalPages - 1, taskPage + 1))
-                  )
-                }
+                totalElements={totalTasks}
+                pageSize={taskPageSize}
+                pageSizeOptions={[6, 10, 20, 50]}
+                itemLabel="tasks"
+                onPageChange={(nextPage) => dispatch(setTaskPage(nextPage))}
+                onPageSizeChange={(nextSize) => {
+                  dispatch(setTaskPageSize(nextSize))
+                  dispatch(setTaskPage(0))
+                }}
               />
             </>
           )}

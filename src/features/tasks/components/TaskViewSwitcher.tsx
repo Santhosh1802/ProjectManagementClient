@@ -1,4 +1,4 @@
-import { Calendar, Kanban, LayoutGrid, List, Table2 } from "lucide-react"
+import { CalendarDays, Kanban, LayoutGrid, List, Table2, Workflow } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -40,9 +40,14 @@ const views: {
     icon: Table2,
   },
   {
+    value: "calendar",
+    label: "Calendar view",
+    icon: CalendarDays,
+  },
+  {
     value: "timeline",
     label: "Planning timeline",
-    icon: Calendar,
+    icon: Workflow,
   },
 ]
 

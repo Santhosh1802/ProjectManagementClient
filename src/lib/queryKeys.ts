@@ -22,6 +22,8 @@ export const taskKeys = {
     [...taskKeys.all, "dependencies", String(taskId)] as const,
   projectDependencies: (projectId: string | number) =>
     [...taskKeys.all, "project-dependencies", String(projectId)] as const,
+  subtasks: (taskId: string | number) =>
+    [...taskKeys.all, "subtasks", String(taskId)] as const,
 }
 
 export const userKeys = {

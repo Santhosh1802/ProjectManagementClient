@@ -256,19 +256,19 @@ export default function GlobalSearch({
           )}
         </CommandList>
         <div className="flex items-center justify-between border-t border-border/60 bg-muted/30 px-3 py-2 text-[11px] text-muted-foreground select-none">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <span className="flex items-center gap-1">
-              <Kbd className="h-4 min-w-4 px-1 text-[9px]">↑</Kbd>
-              <Kbd className="h-4 min-w-4 px-1 text-[9px]">↓</Kbd>
+              <Kbd>↑</Kbd>
+              <Kbd>↓</Kbd>
               <span className="hidden sm:inline">Navigate</span>
             </span>
             <span className="flex items-center gap-1">
-              <Kbd className="h-4 min-w-4 px-1 text-[9px]">↵</Kbd>
+              <Kbd>↵</Kbd>
               <span className="hidden sm:inline">Select</span>
             </span>
           </div>
           <span className="flex items-center gap-1">
-            <Kbd className="h-4 min-w-4 px-1 text-[9px]">Esc</Kbd>
+            <Kbd>Esc</Kbd>
             <span>Close</span>
           </span>
         </div>

@@ -5,20 +5,22 @@ import {
   CalendarDays,
   Check,
   CircleUserRound,
+  Download,
   Filter,
   Kanban,
   LayoutGrid,
   List,
   Loader2,
   Plus,
-  Search,
   Table as TableIcon,
+  Workflow,
 } from "lucide-react"
 
 import PageContainer from "@/components/common/PageContainer"
 import PageHeader from "@/components/common/PageHeader"
+import SearchInput from "@/components/common/SearchInput"
+import ShortcutHint from "@/components/common/ShortcutHint"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import {
@@ -28,52 +30,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import DataPagination from "@/components/common/DataPagination"
 import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination"
-
-function getPaginationItems(
-  totalPages: number,
-  currentPage: number
-): (number | "ellipsis")[] {
-  if (totalPages <= 7) {
-    return Array.from({ length: totalPages }, (_, index) => index)
-  }
-
-  const pages = new Set<number>([
-    0,
-    totalPages - 1,
-    currentPage,
-    currentPage - 1,
-    currentPage + 1,
-  ])
-
-  const visiblePages = [...pages]
-    .filter((p) => p >= 0 && p < totalPages)
-    .sort((a, b) => a - b)
-
-  const result: (number | "ellipsis")[] = []
-
-  visiblePages.forEach((p, index) => {
-    if (index > 0 && p - visiblePages[index - 1] > 1) {
-      result.push("ellipsis")
-    }
-    result.push(p)
-  })
-
-  return result
-}
-
-import { useTasksByProjectQuery, useUpdateTaskStatusMutation, useDeleteTaskMutation } from "@/features/tasks/hooks/useTasksQuery"
+  useProjectDependenciesQuery,
+  useTasksByProjectQuery,
+  useUpdateTaskDetailsMutation,
+  useUpdateTaskStatusMutation,
+  useDeleteTaskMutation,
+} from "@/features/tasks/hooks/useTasksQuery"
 import { useProjectDetailQuery } from "@/features/projects/hooks/useProjectsQuery"
 import { getApiErrorMessage } from "@/lib/apiError"
-import PageSizeSelector from "@/components/common/PageSizeSelector"
+import { downloadCsv } from "@/lib/csvExport"
 import type {
   Task,
   TaskPriority,
@@ -84,8 +51,8 @@ import TaskCard from "@/features/tasks/components/TaskCard"
 import TaskList from "@/features/tasks/components/TaskList"
 import TaskTable from "@/features/tasks/components/TaskTable"
 import TaskKanbanBoard from "@/features/tasks/components/TaskKanbanBoard"
+import TaskCalendarView from "@/features/tasks/components/TaskCalendarView"
 import ProjectPlanningTimeline from "@/features/tasks/components/ProjectPlanningTimeline"
-import { useProjectDependenciesQuery } from "@/features/tasks/hooks/useTasksQuery"
 import { toast } from "@/components/ui/toast"
 import confetti from "canvas-confetti"
 
@@ -122,6 +89,7 @@ export default function ProjectTasksPage() {
   })
 
   const updateStatusMutation = useUpdateTaskStatusMutation()
+  const updateDetailsMutation = useUpdateTaskDetailsMutation()
   const deleteTaskMutation = useDeleteTaskMutation(projectId)
 
   const tasks = tasksPageData?.content ?? []
@@ -243,6 +211,65 @@ export default function ProjectTasksPage() {
     }
   }
 
+  const handleTaskReschedule = async (
+    task: Task,
+    nextDueDateIso: string | null
+  ) => {
+    try {
+      const updated = await updateDetailsMutation.mutateAsync({
+        id: task.id,
+        title: task.title,
+        description: task.description ?? undefined,
+        taskStatus: task.taskStatus,
+        taskPriority: task.taskPriority,
+        dueDate: nextDueDateIso,
+        projectId: task.project?.id ?? projectId ?? "",
+        assignedToId: task.assignedTo?.id ?? "",
+        assigneeIds: task.assignees?.map((a) => a.id),
+        createdById: task.createdBy?.id ?? "",
+      })
+      toast.add({
+        type: "success",
+        title: nextDueDateIso ? "Task rescheduled" : "Due date cleared",
+        description: `"${updated.title}" schedule updated successfully.`,
+      })
+    } catch (err) {
+      toast.add({
+        type: "error",
+        title: "Reschedule failed",
+        description: getApiErrorMessage(err, "Failed to update due date."),
+      })
+    }
+  }
+
+  const handleExportCsv = () => {
+    const slug = (project?.name || "project")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+    downloadCsv(`${slug || "project"}-tasks-export.csv`, filteredTasks, [
+      { header: "Title", accessor: (t) => t.title },
+      { header: "Project", accessor: (t) => t.project?.name ?? project?.name ?? "" },
+      { header: "Status", accessor: (t) => t.taskStatus },
+      { header: "Priority", accessor: (t) => t.taskPriority },
+      {
+        header: "Assignee",
+        accessor: (t) =>
+          t.assignedTo
+            ? `${t.assignedTo.firstName ?? ""} ${t.assignedTo.lastName ?? ""}`.trim()
+            : "Unassigned",
+      },
+      { header: "Assignee Email", accessor: (t) => t.assignedTo?.email ?? "" },
+      { header: "Due Date", accessor: (t) => t.dueDate ?? "" },
+      { header: "Created At", accessor: (t) => t.createdAt },
+    ])
+    toast.add({
+      type: "success",
+      title: "CSV exported",
+      description: `Exported ${filteredTasks.length} task${filteredTasks.length === 1 ? "" : "s"}.`,
+    })
+  }
+
   const handlePageChange = (nextPage: number) => {
     if (nextPage < 0 || nextPage >= totalPages) return
     setPage(nextPage)
@@ -267,16 +294,37 @@ export default function ProjectTasksPage() {
           description="Manage and track work items for this project."
           className="mb-0"
           actions={
-            <Button
-              type="button"
-              onClick={() =>
-                navigate(`/app/tasks/create${projectId ? `?projectId=${projectId}` : ""}`)
-              }
-              className="w-full sm:w-auto"
-            >
-              <Plus className="size-4" />
-              Create Task
-            </Button>
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleExportCsv}
+                disabled={filteredTasks.length === 0}
+                className="h-8 gap-1.5 text-xs"
+              >
+                <Download className="size-3.5" />
+                <span>Export CSV</span>
+              </Button>
+              <Button
+                type="button"
+                onClick={() =>
+                  navigate(`/app/tasks/create${projectId ? `?projectId=${projectId}` : ""}`)
+                }
+                className="w-full sm:w-auto gap-2"
+              >
+                <Plus className="size-4" />
+                <span>Create Task</span>
+                <ShortcutHint
+                  keys={["c", "t"]}
+                  sequence
+                  compact
+                  decorative
+                  variant="onPrimary"
+                  className="hidden sm:inline-flex ml-1"
+                />
+              </Button>
+            </div>
           }
         />
       </div>
@@ -329,13 +377,14 @@ export default function ProjectTasksPage() {
       {/* Toolbar / Controls */}
       <div className="mb-6 flex flex-col gap-3 rounded-lg border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
+          <div className="flex-1 max-w-sm">
+            <SearchInput
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search tasks..."
-              className="pl-9"
+              aria-label="Search tasks"
+              aria-keyshortcuts="/"
+              data-page-search=""
             />
           </div>
 
@@ -474,13 +523,23 @@ export default function ProjectTasksPage() {
             <Kanban className="size-4" />
           </Button>
           <Button
+            variant={view === "calendar" ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => setView("calendar")}
+            className="size-8 p-0"
+            title="Calendar View"
+            aria-label="Calendar View"
+          >
+            <CalendarDays className="size-4" />
+          </Button>
+          <Button
             variant={view === "timeline" ? "secondary" : "ghost"}
             size="sm"
             onClick={() => setView("timeline")}
             className="size-8 p-0"
             title="Planning Timeline"
           >
-            <CalendarDays className="size-4" />
+            <Workflow className="size-4" />
           </Button>
         </div>
       </div>
@@ -568,6 +627,15 @@ export default function ProjectTasksPage() {
             />
           )}
 
+          {view === "calendar" && (
+            <TaskCalendarView
+              tasks={filteredTasks}
+              onViewTask={(t: Task) => navigate(`/app/tasks/${t.id}`)}
+              onRescheduleTask={handleTaskReschedule}
+              isRescheduling={updateDetailsMutation.isPending}
+            />
+          )}
+
           {view === "timeline" && (
             <ProjectPlanningTimeline
               tasks={tasks}
@@ -576,88 +644,24 @@ export default function ProjectTasksPage() {
               projectDueDate={project?.dueDate}
             />
           )}
-
-          {/* Pagination */}
-          {totalPages > 0 && (
-            <div className="mt-6 flex flex-col gap-4 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex flex-wrap items-center gap-3">
-                <p className="text-sm text-muted-foreground">
-                  Showing {totalElements === 0 ? 0 : page * (size || 10) + 1}–{Math.min((page + 1) * (size || 10), totalElements)} of{" "}
-                  {totalElements.toLocaleString("en-IN")} tasks
-                </p>
-                <PageSizeSelector
-                  value={size}
-                  onChange={(newSize) => {
-                    setSize(newSize)
-                    setPage(0)
-                  }}
-                  options={[10, 20, 50, 100]}
-                />
-              </div>
-
-              {totalPages > 1 && (
-                <Pagination className="mx-0 w-auto justify-start sm:justify-end">
-                  <PaginationContent className="flex-wrap">
-                    <PaginationItem>
-                      <PaginationPrevious
-                        href="#"
-                        aria-disabled={page === 0}
-                        tabIndex={page === 0 ? -1 : undefined}
-                        className={
-                          page === 0
-                            ? "pointer-events-none opacity-50"
-                            : "cursor-pointer"
-                        }
-                        onClick={(e) => {
-                          e.preventDefault()
-                          if (page > 0) handlePageChange(page - 1)
-                        }}
-                      />
-                    </PaginationItem>
-
-                    {getPaginationItems(totalPages, page).map((item, index) => (
-                      <PaginationItem key={`${item}-${index}`}>
-                        {item === "ellipsis" ? (
-                          <PaginationEllipsis />
-                        ) : (
-                          <PaginationLink
-                            href="#"
-                            isActive={page === item}
-                            aria-label={`Go to page ${item + 1}`}
-                            aria-current={page === item ? "page" : undefined}
-                            onClick={(e) => {
-                              e.preventDefault()
-                              if (page !== item) handlePageChange(item)
-                            }}
-                          >
-                            {item + 1}
-                          </PaginationLink>
-                        )}
-                      </PaginationItem>
-                    ))}
-
-                    <PaginationItem>
-                      <PaginationNext
-                        href="#"
-                        aria-disabled={page >= totalPages - 1}
-                        tabIndex={page >= totalPages - 1 ? -1 : undefined}
-                        className={
-                          page >= totalPages - 1
-                            ? "pointer-events-none opacity-50"
-                            : "cursor-pointer"
-                        }
-                        onClick={(e) => {
-                          e.preventDefault()
-                          if (page < totalPages - 1) handlePageChange(page + 1)
-                        }}
-                      />
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
-              )}
-            </div>
-          )}
         </>
+      )}
+
+      {/* Pagination (always visible when project has tasks, even if current page filter is empty) */}
+      {!loading && !error && totalElements > 0 && (
+        <DataPagination
+          className="mt-6"
+          page={page}
+          totalPages={totalPages}
+          totalElements={totalElements}
+          pageSize={size}
+          itemLabel="tasks"
+          onPageChange={handlePageChange}
+          onPageSizeChange={(newSize) => {
+            setSize(newSize)
+            setPage(0)
+          }}
+        />
       )}
     </PageContainer>
   )

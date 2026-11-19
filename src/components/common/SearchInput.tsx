@@ -14,21 +14,25 @@ export default function SearchInput({
   showKbdHint = true,
   ...props
 }: SearchInputProps) {
+  const hasValue = Boolean(props.value)
+
   return (
     <div className={cn("relative w-full flex items-center", containerClassName)}>
       <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
       <Input
         type="search"
-        className={cn("w-full pl-8 pr-8 bg-background", className)}
+        className={cn(
+          "w-full pl-8 bg-background",
+          showKbdHint ? "pr-9" : "pr-3",
+          className
+        )}
         {...props}
       />
-      {showKbdHint && (
+      {showKbdHint && !hasValue && (
         <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none hidden sm:flex items-center">
-          <Kbd className="h-4.5 min-w-4.5 px-1 text-[10px] bg-muted/80 border border-border/60 text-muted-foreground font-mono">
-            /
-          </Kbd>
+          <Kbd aria-hidden="true">/</Kbd>
         </div>
       )}
     </div>
-  );
+  )
 }

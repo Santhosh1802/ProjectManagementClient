@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from "react"
-import { useForm } from "react-hook-form"
+import { Controller, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Loader2, Pencil } from "lucide-react"
 
@@ -14,6 +14,8 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import ShortcutHint from "@/components/common/ShortcutHint"
+import { submitFormOnModEnter, toAriaKeyShortcuts } from "@/lib/keyboard"
 import {
   Select,
   SelectContent,
@@ -28,6 +30,13 @@ import type { Task, TaskPriority, TaskStatus } from "@/features/tasks/types/task
 import { editTaskSchema, type EditTaskFormValues } from "@/features/tasks/schema/task.schema"
 import TaskDueDateTimePicker from "@/features/tasks/components/create-task/TaskDueDateTimePicker"
 import AssigneeSelect from "@/features/tasks/components/create-task/AssigneeSelect"
+import CoAssigneesMultiSelect from "@/features/tasks/components/create-task/CoAssigneesMultiSelect"
+
+function getInitialCoAssigneeIds(task: Task): string[] {
+  return (task.assignees ?? [])
+    .map((user) => user.id)
+    .filter((id) => id !== task.assignedTo.id)
+}
 
 interface EditTaskModalProps {
   task: Task
@@ -70,6 +79,7 @@ export default function EditTaskModal({
       taskPriority: task.taskPriority,
       projectId: task.project.id,
       assignedToId: task.assignedTo.id,
+      assigneeIds: getInitialCoAssigneeIds(task),
       dueDate: task.dueDate ? task.dueDate.slice(0, 16).replace("T", " ") : "",
     },
   })
@@ -83,6 +93,7 @@ export default function EditTaskModal({
         taskPriority: task.taskPriority,
         projectId: task.project.id,
         assignedToId: task.assignedTo.id,
+        assigneeIds: getInitialCoAssigneeIds(task),
         dueDate: task.dueDate ? task.dueDate.slice(0, 16).replace("T", " ") : "",
       })
     }
@@ -125,8 +136,20 @@ export default function EditTaskModal({
       }
     }
 
+    for (const a of task.assignees ?? []) {
+      if (a && !memberMap.has(a.id)) {
+        memberMap.set(a.id, {
+          id: a.id,
+          firstName: a.firstName,
+          lastName: a.lastName,
+          email: a.email,
+          isActive: a.isActive ?? true,
+        })
+      }
+    }
+
     return Array.from(memberMap.values())
-  }, [task.project.owner, membersData])
+  }, [task.project.owner, task.assignees, membersData])
 
   const onSubmit = async (values: EditTaskFormValues) => {
     try {
@@ -141,6 +164,12 @@ export default function EditTaskModal({
         }
       }
 
+      const uniqueAssigneeIds = Array.from(
+        new Set(
+          [values.assignedToId, ...(values.assigneeIds ?? [])].filter(Boolean)
+        )
+      )
+
       const updated = await updateMutation.mutateAsync({
         id: task.id,
         title: values.title.trim(),
@@ -149,6 +178,7 @@ export default function EditTaskModal({
         taskPriority: values.taskPriority as TaskPriority,
         projectId: values.projectId,
         assignedToId: values.assignedToId,
+        assigneeIds: uniqueAssigneeIds,
         createdById: task.createdBy.id,
         dueDate: formattedDueDate,
       })
@@ -185,7 +215,12 @@ export default function EditTaskModal({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-2">
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          onKeyDown={submitFormOnModEnter}
+          aria-keyshortcuts={toAriaKeyShortcuts(["mod", "Enter"])}
+          className="space-y-4 py-2"
+        >
           {/* Title */}
           <div className="space-y-1.5">
             <label htmlFor="edit-task-title" className="text-sm font-medium">
@@ -232,6 +267,23 @@ export default function EditTaskModal({
               disabled={isSubmitting}
             />
           </div>
+
+          {/* Additional Co-assignees */}
+          <Controller
+            name="assigneeIds"
+            control={control}
+            render={({ field }) => (
+              <CoAssigneesMultiSelect
+                id="edit-task-co-assignees"
+                value={field.value ?? []}
+                onChange={field.onChange}
+                users={projectAssignees}
+                excludeUserId={watch("assignedToId")}
+                loading={isMembersLoading}
+                disabled={isSubmitting}
+              />
+            )}
+          />
 
           {/* Status & Priority */}
           <div className="grid gap-4 sm:grid-cols-2">
@@ -294,7 +346,14 @@ export default function EditTaskModal({
             </Button>
             <Button type="submit" disabled={isSubmitting} className="gap-2">
               {isSubmitting && <Loader2 className="size-4 animate-spin" />}
-              Save Changes
+              <span>Save Changes</span>
+              <ShortcutHint
+                keys={["mod", "Enter"]}
+                compact
+                decorative
+                variant="onPrimary"
+                className="hidden sm:inline-flex ml-1"
+              />
             </Button>
           </DialogFooter>
         </form>

@@ -6,6 +6,8 @@ export interface AuthUser {
   lastName: string
   email: string
   user_role: string
+  avatarUrl?: string | null
+  mfaEnabled?: boolean
 }
 
 interface AuthState {

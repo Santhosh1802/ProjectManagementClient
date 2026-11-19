@@ -41,15 +41,29 @@ const SINGLE_KEY_SHORTCUTS = ACTIONABLE.filter(
   (shortcut) => !shortcut.sequence && shortcut.keys.length === 1
 )
 
+function isInputVisible(input: HTMLInputElement): boolean {
+  if (
+    input.hidden ||
+    input.closest("[hidden], [data-hidden], [data-state='inactive'], [aria-hidden='true']")
+  ) {
+    return false
+  }
+  const style = window.getComputedStyle(input)
+  if (style.display === "none" || style.visibility === "hidden") {
+    return false
+  }
+  const isJsdom =
+    typeof navigator !== "undefined" && /jsdom/i.test(navigator.userAgent)
+  return input.getClientRects().length > 0 || isJsdom
+}
+
 function focusPageSearch(): boolean {
   const candidates = document.querySelectorAll<HTMLInputElement>(
     PAGE_SEARCH_SELECTOR
   )
 
   for (const input of candidates) {
-    const isVisible = input.getClientRects().length > 0
-
-    if (isVisible && !input.disabled) {
+    if (isInputVisible(input) && !input.disabled) {
       input.focus()
       input.select()
       return true
@@ -64,6 +78,8 @@ export interface UseKeyboardShortcutsOptions {
   role: string | null | undefined
   /** Runs a non-DOM action (open search/help, navigate). */
   onAction: (action: ShortcutAction, shortcut: ShortcutDefinition) => void
+  /** Called whenever a multi-key sequence starts or clears. */
+  onSequenceChange?: (prefix: string | null) => void
   /**
    * True while one of the shortcut system's own overlays (global
    * search, shortcuts dialog) is open, so Ctrl/Cmd + K and
@@ -93,7 +109,10 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions) {
     let pendingTimer: number | undefined
 
     const clearSequence = () => {
-      pendingPrefix = null
+      if (pendingPrefix !== null) {
+        pendingPrefix = null
+        optionsRef.current.onSequenceChange?.(null)
+      }
 
       if (pendingTimer !== undefined) {
         window.clearTimeout(pendingTimer)
@@ -153,6 +172,15 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions) {
 
       if (isOverlayOpen()) {
         clearSequence()
+        if (key === "?" && isOwnOverlayOpen()) {
+          const helpShortcut = SINGLE_KEY_SHORTCUTS.find(
+            (candidate) => candidate.keys[0] === "?"
+          )
+          if (helpShortcut && isAllowed(helpShortcut)) {
+            event.preventDefault()
+            onAction(helpShortcut.action, helpShortcut)
+          }
+        }
         return
       }
 
@@ -182,6 +210,7 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions) {
 
       if (!event.shiftKey && SEQUENCE_PREFIXES.has(key)) {
         pendingPrefix = key
+        optionsRef.current.onSequenceChange?.(key)
         pendingTimer = window.setTimeout(clearSequence, SEQUENCE_TIMEOUT_MS)
         return
       }

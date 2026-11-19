@@ -50,6 +50,9 @@ export interface Task {
   dueDate: string | null
   project: TaskProject
   assignedTo: TaskUser
+  assignees?: TaskUser[]
+  subtaskCount?: number
+  completedSubtaskCount?: number
   createdBy: TaskUser
   createdAt: string
   updatedAt: string
@@ -70,6 +73,7 @@ export interface CreateTaskRequest {
   dueDate?: string | null
   projectId: string
   assignedToId: string
+  assigneeIds?: string[]
 }
 
 export interface GetTaskByIdRequest {
@@ -108,6 +112,7 @@ export interface UpdateTaskDetailsRequest {
   dueDate?: string | null
   projectId: string
   assignedToId: string
+  assigneeIds?: string[]
   createdById: string
 }
 
@@ -124,7 +129,7 @@ export type TaskPageResponse = PageResponse<Task>
 
 // features/tasks/types/task.types.ts
 
-export type TaskView = "kanban" | "card" | "list" | "table" | "timeline"
+export type TaskView = "kanban" | "card" | "list" | "table" | "calendar" | "timeline"
 
 export type DependencyType = "FINISH_TO_START" | "BLOCKED_BY"
 
@@ -217,4 +222,41 @@ export interface TaskSearchParams {
   sortOrder?: string
   page?: number
   size?: number
+}
+
+export interface SubtaskAssignee {
+  id: string
+  firstName: string
+  lastName: string
+  email: string
+}
+
+export interface TaskSubtask {
+  id: string
+  taskId: string
+  title: string
+  completed: boolean
+  sortOrder: number
+  assignedTo: SubtaskAssignee | null
+  dueDate: string | null
+  completedAt: string | null
+  createdById: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateSubtaskRequest {
+  title: string
+  assignedToId?: string | null
+  dueDate?: string | null
+}
+
+export interface UpdateSubtaskRequest {
+  title?: string
+  completed?: boolean
+  assignedToId?: string
+  clearAssignee?: boolean
+  dueDate?: string
+  clearDueDate?: boolean
+  sortOrder?: number
 }

@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useEffect, useMemo, useRef } from "react"
-import { useForm, useWatch } from "react-hook-form"
+import { Controller, useForm, useWatch } from "react-hook-form"
 import { submitFormOnModEnter, toAriaKeyShortcuts } from "@/lib/keyboard"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 
 import AssigneeSelect from "@/features/tasks/components/create-task/AssigneeSelect"
+import CoAssigneesMultiSelect from "@/features/tasks/components/create-task/CoAssigneesMultiSelect"
 import ProjectSelect from "@/features/tasks/components/create-task/ProjectSelect"
 import TaskDueDateTimePicker from "@/features/tasks/components/create-task/TaskDueDateTimePicker"
 import TaskPrioritySelect from "@/features/tasks/components/create-task/TaskPrioritySelect"
@@ -65,6 +66,7 @@ export default function CreateTaskForm({
       taskPriority: "MEDIUM",
       projectId: defaultProjectId ?? "",
       assignedToId: "",
+      assigneeIds: [],
       dueDate: "",
     },
   })
@@ -80,6 +82,11 @@ export default function CreateTaskForm({
   const selectedProjectId = useWatch({
     control,
     name: "projectId",
+  })
+
+  const selectedPrimaryAssigneeId = useWatch({
+    control,
+    name: "assignedToId",
   })
 
   const prevProjectIdRef = useRef(selectedProjectId)
@@ -146,11 +153,12 @@ export default function CreateTaskForm({
     return Array.from(memberMap.values())
   }, [selectedProjectId, projectDetail, membersData])
 
-  // Reset assignee when selected project changes
+  // Reset assignees when selected project changes
   useEffect(() => {
     if (prevProjectIdRef.current !== selectedProjectId) {
       if (prevProjectIdRef.current) {
         setValue("assignedToId", "", { shouldValidate: false })
+        setValue("assigneeIds", [], { shouldValidate: false })
       }
       prevProjectIdRef.current = selectedProjectId
     }
@@ -189,6 +197,7 @@ export default function CreateTaskForm({
         taskPriority: "MEDIUM",
         projectId: defaultProjectId ?? "",
         assignedToId: "",
+        assigneeIds: [],
         dueDate: "",
       })
     } catch (error) {
@@ -292,6 +301,22 @@ export default function CreateTaskForm({
           disabled={isSubmitting || !selectedProjectId}
         />
       </div>
+
+      {/* Additional Co-assignees */}
+      <Controller
+        name="assigneeIds"
+        control={form.control}
+        render={({ field }) => (
+          <CoAssigneesMultiSelect
+            value={field.value ?? []}
+            onChange={field.onChange}
+            users={projectAssignees}
+            excludeUserId={selectedPrimaryAssigneeId}
+            loading={isProjectDetailLoading || isMembersLoading}
+            disabled={isSubmitting || !selectedProjectId}
+          />
+        )}
+      />
 
       {/* Status + Priority */}
       <div className="grid gap-6 md:grid-cols-2">

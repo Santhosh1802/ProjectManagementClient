@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import {
@@ -7,12 +7,21 @@ import {
   UserPlus,
   Loader2,
   MoreVertical,
+  Search,
   Shield,
   Trash2,
   AlertTriangle,
 } from "lucide-react"
 
 import { useAppSelector } from "@/hooks/redux-hooks"
+import DataPagination, { useClientPagination } from "@/components/common/DataPagination"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
   useWorkspaceMembersQuery,
   useUpdateWorkspaceMutation,
@@ -27,6 +36,9 @@ import { InviteMemberDialog } from "@/features/workspaces/components/InviteMembe
 import { TransferOwnershipDialog } from "@/features/workspaces/components/TransferOwnershipDialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Kbd } from "@/components/ui/kbd"
+import ShortcutHint from "@/components/common/ShortcutHint"
+import { submitFormOnModEnter, toAriaKeyShortcuts } from "@/lib/keyboard"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -68,6 +80,8 @@ export default function OrganizationSettingsPage() {
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false)
   const [transferDialogOpen, setTransferDialogOpen] = useState(false)
   const [activeTab, setActiveTab] = useState("members")
+  const [memberSearch, setMemberSearch] = useState("")
+  const [roleFilter, setRoleFilter] = useState<"ALL" | WorkspaceRole>("ALL")
 
   const isOrg = activeWorkspace?.workspaceType === "ORGANIZATION"
   const isOwner = activeWorkspace?.currentUserRole === "OWNER"
@@ -86,6 +100,27 @@ export default function OrganizationSettingsPage() {
   const { mutate: removeMember, isPending: isRemoving } = useRemoveMemberMutation(
     workspaceId ?? ""
   )
+
+  const filteredMembers = useMemo(() => {
+    const q = memberSearch.trim().toLowerCase()
+    return members.filter((m) => {
+      const fullName = `${m.firstName ?? ""} ${m.lastName ?? ""}`.trim().toLowerCase()
+      const email = (m.email ?? "").toLowerCase()
+      const matchesSearch = !q || fullName.includes(q) || email.includes(q)
+      const matchesRole = roleFilter === "ALL" || m.role === roleFilter
+      return matchesSearch && matchesRole
+    })
+  }, [members, memberSearch, roleFilter])
+
+  const {
+    page: memberPage,
+    setPage: setMemberPage,
+    pageSize: memberPageSize,
+    setPageSize: setMemberPageSize,
+    totalElements: totalFilteredMembers,
+    totalPages: totalMemberPages,
+    paginatedItems: paginatedMembers,
+  } = useClientPagination(filteredMembers, 10)
 
   const {
     register,
@@ -133,30 +168,30 @@ export default function OrganizationSettingsPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
+    <div className="space-y-6 max-w-5xl mx-auto min-w-0">
       {/* Header */}
-      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight">{activeWorkspace.name}</h1>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between min-w-0">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-2xl font-bold tracking-tight break-words">{activeWorkspace.name}</h1>
             <Badge variant="outline" className="text-xs uppercase font-mono">
               {activeWorkspace.currentUserRole}
             </Badge>
           </div>
-          <p className="text-sm text-muted-foreground mt-0.5">
+          <p className="text-sm text-muted-foreground mt-0.5 break-words">
             Manage your organization profile, team members, and role permissions.
           </p>
         </div>
 
         {isAdmin && (
-          <Button onClick={() => setInviteDialogOpen(true)} className="gap-2 self-start sm:self-auto">
+          <Button onClick={() => setInviteDialogOpen(true)} className="gap-2 self-start sm:self-auto shrink-0">
             <UserPlus className="size-4" />
             Invite Member
           </Button>
         )}
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 min-w-0">
         <TabsList>
           <TabsTrigger value="members" className="gap-2">
             <Users className="size-4" />
@@ -169,13 +204,59 @@ export default function OrganizationSettingsPage() {
         </TabsList>
 
         {/* Members Tab */}
-        <TabsContent value="members" className="space-y-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base font-semibold">Organization Members</CardTitle>
-              <CardDescription>
-                People who have access to collaborate on projects in this organization.
-              </CardDescription>
+        <TabsContent value="members" className="space-y-4 min-w-0">
+          <Card className="min-w-0 overflow-hidden">
+            <CardHeader className="pb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <CardTitle className="text-base font-semibold">Organization Members</CardTitle>
+                <CardDescription>
+                  People who have access to collaborate on projects in this organization.
+                </CardDescription>
+              </div>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={memberSearch}
+                    onChange={(e) => {
+                      setMemberSearch(e.target.value)
+                      setMemberPage(0)
+                    }}
+                    placeholder="Search members..."
+                    aria-label="Search organization members"
+                    aria-keyshortcuts="/"
+                    data-page-search=""
+                    className="h-8 pr-8 pl-8 text-xs sm:w-52"
+                  />
+                  {!memberSearch && (
+                    <Kbd
+                      aria-hidden="true"
+                      className="pointer-events-none absolute top-1/2 right-2 hidden h-4 min-w-4 -translate-y-1/2 px-1 text-[9px] sm:inline-flex"
+                    >
+                      /
+                    </Kbd>
+                  )}
+                </div>
+                <Select
+                  value={roleFilter}
+                  onValueChange={(val) => {
+                    if (val) {
+                      setRoleFilter(val as "ALL" | WorkspaceRole)
+                      setMemberPage(0)
+                    }
+                  }}
+                >
+                  <SelectTrigger className="h-8 w-full sm:w-32 text-xs">
+                    <SelectValue placeholder="All Roles" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">All Roles</SelectItem>
+                    <SelectItem value="OWNER">Owners</SelectItem>
+                    <SelectItem value="ADMIN">Admins</SelectItem>
+                    <SelectItem value="MEMBER">Members</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </CardHeader>
             <CardContent className="p-0">
               <div className="overflow-x-auto">
@@ -196,14 +277,14 @@ export default function OrganizationSettingsPage() {
                           <Loader2 className="size-5 animate-spin mx-auto text-primary" />
                         </TableCell>
                       </TableRow>
-                    ) : members.length === 0 ? (
+                    ) : paginatedMembers.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
                           No members found.
                         </TableCell>
                       </TableRow>
                     ) : (
-                      members.map((member) => {
+                      paginatedMembers.map((member) => {
                         const isMemberOwner = member.role === "OWNER"
                         const isSelf = member.userId === currentUser?.id
 
@@ -307,6 +388,20 @@ export default function OrganizationSettingsPage() {
                   </TableBody>
                 </Table>
               </div>
+              {!membersLoading && totalFilteredMembers > 0 && (
+                <DataPagination
+                  className="px-4 py-3"
+                  compact
+                  page={memberPage}
+                  totalPages={totalMemberPages}
+                  totalElements={totalFilteredMembers}
+                  pageSize={memberPageSize}
+                  pageSizeOptions={[10, 20, 50]}
+                  itemLabel="members"
+                  onPageChange={setMemberPage}
+                  onPageSizeChange={setMemberPageSize}
+                />
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -314,12 +409,49 @@ export default function OrganizationSettingsPage() {
         {/* General Settings Tab */}
         <TabsContent value="general" className="space-y-6">
           <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-base font-semibold">Plan &amp; Usage Quotas</CardTitle>
+                <CardDescription>Current subscription tier and tenant resource limits.</CardDescription>
+              </div>
+              <Badge variant="secondary" className="font-mono uppercase">
+                {activeWorkspace.planTier ?? "FREE"} Plan
+              </Badge>
+            </CardHeader>
+            <CardContent className="grid gap-4 sm:grid-cols-2">
+              <div className="rounded-lg border p-3 space-y-1">
+                <p className="text-xs text-muted-foreground">Projects Used</p>
+                <p className="text-lg font-semibold">
+                  {activeWorkspace.projectCount}{" "}
+                  <span className="text-xs font-normal text-muted-foreground">
+                    / {activeWorkspace.maxProjects && activeWorkspace.maxProjects > 0 ? activeWorkspace.maxProjects : "Unlimited"}
+                  </span>
+                </p>
+              </div>
+              <div className="rounded-lg border p-3 space-y-1">
+                <p className="text-xs text-muted-foreground">Members Used</p>
+                <p className="text-lg font-semibold">
+                  {activeWorkspace.memberCount}{" "}
+                  <span className="text-xs font-normal text-muted-foreground">
+                    / {activeWorkspace.maxMembers && activeWorkspace.maxMembers > 0 ? activeWorkspace.maxMembers : "Unlimited"}
+                  </span>
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
             <CardHeader>
               <CardTitle className="text-base font-semibold">Organization Profile</CardTitle>
               <CardDescription>Update your organization workspace name and details.</CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit(onUpdateName)} className="space-y-4 max-w-md">
+              <form
+                onSubmit={handleSubmit(onUpdateName)}
+                onKeyDown={submitFormOnModEnter}
+                aria-keyshortcuts={toAriaKeyShortcuts(["mod", "Enter"])}
+                className="space-y-4 max-w-md"
+              >
                 <div className="space-y-1.5">
                   <Label htmlFor="org-name-input">Organization Name</Label>
                   <Input
@@ -333,9 +465,16 @@ export default function OrganizationSettingsPage() {
                 </div>
 
                 {isAdmin && (
-                  <Button type="submit" disabled={isUpdatingWs}>
+                  <Button type="submit" disabled={isUpdatingWs} className="gap-2">
                     {isUpdatingWs && <Loader2 className="mr-2 size-4 animate-spin" />}
-                    Save Changes
+                    <span>Save Changes</span>
+                    <ShortcutHint
+                      keys={["mod", "Enter"]}
+                      compact
+                      decorative
+                      variant="onPrimary"
+                      className="hidden sm:inline-flex ml-1"
+                    />
                   </Button>
                 )}
               </form>

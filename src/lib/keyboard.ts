@@ -21,14 +21,30 @@ export const MOD_KEY_LABEL = IS_MAC_PLATFORM ? "⌘" : "Ctrl"
 
 const KEY_LABELS: Record<string, string> = {
   mod: MOD_KEY_LABEL,
+  Shift: IS_MAC_PLATFORM ? "⇧" : "Shift",
+  Alt: IS_MAC_PLATFORM ? "⌥" : "Alt",
   Enter: IS_MAC_PLATFORM ? "↵" : "Enter",
   Esc: "Esc",
+  ArrowLeft: "←",
+  ArrowRight: "→",
+  ArrowUp: "↑",
+  ArrowDown: "↓",
+  "[": "[",
+  "]": "]",
 }
 
 const SPOKEN_LABELS: Record<string, string> = {
   mod: IS_MAC_PLATFORM ? "Command" : "Control",
+  Shift: "Shift",
+  Alt: IS_MAC_PLATFORM ? "Option" : "Alt",
   Enter: "Enter",
   Esc: "Escape",
+  ArrowLeft: "Left arrow",
+  ArrowRight: "Right arrow",
+  ArrowUp: "Up arrow",
+  ArrowDown: "Down arrow",
+  "[": "Left bracket",
+  "]": "Right bracket",
   "/": "Slash",
   "?": "Question mark",
 }
@@ -47,8 +63,11 @@ export function describeShortcut(keys: string[], sequence = false): string {
   return sequence ? spoken.join(" then ") : spoken.join("+")
 }
 
-/** Value for the `aria-keyshortcuts` attribute (modifier combos only). */
-export function toAriaKeyShortcuts(keys: string[]): string {
+/** Value for the `aria-keyshortcuts` attribute. */
+export function toAriaKeyShortcuts(
+  keys: string[],
+  sequence = false
+): string {
   return keys
     .map((key) =>
       key === "mod"
@@ -59,7 +78,7 @@ export function toAriaKeyShortcuts(keys: string[]): string {
           ? key.toUpperCase()
           : key
     )
-    .join("+")
+    .join(sequence ? " " : "+")
 }
 
 type AnyKeyboardEvent = KeyboardEvent | ReactKeyboardEvent

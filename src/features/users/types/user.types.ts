@@ -22,7 +22,7 @@ export interface PageResponse<T> {
 
 /* -------------------- Roles -------------------- */
 
-export type UserRole = "ADMIN" | "MANAGER" | "USER"
+export type UserRole = "SUPER_ADMIN" | "ADMIN" | "MANAGER" | "USER"
 
 /* -------------------- Request Types -------------------- */
 
@@ -68,6 +68,7 @@ export interface UserDetails {
   firstName: string
   lastName?: string
   email: string
+  avatarUrl?: string | null
 }
 
 /* -------------------- Response Types -------------------- */
@@ -83,6 +84,8 @@ export interface User {
   createdAt: string
   updatedAt: string
   lastLoginAt: string | null
+  avatarUrl?: string | null
+  mfaEnabled?: boolean
 }
 
 /* -------------------- Owned Projects -------------------- */

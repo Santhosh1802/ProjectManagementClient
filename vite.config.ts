@@ -41,6 +41,21 @@ export default defineConfig({
       "@": path.resolve(import.meta.dirname, "./src"),
     },
   },
+  build: {
+    rolldownOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("node_modules")) {
+            if (id.includes("recharts") || id.includes("d3-")) return "vendor-charts"
+            if (id.includes("@tanstack") || id.includes("@reduxjs") || id.includes("react-redux") || id.includes("redux-persist")) return "vendor-state"
+            if (id.includes("@stomp") || id.includes("sockjs-client")) return "vendor-realtime"
+            if (id.includes("lucide-react") || id.includes("@base-ui")) return "vendor-ui"
+            if (id.includes("react-router") || id.includes("react-dom") || id.includes("/react/")) return "vendor-react"
+          }
+        },
+      },
+    },
+  },
   server: {
     port: 4321,
     strictPort: true,
@@ -50,6 +65,7 @@ export default defineConfig({
     globals: true,
     environment: "jsdom",
     setupFiles: "./src/test/setup.ts",
-    testTimeout: 15000,
+    testTimeout: 30000,
+    maxWorkers: 4,
   },
 })

@@ -13,6 +13,7 @@ import { useAppSelector } from "@/hooks/redux-hooks";
 
 import AppSidebar from "../common/AppSidebar";
 import AppHeader from "../common/AppHeader";
+import { AccessibilityToolbar } from "../common/AccessibilityToolbar";
 import KeyboardShortcutsProvider from "../common/KeyboardShortcutsProvider";
 import MobileQuickActionFAB from "../common/MobileQuickActionFAB";
 import AppLoader from "@/components/common/AppLoader";
@@ -52,14 +53,19 @@ export default function AppLayout() {
       <KeyboardShortcutsProvider>
         <AppSidebar />
 
-        <SidebarInset>
+        <SidebarInset className="min-w-0 overflow-x-hidden">
+          <AccessibilityToolbar />
           <AppHeader />
 
-          <main className="flex flex-1 flex-col">
-            <div className="flex-1 p-4 md:p-6">
+          <div
+            id="main-content"
+            tabIndex={-1}
+            className="flex min-w-0 flex-1 flex-col overflow-x-hidden bg-gradient-to-br from-background via-background to-secondary/15 outline-none"
+          >
+            <div className="mx-auto min-w-0 w-full max-w-[1440px] flex-1 p-4 md:p-6 lg:p-8">
               <Outlet />
             </div>
-          </main>
+          </div>
         </SidebarInset>
 
         <MobileQuickActionFAB />

@@ -47,7 +47,9 @@ export const NotificationBell: React.FC = () => {
 
     setOpen(false)
 
-    if (item.taskId) {
+    if (item.type === "CHAT_MESSAGE" || item.type === "CHAT_MENTION") {
+      navigate("/app/chat")
+    } else if (item.taskId) {
       navigate(`/app/tasks/${item.taskId}`)
     } else if (item.projectId) {
       navigate(`/app/projects/${item.projectId}`)
@@ -61,6 +63,9 @@ export const NotificationBell: React.FC = () => {
       case "TASK_STATUS_CHANGED":
         return <Check className="size-4 text-amber-500" />
       case "TASK_COMMENT_ADDED":
+      case "COMMENT_MENTIONED":
+      case "CHAT_MESSAGE":
+      case "CHAT_MENTION":
         return <MessageSquare className="size-4 text-blue-500" />
       case "PROJECT_MEMBER_ADDED":
         return <UserPlus className="size-4 text-emerald-500" />

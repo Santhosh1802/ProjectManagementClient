@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest"
-import { createTaskSchema, editTaskSchema } from "../features/tasks/schema/task.schema"
+import {
+  createSubtaskSchema,
+  createTaskSchema,
+  editTaskSchema,
+} from "../features/tasks/schema/task.schema"
 
 describe("Task Zod Schemas", () => {
   describe("createTaskSchema", () => {
@@ -59,11 +63,15 @@ describe("Task Zod Schemas", () => {
         taskPriority: "URGENT" as const,
         projectId: "proj-1",
         assignedToId: "user-2",
+        assigneeIds: ["user-3", "user-4"],
         dueDate: "2026-11-15 14:30",
       }
 
       const result = editTaskSchema.safeParse(validEdit)
       expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.data.assigneeIds).toEqual(["user-3", "user-4"])
+      }
     })
 
     it("fails when assignee is missing", () => {
@@ -76,6 +84,24 @@ describe("Task Zod Schemas", () => {
       }
 
       const result = editTaskSchema.safeParse(invalidEdit)
+      expect(result.success).toBe(false)
+    })
+  })
+
+  describe("createSubtaskSchema", () => {
+    it("accepts a trimmed subtask title and optional assignee", () => {
+      const result = createSubtaskSchema.safeParse({
+        title: "  Write integration tests  ",
+        assignedToId: "user-2",
+      })
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.data.title).toBe("Write integration tests")
+      }
+    })
+
+    it("rejects blank subtask title", () => {
+      const result = createSubtaskSchema.safeParse({ title: "   " })
       expect(result.success).toBe(false)
     })
   })

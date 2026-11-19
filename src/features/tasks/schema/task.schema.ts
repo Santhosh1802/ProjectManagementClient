@@ -47,6 +47,8 @@ export const createTaskSchema = z.object({
     .trim()
     .min(1, "Assignee is required."),
 
+  assigneeIds: z.array(z.string()).optional(),
+
   dueDate: z
     .string()
     .trim()
@@ -90,6 +92,8 @@ export const editTaskSchema = z.object({
     .trim()
     .min(1, "Assignee is required."),
 
+  assigneeIds: z.array(z.string()).optional(),
+
   dueDate: z
     .string()
     .trim()
@@ -101,3 +105,14 @@ export const editTaskSchema = z.object({
 })
 
 export type EditTaskFormValues = z.infer<typeof editTaskSchema>
+
+export const createSubtaskSchema = z.object({
+  title: z
+    .string()
+    .trim()
+    .min(1, "Subtask title is required.")
+    .max(200, "Subtask title must be 200 characters or less."),
+  assignedToId: z.string().optional(),
+})
+
+export type CreateSubtaskFormValues = z.infer<typeof createSubtaskSchema>

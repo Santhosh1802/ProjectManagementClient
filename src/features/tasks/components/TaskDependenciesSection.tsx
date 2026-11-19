@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/select"
 import { toast } from "@/components/ui/toast"
 import { getApiErrorMessage } from "@/lib/apiError"
+import DataPagination, { useClientPagination } from "@/components/common/DataPagination"
 import {
   useTaskDependenciesQuery,
   useCreateTaskDependencyMutation,
@@ -65,6 +66,9 @@ export default function TaskDependenciesSection({
   const blockedBy = dependencies?.blockedBy ?? []
   const blocking = dependencies?.blocking ?? []
   const isBlocked = dependencies?.isBlocked ?? false
+
+  const blockedByPagination = useClientPagination(blockedBy, 5)
+  const blockingPagination = useClientPagination(blocking, 5)
 
   // Eligible tasks to depend on: same project, not the current task, and not already in blockedBy
   const existingPrerequisiteIds = new Set(blockedBy.map((d) => d.taskId))
@@ -193,64 +197,77 @@ export default function TaskDependenciesSection({
               No prerequisites. This task is free to start.
             </div>
           ) : (
-            <div className="divide-y rounded-lg border">
-              {blockedBy.map((dep) => {
-                const isComplete = dep.taskStatus === "DONE"
-                return (
-                  <div
-                    key={dep.dependencyId}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 text-xs hover:bg-muted/40 transition-colors"
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      {isComplete ? (
-                        <CheckCircle2 className="size-4 shrink-0 text-green-600 dark:text-green-400" />
-                      ) : (
-                        <Clock className="size-4 shrink-0 text-amber-500" />
-                      )}
-                      <div className="min-w-0">
-                        <Link
-                          to={`/app/tasks/${dep.taskId}`}
-                          className="font-medium hover:underline hover:text-primary truncate block max-w-sm"
-                        >
-                          {dep.taskTitle}
-                        </Link>
-                        <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
-                          <span>Status: {dep.taskStatus.replace("_", " ")}</span>
-                          <span>•</span>
-                          <span>Priority: {dep.taskPriority}</span>
-                          <span>•</span>
-                          <span className="capitalize">
-                            {dep.dependencyType === "FINISH_TO_START"
-                              ? "Finish to Start"
-                              : "Blocked By"}
-                          </span>
+            <div className="space-y-2.5 min-w-0">
+              <div className="divide-y rounded-lg border">
+                {blockedByPagination.paginatedItems.map((dep) => {
+                  const isComplete = dep.taskStatus === "DONE"
+                  return (
+                    <div
+                      key={dep.dependencyId}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 text-xs hover:bg-muted/40 transition-colors"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        {isComplete ? (
+                          <CheckCircle2 className="size-4 shrink-0 text-green-600 dark:text-green-400" />
+                        ) : (
+                          <Clock className="size-4 shrink-0 text-amber-500" />
+                        )}
+                        <div className="min-w-0">
+                          <Link
+                            to={`/app/tasks/${dep.taskId}`}
+                            className="font-medium hover:underline hover:text-primary truncate block max-w-sm"
+                          >
+                            {dep.taskTitle}
+                          </Link>
+                          <div className="flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
+                            <span>Status: {dep.taskStatus.replace("_", " ")}</span>
+                            <span>•</span>
+                            <span>Priority: {dep.taskPriority}</span>
+                            <span>•</span>
+                            <span className="capitalize">
+                              {dep.dependencyType === "FINISH_TO_START"
+                                ? "Finish to Start"
+                                : "Blocked By"}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
-                      <Badge
-                        variant={isComplete ? "secondary" : "destructive"}
-                        className="text-[10px] px-1.5 py-0 font-normal"
-                      >
-                        {isComplete ? "Satisfied" : "Blocking"}
-                      </Badge>
-                      {canManage && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleRemoveDependency(dep)}
-                          disabled={removeMutation.isPending}
-                          className="size-7 text-muted-foreground hover:text-destructive"
-                          title="Remove dependency"
+                      <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                        <Badge
+                          variant={isComplete ? "secondary" : "destructive"}
+                          className="text-[10px] px-1.5 py-0 font-normal"
                         >
-                          <Trash2 className="size-3.5" />
-                        </Button>
-                      )}
+                          {isComplete ? "Satisfied" : "Blocking"}
+                        </Badge>
+                        {canManage && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRemoveDependency(dep)}
+                            disabled={removeMutation.isPending}
+                            className="size-7 text-muted-foreground hover:text-destructive"
+                            title="Remove dependency"
+                          >
+                            <Trash2 className="size-3.5" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )
-              })}
+                  )
+                })}
+              </div>
+              <DataPagination
+                compact
+                page={blockedByPagination.page}
+                totalPages={blockedByPagination.totalPages}
+                totalElements={blockedByPagination.totalElements}
+                pageSize={blockedByPagination.pageSize}
+                pageSizeOptions={[5, 10]}
+                itemLabel="prerequisites"
+                onPageChange={blockedByPagination.setPage}
+                onPageSizeChange={blockedByPagination.setPageSize}
+              />
             </div>
           )}
         </div>
@@ -271,36 +288,49 @@ export default function TaskDependenciesSection({
               This task is not blocking any downstream tasks.
             </div>
           ) : (
-            <div className="divide-y rounded-lg border">
-              {blocking.map((dep) => (
-                <div
-                  key={dep.dependencyId}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 text-xs hover:bg-muted/40 transition-colors"
-                >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <ArrowRight className="size-4 shrink-0 text-muted-foreground" />
-                    <div className="min-w-0">
-                      <Link
-                        to={`/app/tasks/${dep.taskId}`}
-                        className="font-medium hover:underline hover:text-primary truncate block max-w-sm"
-                      >
-                        {dep.taskTitle}
-                      </Link>
-                      <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
-                        <span>Status: {dep.taskStatus.replace("_", " ")}</span>
-                        <span>•</span>
-                        <span>Priority: {dep.taskPriority}</span>
+            <div className="space-y-2.5 min-w-0">
+              <div className="divide-y rounded-lg border">
+                {blockingPagination.paginatedItems.map((dep) => (
+                  <div
+                    key={dep.dependencyId}
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 text-xs hover:bg-muted/40 transition-colors"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <ArrowRight className="size-4 shrink-0 text-muted-foreground" />
+                      <div className="min-w-0">
+                        <Link
+                          to={`/app/tasks/${dep.taskId}`}
+                          className="font-medium hover:underline hover:text-primary truncate block max-w-sm"
+                        >
+                          {dep.taskTitle}
+                        </Link>
+                        <div className="flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
+                          <span>Status: {dep.taskStatus.replace("_", " ")}</span>
+                          <span>•</span>
+                          <span>Priority: {dep.taskPriority}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
-                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal">
-                      Dependent
-                    </Badge>
+                    <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal">
+                        Dependent
+                      </Badge>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
+              <DataPagination
+                compact
+                page={blockingPagination.page}
+                totalPages={blockingPagination.totalPages}
+                totalElements={blockingPagination.totalElements}
+                pageSize={blockingPagination.pageSize}
+                pageSizeOptions={[5, 10]}
+                itemLabel="dependent tasks"
+                onPageChange={blockingPagination.setPage}
+                onPageSizeChange={blockingPagination.setPageSize}
+              />
             </div>
           )}
         </div>

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import { render, screen } from "@testing-library/react"
+import { fireEvent, render, screen } from "@testing-library/react"
 import NotificationsPage from "./NotificationsPage"
 import { BrowserRouter } from "react-router-dom"
 import * as hooks from "@/features/notifications/hooks/useNotificationsQuery"
@@ -43,6 +43,8 @@ describe("NotificationsPage", () => {
     last: true,
   }
 
+  const markAllMutate = vi.fn()
+
   beforeEach(() => {
     vi.clearAllMocks()
 
@@ -64,7 +66,7 @@ describe("NotificationsPage", () => {
     } as unknown as ReturnType<typeof hooks.useMarkNotificationAsReadMutation>)
 
     vi.spyOn(hooks, "useMarkAllNotificationsAsReadMutation").mockReturnValue({
-      mutate: vi.fn(),
+      mutate: markAllMutate,
       isPending: false,
     } as unknown as ReturnType<typeof hooks.useMarkAllNotificationsAsReadMutation>)
 
@@ -116,5 +118,40 @@ describe("NotificationsPage", () => {
     )
 
     expect(screen.getByRole("heading", { name: /No notifications/i })).toBeDefined()
+  })
+
+  it("supports multi-page DataPagination, Unread filter tab, and Mark all as read action", () => {
+    vi.spyOn(hooks, "useNotificationsQuery").mockReturnValue({
+      data: {
+        content: mockNotifications,
+        pageNumber: 0,
+        pageSize: 20,
+        totalElements: 25,
+        totalPages: 2,
+        first: true,
+        last: false,
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof hooks.useNotificationsQuery>)
+
+    render(
+      <BrowserRouter>
+        <NotificationsPage />
+      </BrowserRouter>
+    )
+
+    expect(screen.getByText("1–20")).toBeInTheDocument()
+    expect(screen.getByText("25")).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("button", { name: "Go to next page" }))
+    expect(hooks.useNotificationsQuery).toHaveBeenLastCalledWith(false, 1, 20)
+
+    fireEvent.click(screen.getByRole("tab", { name: /Unread/i }))
+    expect(hooks.useNotificationsQuery).toHaveBeenLastCalledWith(true, 0, 20)
+
+    fireEvent.click(screen.getByRole("button", { name: /Mark all as read/i }))
+    expect(markAllMutate).toHaveBeenCalled()
   })
 })

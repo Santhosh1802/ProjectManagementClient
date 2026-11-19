@@ -22,6 +22,10 @@ import { Badge } from "@/components/ui/badge"
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar"
 import { useAppSelector } from "@/hooks/redux-hooks"
 import { useWorkspacesQuery, useSwitchWorkspace } from "../hooks/useWorkspaces"
+import {
+  readDefaultWorkspacePreference,
+  resolveDefaultWorkspace,
+} from "../slice/workspaceSlice"
 import { CreateOrganizationDialog } from "./CreateOrganizationDialog"
 import type { Workspace } from "../types/workspace.types"
 
@@ -32,8 +36,19 @@ export function WorkspaceSwitcher() {
 
   // Fetch workspaces list & sync
   const { data: workspaces = [], isLoading } = useWorkspacesQuery()
-  const activeWorkspace = useAppSelector((state) => state.workspaces.activeWorkspace)
+  const activeWorkspace = useAppSelector((state) => state.workspaces?.activeWorkspace ?? null)
+  const storedDefaultPref = useAppSelector(
+    (state) => state.workspaces?.defaultWorkspacePreference
+  )
+  const currentUserId = useAppSelector((state) => state.auth?.user?.id ?? null)
   const switchWorkspace = useSwitchWorkspace()
+
+  const effectivePref =
+    storedDefaultPref ?? readDefaultWorkspacePreference(currentUserId)
+  const resolvedDefaultWorkspace =
+    effectivePref && effectivePref !== "AUTO_PERSONAL"
+      ? resolveDefaultWorkspace(workspaces, effectivePref)
+      : null
 
   const personalWorkspaces = workspaces.filter((w) => w.workspaceType === "PERSONAL")
   const organizationWorkspaces = workspaces.filter((w) => w.workspaceType === "ORGANIZATION")
@@ -48,6 +63,13 @@ export function WorkspaceSwitcher() {
 
   const handleOpenSettings = () => {
     navigate("/app/organization/settings")
+    if (isMobile) {
+      setOpenMobile(false)
+    }
+  }
+
+  const handleOpenDefaultWorkspaceSettings = () => {
+    navigate("/app/settings?tab=workspace")
     if (isMobile) {
       setOpenMobile(false)
     }
@@ -117,9 +139,19 @@ export function WorkspaceSwitcher() {
                         </div>
                         <span className="truncate text-xs font-medium">{ws.name}</span>
                       </div>
-                      {activeWorkspace?.id === ws.id && (
-                        <Check className="size-4 text-primary shrink-0 ml-2" />
-                      )}
+                      <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                        {resolvedDefaultWorkspace?.id === ws.id && (
+                          <Badge
+                            variant="secondary"
+                            className="text-[9px] px-1 py-0 h-3.5 uppercase font-mono"
+                          >
+                            Default
+                          </Badge>
+                        )}
+                        {activeWorkspace?.id === ws.id && (
+                          <Check className="size-4 text-primary" />
+                        )}
+                      </div>
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuGroup>
@@ -160,6 +192,14 @@ export function WorkspaceSwitcher() {
                         </div>
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                        {resolvedDefaultWorkspace?.id === ws.id && (
+                          <Badge
+                            variant="secondary"
+                            className="text-[9px] px-1 py-0 h-3.5 uppercase font-mono"
+                          >
+                            Default
+                          </Badge>
+                        )}
                         <Badge
                           variant="outline"
                           className="text-[9px] px-1 py-0 h-3.5 border-border text-muted-foreground uppercase font-mono"
@@ -195,6 +235,14 @@ export function WorkspaceSwitcher() {
                     <span>Organization Settings</span>
                   </DropdownMenuItem>
                 )}
+
+                <DropdownMenuItem
+                  onClick={handleOpenDefaultWorkspaceSettings}
+                  className="flex items-center gap-2 cursor-pointer py-2 px-2.5 rounded-lg text-muted-foreground hover:text-foreground text-xs"
+                >
+                  <Settings className="size-4" />
+                  <span>Default Workspace Settings</span>
+                </DropdownMenuItem>
               </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>

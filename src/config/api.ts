@@ -7,6 +7,7 @@ import {
   setBackendUnAvailable,
 } from "@/app/slice/appSlice"
 import { store } from "@/app/store"
+import { clearWorkspaces } from "@/features/workspaces/slice/workspaceSlice"
 import { queryClient } from "@/lib/queryClient"
 
 const api = axios.create({
@@ -67,6 +68,22 @@ api.interceptors.response.use(
       store.dispatch(setBackendAvailable())
     }
 
+    // Self-heal if localStorage/Redux holds a stale workspace ID (e.g. after DB reset or workspace deletion)
+    if (
+      error.response?.status === 404 &&
+      error.response?.data?.error === "Workspace Not Found" &&
+      error.config &&
+      !error.config._workspaceRetried
+    ) {
+      error.config._workspaceRetried = true
+      store.dispatch(clearWorkspaces())
+      localStorage.removeItem("devflow_active_workspace_id")
+      if (error.config.headers) {
+        delete error.config.headers["X-Workspace-Id"]
+      }
+      return api.request(error.config)
+    }
+
     // When session expires (401), and request is not the login or check endpoint itself
     if (
       error.response?.status === 401 &&
@@ -75,6 +92,7 @@ api.interceptors.response.use(
       !error.config.url.includes("/auth/me")
     ) {
       // Avoid infinite loop if /me or /login itself returns 401
+      store.dispatch(clearWorkspaces())
       queryClient.cancelQueries()
       queryClient.clear()
     }

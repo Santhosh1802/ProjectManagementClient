@@ -30,6 +30,8 @@ export default function AuthInitializer() {
             lastName: user.lastName ?? "",
             email: user.email,
             user_role: user.userRole,
+            avatarUrl: user.avatarUrl ?? null,
+            mfaEnabled: Boolean(user.mfaEnabled),
           }
           dispatch(setAuthUser(authUser))
         } else {

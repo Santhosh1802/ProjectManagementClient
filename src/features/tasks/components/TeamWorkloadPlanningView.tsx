@@ -3,12 +3,16 @@ import {
   AlertTriangle,
   Briefcase,
   Clock,
+  Download,
   Search,
   Users,
 } from "lucide-react"
 
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { toast } from "@/components/ui/toast"
+import { downloadCsv } from "@/lib/csvExport"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import {
   Select,
@@ -17,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import DataPagination, { useClientPagination } from "@/components/common/DataPagination"
 import type { Task } from "@/features/tasks/types/task.types"
 import type { ProjectMember } from "@/features/projects/types/project.types"
 
@@ -104,6 +109,39 @@ export default function TeamWorkloadPlanningView({
       return true
     })
   }, [memberWorkloadStats, search, selectedMemberFilter, statusFilter, priorityFilter])
+
+  const {
+    page,
+    setPage,
+    pageSize,
+    setPageSize,
+    totalElements,
+    totalPages,
+    paginatedItems: paginatedWorkloads,
+  } = useClientPagination(filteredWorkloads, 6)
+
+  const handleExportWorkloadCsv = () => {
+    downloadCsv("project-team-workload.csv", filteredWorkloads, [
+      {
+        header: "Member",
+        accessor: (w) =>
+          `${w.member.user.firstName ?? ""} ${w.member.user.lastName ?? ""}`.trim(),
+      },
+      { header: "Email", accessor: (w) => w.member.user.email },
+      { header: "Project Role", accessor: (w) => w.member.projectRole },
+      { header: "Total Tasks", accessor: (w) => w.total },
+      { header: "Active", accessor: (w) => w.inProgress },
+      { header: "To Do", accessor: (w) => w.todo },
+      { header: "Done", accessor: (w) => w.completed },
+      { header: "Overdue", accessor: (w) => w.overdue },
+      { header: "Completion %", accessor: (w) => w.completionRate },
+    ])
+    toast.add({
+      type: "success",
+      title: "CSV exported",
+      description: `Exported workload for ${filteredWorkloads.length} team member${filteredWorkloads.length === 1 ? "" : "s"}.`,
+    })
+  }
 
   return (
     <div className="space-y-6">
@@ -243,6 +281,18 @@ export default function TeamWorkloadPlanningView({
               </SelectContent>
             </Select>
           </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleExportWorkloadCsv}
+            disabled={filteredWorkloads.length === 0}
+            className="h-8 gap-1.5 text-xs"
+          >
+            <Download className="size-3.5" />
+            <span>Export CSV</span>
+          </Button>
         </div>
       </div>
 
@@ -252,9 +302,10 @@ export default function TeamWorkloadPlanningView({
           No team members matched the specified search and filter criteria.
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredWorkloads.map(
-            ({ member, total, completed, inProgress, todo, overdue, completionRate, tasks: memberTasks }) => {
+        <div className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {paginatedWorkloads.map(
+              ({ member, total, completed, inProgress, todo, overdue, completionRate, tasks: memberTasks }) => {
               const fullName = `${member.user.firstName} ${member.user.lastName || ""}`.trim()
               const initials = `${member.user.firstName?.[0] ?? ""}${member.user.lastName?.[0] ?? ""}`.toUpperCase()
 
@@ -352,6 +403,19 @@ export default function TeamWorkloadPlanningView({
               )
             }
           )}
+          </div>
+
+          <DataPagination
+            compact
+            page={page}
+            totalPages={totalPages}
+            totalElements={totalElements}
+            pageSize={pageSize}
+            pageSizeOptions={[6, 12, 24]}
+            itemLabel="team members"
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
         </div>
       )}
     </div>

@@ -1,8 +1,10 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Input } from "@/components/ui/input"
+import DataPagination, { useClientPagination } from "@/components/common/DataPagination"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,6 +29,7 @@ import {
   History,
   Workflow,
   Loader2,
+  Search,
   Zap,
 } from "lucide-react"
 import {
@@ -56,8 +59,29 @@ export function WorkflowRulesList({
 
   const [historyOpen, setHistoryOpen] = useState(false)
   const [selectedRuleForHistory, setSelectedRuleForHistory] = useState<WorkflowRule | null>(null)
-
   const [ruleToDelete, setRuleToDelete] = useState<WorkflowRule | null>(null)
+  const [ruleSearch, setRuleSearch] = useState("")
+
+  const filteredRules = useMemo(() => {
+    const q = ruleSearch.trim().toLowerCase()
+    if (!q) return rules
+    return rules.filter(
+      (r) =>
+        r.name.toLowerCase().includes(q) ||
+        (r.description ?? "").toLowerCase().includes(q) ||
+        r.triggerType.toLowerCase().includes(q)
+    )
+  }, [rules, ruleSearch])
+
+  const {
+    page,
+    setPage,
+    pageSize,
+    setPageSize,
+    totalElements,
+    totalPages,
+    paginatedItems: paginatedRules,
+  } = useClientPagination(filteredRules, 5)
 
   const handleCreate = () => {
     navigate(`/app/projects/${projectId}/rules/editor`)
@@ -180,8 +204,30 @@ export function WorkflowRulesList({
           )}
         </div>
       ) : (
-        <div className="grid gap-3">
-          {rules.map((rule) => (
+        <div className="space-y-3">
+          {rules.length > 3 && (
+            <div className="relative max-w-xs">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={ruleSearch}
+                onChange={(e) => {
+                  setRuleSearch(e.target.value)
+                  setPage(0)
+                }}
+                placeholder="Search automation rules..."
+                aria-label="Search automation rules"
+                className="h-8 pl-8 text-xs"
+              />
+            </div>
+          )}
+
+          {filteredRules.length === 0 ? (
+            <div className="rounded-lg border border-dashed py-6 text-center text-xs text-muted-foreground">
+              No workflow rules match &quot;{ruleSearch}&quot;.
+            </div>
+          ) : (
+            <div className="grid gap-3">
+              {paginatedRules.map((rule) => (
             <div
               key={rule.id}
               className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-lg border bg-card p-4 transition-colors hover:border-foreground/20"
@@ -265,6 +311,20 @@ export function WorkflowRulesList({
               </div>
             </div>
           ))}
+            </div>
+          )}
+
+          <DataPagination
+            compact
+            page={page}
+            totalPages={totalPages}
+            totalElements={totalElements}
+            pageSize={pageSize}
+            pageSizeOptions={[5, 10, 20]}
+            itemLabel="rules"
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
         </div>
       )}
 

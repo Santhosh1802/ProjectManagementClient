@@ -18,6 +18,7 @@ import { useAppSelector } from "@/hooks/redux-hooks"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import ShortcutHint from "@/components/common/ShortcutHint"
 import {
   Select,
   SelectContent,
@@ -42,10 +43,14 @@ import {
   Plus,
   RefreshCw,
   Activity,
+  Download,
 } from "lucide-react"
 
 import PageContainer from "@/components/common/PageContainer"
 import PageHeader from "@/components/common/PageHeader"
+import DataPagination, { useClientPagination } from "@/components/common/DataPagination"
+import { toast } from "@/components/ui/toast"
+import { downloadCsv } from "@/lib/csvExport"
 import { cn } from "@/lib/utils"
 
 /* -------------------------------------------------------------
@@ -195,6 +200,46 @@ export default function Dashboard() {
   const overdueTasksList = overviewData?.overdueTasksList ?? []
   const upcomingTasksList = overviewData?.upcomingTasksList ?? []
   const workloadMembers = workloadData?.members ?? []
+  const activities = activityData ?? []
+
+  const handleExportProgressCsv = () => {
+    downloadCsv("project-progress-export.csv", projectProgressList, [
+      { header: "Project", accessor: (p) => p.projectName },
+      { header: "Status", accessor: (p) => p.projectStatus },
+      { header: "Total Tasks", accessor: (p) => p.totalTasks },
+      { header: "Completed Tasks", accessor: (p) => p.completedTasks },
+      { header: "Completion %", accessor: (p) => p.completionPercentage },
+      { header: "Due Date", accessor: (p) => p.dueDate ?? "" },
+    ])
+    toast.add({
+      type: "success",
+      title: "CSV exported",
+      description: `Exported ${projectProgressList.length} project summary row${projectProgressList.length === 1 ? "" : "s"}.`,
+    })
+  }
+
+  const handleExportWorkloadCsv = () => {
+    downloadCsv("team-workload-export.csv", workloadMembers, [
+      { header: "Member", accessor: (m) => m.name },
+      { header: "Email", accessor: (m) => m.email },
+      { header: "Total Assigned", accessor: (m) => m.totalAssigned },
+      { header: "In Progress", accessor: (m) => m.inProgressTasks },
+      { header: "To Do", accessor: (m) => m.todoTasks },
+      { header: "Completed", accessor: (m) => m.completedTasks },
+      { header: "Overdue", accessor: (m) => m.overdueTasks },
+    ])
+    toast.add({
+      type: "success",
+      title: "CSV exported",
+      description: `Exported workload for ${workloadMembers.length} member${workloadMembers.length === 1 ? "" : "s"}.`,
+    })
+  }
+
+  const projectProgressPag = useClientPagination(projectProgressList, 5)
+  const workloadPag = useClientPagination(workloadMembers, 5)
+  const overduePag = useClientPagination(overdueTasksList, 3)
+  const upcomingPag = useClientPagination(upcomingTasksList, 3)
+  const activityPag = useClientPagination(activities, 5)
 
   return (
     <PageContainer>
@@ -240,6 +285,19 @@ export default function Dashboard() {
               <span className="hidden sm:inline">Refresh</span>
             </Button>
 
+            {/* Export Progress CSV */}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleExportProgressCsv}
+              disabled={projectProgressList.length === 0}
+              className="h-8 gap-1.5 text-xs"
+            >
+              <Download className="size-3.5" />
+              <span className="hidden sm:inline">Export CSV</span>
+            </Button>
+
             {/* Quick Action */}
             {(role === "ADMIN" || role === "MANAGER") && (
               <Button
@@ -249,6 +307,14 @@ export default function Dashboard() {
               >
                 <Plus className="size-3.5" />
                 <span>New Project</span>
+                <ShortcutHint
+                  keys={["c", "p"]}
+                  sequence
+                  compact
+                  decorative
+                  variant="onPrimary"
+                  className="hidden sm:inline-flex ml-1"
+                />
               </Button>
             )}
           </div>
@@ -535,37 +601,50 @@ export default function Dashboard() {
                 </p>
               </div>
             ) : (
-              <div className="divide-y divide-border/60">
-                {projectProgressList.slice(0, 5).map((project) => (
-                  <div
-                    key={project.projectId}
-                    className="flex flex-col gap-2 py-3 transition-colors hover:bg-muted/40 px-2 rounded-lg"
-                  >
-                    <div className="flex items-center justify-between min-w-0">
-                      <Link
-                        to={`/app/projects/${project.projectId}`}
-                        className="font-medium text-sm text-foreground hover:text-primary transition-colors truncate block"
-                      >
-                        {project.projectName}
-                      </Link>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <Badge variant="outline" className="text-[10px]">
-                          {project.projectStatus}
-                        </Badge>
-                        <span className="text-xs font-bold text-foreground">
-                          {project.completionPercentage}%
-                        </span>
+              <div className="space-y-3">
+                <div className="divide-y divide-border/60">
+                  {projectProgressPag.paginatedItems.map((project) => (
+                    <div
+                      key={project.projectId}
+                      className="flex flex-col gap-2 py-3 transition-colors hover:bg-muted/40 px-2 rounded-lg"
+                    >
+                      <div className="flex items-center justify-between min-w-0">
+                        <Link
+                          to={`/app/projects/${project.projectId}`}
+                          className="font-medium text-sm text-foreground hover:text-primary transition-colors truncate block"
+                        >
+                          {project.projectName}
+                        </Link>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Badge variant="outline" className="text-[10px]">
+                            {project.projectStatus}
+                          </Badge>
+                          <span className="text-xs font-bold text-foreground">
+                            {project.completionPercentage}%
+                          </span>
+                        </div>
+                      </div>
+                      {/* Progress Bar */}
+                      <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                        <div
+                          className="h-full bg-primary transition-all duration-300"
+                          style={{ width: `${project.completionPercentage}%` }}
+                        />
                       </div>
                     </div>
-                    {/* Progress Bar */}
-                    <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
-                      <div
-                        className="h-full bg-primary transition-all duration-300"
-                        style={{ width: `${project.completionPercentage}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
+                <DataPagination
+                  compact
+                  page={projectProgressPag.page}
+                  totalPages={projectProgressPag.totalPages}
+                  totalElements={projectProgressPag.totalElements}
+                  pageSize={projectProgressPag.pageSize}
+                  pageSizeOptions={[5, 10, 20]}
+                  itemLabel="projects"
+                  onPageChange={projectProgressPag.setPage}
+                  onPageSizeChange={projectProgressPag.setPageSize}
+                />
               </div>
             )}
           </CardContent>
@@ -578,8 +657,22 @@ export default function Dashboard() {
               <CardTitle className="text-base font-semibold">Team Workload</CardTitle>
               <CardDescription>Deliverables allocated across team members.</CardDescription>
             </div>
-            <div className="flex size-7 items-center justify-center rounded-md bg-primary/10 text-primary">
-              <Users className="size-4" />
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleExportWorkloadCsv}
+                disabled={workloadMembers.length === 0}
+                className="h-7 gap-1 px-2 text-xs"
+                aria-label="Export workload CSV"
+              >
+                <Download className="size-3" />
+                <span className="hidden sm:inline">CSV</span>
+              </Button>
+              <div className="flex size-7 items-center justify-center rounded-md bg-primary/10 text-primary">
+                <Users className="size-4" />
+              </div>
             </div>
           </CardHeader>
           <CardContent className="p-4">
@@ -598,28 +691,41 @@ export default function Dashboard() {
                 </p>
               </div>
             ) : (
-              <div className="divide-y divide-border/60">
-                {workloadMembers.slice(0, 5).map((member) => (
-                  <div
-                    key={member.userId}
-                    className="flex items-center justify-between py-2.5 transition-colors hover:bg-muted/40 px-2 rounded-lg"
-                  >
-                    <div className="min-w-0">
-                      <p className="font-medium text-sm text-foreground truncate">{member.name}</p>
-                      <p className="text-xs text-muted-foreground truncate">{member.email}</p>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <Badge variant="secondary" className="text-xs font-semibold">
-                        {member.totalAssigned} tasks
-                      </Badge>
-                      {member.overdueTasks > 0 && (
-                        <Badge variant="destructive" className="text-[10px]">
-                          {member.overdueTasks} overdue
+              <div className="space-y-3">
+                <div className="divide-y divide-border/60">
+                  {workloadPag.paginatedItems.map((member) => (
+                    <div
+                      key={member.userId}
+                      className="flex items-center justify-between py-2.5 transition-colors hover:bg-muted/40 px-2 rounded-lg"
+                    >
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm text-foreground truncate">{member.name}</p>
+                        <p className="text-xs text-muted-foreground truncate">{member.email}</p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Badge variant="secondary" className="text-xs font-semibold">
+                          {member.totalAssigned} tasks
                         </Badge>
-                      )}
+                        {member.overdueTasks > 0 && (
+                          <Badge variant="destructive" className="text-[10px]">
+                            {member.overdueTasks} overdue
+                          </Badge>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
+                <DataPagination
+                  compact
+                  page={workloadPag.page}
+                  totalPages={workloadPag.totalPages}
+                  totalElements={workloadPag.totalElements}
+                  pageSize={workloadPag.pageSize}
+                  pageSizeOptions={[5, 10, 20]}
+                  itemLabel="members"
+                  onPageChange={workloadPag.setPage}
+                  onPageSizeChange={workloadPag.setPageSize}
+                />
               </div>
             )}
           </CardContent>
@@ -660,13 +766,13 @@ export default function Dashboard() {
               <div className="space-y-4">
                 {/* Overdue Section */}
                 {overdueTasksList.length > 0 && (
-                  <div>
+                  <div className="space-y-2">
                     <h4 className="text-xs font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 mb-2 flex items-center gap-1.5">
                       <AlertCircle className="size-3.5" />
-                      <span>Overdue Deliverables</span>
+                      <span>Overdue Deliverables ({overdueTasksList.length})</span>
                     </h4>
                     <div className="divide-y divide-border/60">
-                      {overdueTasksList.slice(0, 3).map((task) => (
+                      {overduePag.paginatedItems.map((task) => (
                         <div
                           key={task.taskId}
                           className="flex items-center justify-between py-2 px-2 hover:bg-rose-500/5 rounded-lg transition-colors"
@@ -688,18 +794,29 @@ export default function Dashboard() {
                         </div>
                       ))}
                     </div>
+                    <DataPagination
+                      compact
+                      page={overduePag.page}
+                      totalPages={overduePag.totalPages}
+                      totalElements={overduePag.totalElements}
+                      pageSize={overduePag.pageSize}
+                      pageSizeOptions={[3, 5, 10]}
+                      itemLabel="overdue tasks"
+                      onPageChange={overduePag.setPage}
+                      onPageSizeChange={overduePag.setPageSize}
+                    />
                   </div>
                 )}
 
                 {/* Upcoming Section */}
                 {upcomingTasksList.length > 0 && (
-                  <div>
+                  <div className="space-y-2">
                     <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
                       <Clock className="size-3.5" />
-                      <span>Upcoming Deadlines</span>
+                      <span>Upcoming Deadlines ({upcomingTasksList.length})</span>
                     </h4>
                     <div className="divide-y divide-border/60">
-                      {upcomingTasksList.slice(0, 3).map((task) => (
+                      {upcomingPag.paginatedItems.map((task) => (
                         <div
                           key={task.taskId}
                           className="flex items-center justify-between py-2 px-2 hover:bg-muted/40 rounded-lg transition-colors"
@@ -721,6 +838,17 @@ export default function Dashboard() {
                         </div>
                       ))}
                     </div>
+                    <DataPagination
+                      compact
+                      page={upcomingPag.page}
+                      totalPages={upcomingPag.totalPages}
+                      totalElements={upcomingPag.totalElements}
+                      pageSize={upcomingPag.pageSize}
+                      pageSizeOptions={[3, 5, 10]}
+                      itemLabel="upcoming tasks"
+                      onPageChange={upcomingPag.setPage}
+                      onPageSizeChange={upcomingPag.setPageSize}
+                    />
                   </div>
                 )}
               </div>
@@ -755,15 +883,28 @@ export default function Dashboard() {
                 </p>
               </div>
             ) : (
-              <div className="divide-y divide-border/60">
-                {activityData.slice(0, 5).map((log) => (
-                  <div key={log.id} className="py-2.5 px-2 hover:bg-muted/40 rounded-lg transition-colors">
-                    <p className="text-xs text-foreground font-medium">{log.details}</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">
-                      by {log.actorName || "Team Member"} · {new Date(log.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
-                ))}
+              <div className="space-y-3">
+                <div className="divide-y divide-border/60">
+                  {activityPag.paginatedItems.map((log) => (
+                    <div key={log.id} className="py-2.5 px-2 hover:bg-muted/40 rounded-lg transition-colors min-w-0">
+                      <p className="text-xs text-foreground font-medium break-words">{log.details}</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
+                        by {log.actorName || "Team Member"} · {new Date(log.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+                <DataPagination
+                  compact
+                  page={activityPag.page}
+                  totalPages={activityPag.totalPages}
+                  totalElements={activityPag.totalElements}
+                  pageSize={activityPag.pageSize}
+                  pageSizeOptions={[5, 10, 20]}
+                  itemLabel="events"
+                  onPageChange={activityPag.setPage}
+                  onPageSizeChange={activityPag.setPageSize}
+                />
               </div>
             )}
           </CardContent>

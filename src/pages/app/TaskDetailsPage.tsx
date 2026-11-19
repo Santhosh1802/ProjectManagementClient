@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Link, useNavigate, useParams } from "react-router-dom"
 import {
   ArrowLeft,
@@ -49,6 +49,7 @@ import {
 import { toast } from "@/components/ui/toast"
 import { getApiErrorMessage } from "@/lib/apiError"
 import { TaskCommentsSection } from "@/features/comments/components/TaskCommentsSection"
+import { TaskAttachmentsSection } from "@/features/attachments/components/TaskAttachmentsSection"
 import { TaskActivityTimeline } from "@/features/activity/components/TaskActivityTimeline"
 
 import {
@@ -69,8 +70,15 @@ import {
   updateTask as updateTaskInState,
 } from "@/features/tasks/slice/task.slice"
 import EditTaskModal from "@/features/tasks/components/EditTaskModal"
+import {
+  getEffectiveAssignees,
+  TaskAssigneeAvatars,
+} from "@/features/tasks/components/TaskAssigneeAvatars"
 import TaskDependenciesSection from "@/features/tasks/components/TaskDependenciesSection"
+import TaskSubtasksSection from "@/features/tasks/components/TaskSubtasksSection"
 import { useTasksByProjectQuery } from "@/features/tasks/hooks/useTasksQuery"
+import { useProjectMembersQuery } from "@/features/projects/hooks/useProjectsQuery"
+import type { MentionableMember } from "@/features/comments/utils/mentionUtils"
 
 const STATUS_OPTIONS = [
   {
@@ -259,6 +267,40 @@ export default function TaskDetailsPage() {
   )
   const projectTasks = projectTasksData?.content ?? []
 
+  const { data: projectMembersData } = useProjectMembersQuery(
+    { projectId: task?.project?.id ?? "", page: 0, size: 100 },
+    { enabled: Boolean(task?.project?.id) }
+  )
+
+  const mentionMembers = useMemo<MentionableMember[]>(() => {
+    const map = new Map<string, MentionableMember>()
+    const addMember = (member?: MentionableMember | null) => {
+      if (!member?.email) return
+      const key = member.email.toLowerCase()
+      if (!map.has(key)) {
+        map.set(key, member)
+      }
+    }
+
+    addMember(task?.project?.owner)
+    for (const pm of projectMembersData?.content ?? []) {
+      addMember(pm.user)
+    }
+    addMember(task?.assignedTo)
+    for (const coAssignee of task?.assignees ?? []) {
+      addMember(coAssignee)
+    }
+    addMember(task?.createdBy)
+
+    return Array.from(map.values())
+  }, [
+    task?.project?.owner,
+    task?.assignedTo,
+    task?.assignees,
+    task?.createdBy,
+    projectMembersData,
+  ])
+
   useEffect(() => {
     let cancelled = false
 
@@ -422,19 +464,20 @@ export default function TaskDetailsPage() {
   return (
     <PageContainer className="flex flex-col gap-6">
       {/* Header */}
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex flex-col items-start gap-4 sm:flex-row">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between min-w-0">
+        <div className="flex flex-col items-start gap-4 sm:flex-row min-w-0 flex-1">
           <Button
             type="button"
             variant="ghost"
             size="icon"
             onClick={() => navigate("/app/tasks")}
             aria-label="Back to tasks"
+            className="shrink-0"
           >
             <ArrowLeft className="size-4" />
           </Button>
 
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <div className="mb-1 flex flex-wrap items-center gap-2">
               <StatusBadge status={task.taskStatus} showDot />
               <StatusBadge status={task.taskPriority} />
@@ -446,15 +489,13 @@ export default function TaskDetailsPage() {
               )}
             </div>
 
-            <h1 className="truncate text-lg font-semibold tracking-tight sm:text-3xl">
+            <h1 className="break-words text-lg font-semibold tracking-tight sm:text-3xl">
               {task.title}
             </h1>
-
-            
           </div>
         </div>
 
-              <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 shrink-0">
                 <Button
                   variant="outline"
                   onClick={() => setEditTaskOpen(true)}
@@ -510,7 +551,7 @@ export default function TaskDetailsPage() {
 
             <CardContent>
               {task.description ? (
-                <p className="whitespace-pre-wrap text-sm leading-7 text-muted-foreground">
+                <p className="whitespace-pre-wrap break-words text-sm leading-7 text-muted-foreground">
                   {task.description}
                 </p>
               ) : (
@@ -613,6 +654,19 @@ export default function TaskDetailsPage() {
             </CardContent>
           </Card>
 
+          {/* Subtasks & Checklist Section */}
+          <TaskSubtasksSection
+            taskId={task.id}
+            projectId={task.project?.id}
+            projectMembers={mentionMembers.map((member) => ({
+              id: member.id,
+              firstName: member.firstName,
+              lastName: member.lastName ?? "",
+              email: member.email,
+            }))}
+            canManage={true}
+          />
+
           {/* Dependencies Section */}
           <TaskDependenciesSection
             task={task}
@@ -620,10 +674,16 @@ export default function TaskDetailsPage() {
             canManage={true}
           />
 
+          {/* Attachments Section */}
+          <TaskAttachmentsSection taskId={task.id} />
+
           {/* Comments Section */}
           <Card>
             <CardContent className="pt-6">
-              <TaskCommentsSection taskId={task.id} />
+              <TaskCommentsSection
+                taskId={task.id}
+                mentionMembers={mentionMembers}
+              />
             </CardContent>
           </Card>
 
@@ -685,14 +745,14 @@ export default function TaskDetailsPage() {
         </div>
 
         {/* Sidebar */}
-        <aside className="space-y-6">
+        <aside className="space-y-6 min-w-0">
           {/* Assignee */}
           <Card>
             <CardHeader>
               <CardTitle>Assigned to</CardTitle>
             </CardHeader>
 
-            <CardContent>
+            <CardContent className="space-y-4">
               <div className="flex items-start gap-3">
                 <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted font-medium">
                   {getInitials(assignedTo)}
@@ -716,6 +776,46 @@ export default function TaskDetailsPage() {
                   </p>
                 </div>
               </div>
+
+              {(() => {
+                const coAssignees = getEffectiveAssignees(task).filter(
+                  (u) => u.id !== assignedTo.id
+                )
+                if (coAssignees.length === 0) return null
+                return (
+                  <>
+                    <Separator />
+                    <div className="space-y-2.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-xs font-medium text-muted-foreground">
+                          Co-assignees ({coAssignees.length})
+                        </p>
+                        <TaskAssigneeAvatars task={task} size="sm" maxVisible={4} />
+                      </div>
+                      <ul className="space-y-2">
+                        {coAssignees.map((coAssignee) => (
+                          <li
+                            key={coAssignee.id}
+                            className="flex items-center gap-2.5 text-sm"
+                          >
+                            <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
+                              {getInitials(coAssignee)}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="truncate text-xs font-medium">
+                                {getFullName(coAssignee)}
+                              </p>
+                              <p className="truncate text-[11px] text-muted-foreground">
+                                {coAssignee.email}
+                              </p>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </>
+                )
+              })()}
             </CardContent>
           </Card>
 

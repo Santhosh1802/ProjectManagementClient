@@ -2,43 +2,42 @@ import { Sun, Moon, Laptop, Palette, Check } from "lucide-react"
 import { useAppDispatch, useAppSelector } from "@/hooks/redux-hooks"
 import {
   setTheme,
-  setColorTheme,
+  setPrimaryColor,
+  setSecondaryColor,
   type Theme,
-  type ColorTheme,
 } from "@/app/slice/themeSlice"
+import { THEME_COLORS, THEME_COLOR_LIST, type ThemeColorKey } from "@/config/themeColors"
 import { Button } from "@/components/ui/button"
+import ShortcutHint from "./ShortcutHint"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
 
-const COLOR_PRESETS: { id: ColorTheme; name: string; dotClass: string }[] = [
-  { id: "indigo", name: "Indigo", dotClass: "bg-indigo-500" },
-  { id: "slate", name: "Slate", dotClass: "bg-slate-500" },
-  { id: "emerald", name: "Emerald", dotClass: "bg-emerald-500" },
-  { id: "rose", name: "Rose", dotClass: "bg-rose-500" },
-  { id: "zinc", name: "Zinc", dotClass: "bg-zinc-500" },
-]
-
 export default function ThemeColorSelector() {
   const dispatch = useAppDispatch()
   const theme = useAppSelector((state) => state.theme.theme)
-  const colorTheme = useAppSelector((state) => state.theme.colorTheme || "indigo")
+  const primaryColor = useAppSelector((state) => state.theme.primaryColor || "indigo")
+  const secondaryColor = useAppSelector((state) => state.theme.secondaryColor || "teal")
 
   const handleThemeChange = (newTheme: Theme) => {
     dispatch(setTheme(newTheme))
   }
 
-  const handleColorThemeChange = (newColor: ColorTheme) => {
-    dispatch(setColorTheme(newColor))
+  const handlePrimaryChange = (key: ThemeColorKey) => {
+    dispatch(setPrimaryColor(key))
   }
+
+  const handleSecondaryChange = (key: ThemeColorKey) => {
+    dispatch(setSecondaryColor(key))
+  }
+
+  const primarySwatch = THEME_COLORS[primaryColor]?.swatchClass ?? "bg-indigo-600"
+  const secondarySwatch = THEME_COLORS[secondaryColor]?.swatchClass ?? "bg-teal-500"
 
   return (
     <DropdownMenu>
@@ -46,27 +45,33 @@ export default function ThemeColorSelector() {
         render={
           <Button
             variant="ghost"
-            size="icon"
-            className="size-8.5 rounded-lg border border-border/50 bg-background/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-all duration-200"
-            aria-label="Toggle theme and accent color"
+            size="sm"
+            className="h-8.5 gap-1.5 rounded-lg border border-border/60 bg-background/60 px-2 hover:bg-muted text-muted-foreground hover:text-foreground transition-all duration-200"
+            aria-label="Toggle theme and dual accent colors"
+            aria-keyshortcuts="D"
+            title="Theme & colors (Press D to toggle light/dark)"
           />
         }
       >
-        <div className="relative flex items-center justify-center">
+        <div className="flex items-center gap-1.5">
           {theme === "light" ? (
-            <Sun className="size-4 text-amber-500 transition-transform duration-200" />
+            <Sun className="size-4 text-amber-500" />
           ) : theme === "dark" ? (
-            <Moon className="size-4 text-sky-400 transition-transform duration-200" />
+            <Moon className="size-4 text-sky-400" />
           ) : (
-            <Laptop className="size-4 text-primary transition-transform duration-200" />
+            <Laptop className="size-4 text-primary" />
           )}
-          <span className="sr-only">Toggle theme</span>
+          <span className="flex items-center -space-x-1" aria-hidden="true">
+            <span className={cn("size-2.5 rounded-full ring-1 ring-background", primarySwatch)} />
+            <span className={cn("size-2.5 rounded-full ring-1 ring-background", secondarySwatch)} />
+          </span>
         </div>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" className="w-52">
-        <div className="px-2 py-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Interface Mode
+      <DropdownMenuContent align="end" className="w-64 p-2">
+        <div className="flex items-center justify-between px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <span>Interface Mode</span>
+          <ShortcutHint keys={["d"]} compact decorative />
         </div>
 
         <DropdownMenuItem onClick={() => handleThemeChange("light")} className="cursor-pointer">
@@ -87,27 +92,68 @@ export default function ThemeColorSelector() {
           {theme === "system" && <Check className="ml-auto size-4 text-primary" />}
         </DropdownMenuItem>
 
-        <DropdownMenuSeparator />
+        <DropdownMenuSeparator className="my-2" />
 
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger className="cursor-pointer">
-            <Palette className="size-4 text-primary" />
-            <span>Accent Palette</span>
-          </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent className="w-44">
-            {COLOR_PRESETS.map((preset) => (
-              <DropdownMenuItem
-                key={preset.id}
-                onClick={() => handleColorThemeChange(preset.id)}
-                className="flex cursor-pointer items-center gap-2"
-              >
-                <span className={cn("size-3 rounded-full ring-1 ring-border", preset.dotClass)} />
-                <span>{preset.name}</span>
-                {colorTheme === preset.id && <Check className="ml-auto size-4 text-primary" />}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
+        <div className="space-y-2.5 px-2 pb-1">
+          <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <Palette className="size-3.5 text-primary" />
+            Dual Color Theme
+          </div>
+
+          {/* Primary Color Picker */}
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">Primary</span>
+              <span className="font-medium">{THEME_COLORS[primaryColor]?.label}</span>
+            </div>
+            <div className="grid grid-cols-8 gap-1.5">
+              {THEME_COLOR_LIST.map((c) => (
+                <button
+                  key={`p-${c.key}`}
+                  type="button"
+                  title={`Primary: ${c.label}`}
+                  aria-label={`Primary color ${c.label}`}
+                  aria-pressed={primaryColor === c.key}
+                  onClick={() => handlePrimaryChange(c.key)}
+                  className={cn(
+                    "flex size-6 items-center justify-center rounded-full transition-transform hover:scale-110",
+                    c.swatchClass,
+                    primaryColor === c.key && "ring-2 ring-foreground ring-offset-2 ring-offset-popover"
+                  )}
+                >
+                  {primaryColor === c.key && <Check className="size-3 text-white" />}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Secondary Color Picker */}
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">Secondary</span>
+              <span className="font-medium">{THEME_COLORS[secondaryColor]?.label}</span>
+            </div>
+            <div className="grid grid-cols-8 gap-1.5">
+              {THEME_COLOR_LIST.map((c) => (
+                <button
+                  key={`s-${c.key}`}
+                  type="button"
+                  title={`Secondary: ${c.label}`}
+                  aria-label={`Secondary color ${c.label}`}
+                  aria-pressed={secondaryColor === c.key}
+                  onClick={() => handleSecondaryChange(c.key)}
+                  className={cn(
+                    "flex size-6 items-center justify-center rounded-full transition-transform hover:scale-110",
+                    c.swatchClass,
+                    secondaryColor === c.key && "ring-2 ring-foreground ring-offset-2 ring-offset-popover"
+                  )}
+                >
+                  {secondaryColor === c.key && <Check className="size-3 text-white" />}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   )

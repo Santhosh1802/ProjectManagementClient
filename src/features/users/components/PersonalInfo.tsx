@@ -1,4 +1,5 @@
-import { submitFormOnModEnter } from "@/lib/keyboard"
+import { submitFormOnModEnter, toAriaKeyShortcuts } from "@/lib/keyboard"
+import ShortcutHint from "@/components/common/ShortcutHint"
 import {
   Card,
   CardContent,
@@ -116,6 +117,7 @@ export default function PersonalInfo({ user }: PersonalInfoProps) {
           id="personal-info"
           onSubmit={handleSubmit(onSubmit)}
           onKeyDown={submitFormOnModEnter}
+          aria-keyshortcuts={toAriaKeyShortcuts(["mod", "Enter"])}
         >
           <FieldGroup>
             {/* First + Last name */}
@@ -251,9 +253,17 @@ export default function PersonalInfo({ user }: PersonalInfoProps) {
             type="submit"
             form="personal-info"
             disabled={!isDirty || isSubmitting}
+            className="gap-2"
           >
             {isSubmitting && <Loader2 className="size-4 animate-spin" />}
-            Save Profile
+            <span>Save Profile</span>
+            <ShortcutHint
+              keys={["mod", "Enter"]}
+              compact
+              decorative
+              variant="onPrimary"
+              className="hidden sm:inline-flex ml-1"
+            />
           </Button>
         </div>
       </CardFooter>

@@ -5,14 +5,17 @@
  * registry so both always enforce the same access rules.
  */
 
-export type AppRole = "ADMIN" | "MANAGER" | "USER"
+export type AppRole = "SUPER_ADMIN" | "ADMIN" | "MANAGER" | "USER"
 
 export const ROUTE_ROLES = {
+  /** /app/super-admin */
+  superAdmin: ["SUPER_ADMIN"],
+
   /** /app/users */
-  userManagement: ["ADMIN"],
+  userManagement: ["ADMIN", "SUPER_ADMIN"],
 
   /** /app/users/create and /app/users/:userId */
-  userAdministration: ["MANAGER", "ADMIN"],
+  userAdministration: ["MANAGER", "ADMIN", "SUPER_ADMIN"],
 } satisfies Record<string, AppRole[]>
 
 export function hasAllowedRole(

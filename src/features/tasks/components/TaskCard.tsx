@@ -8,6 +8,11 @@ import {
 import type { Task } from "@/features/tasks/types/task.types"
 
 import StatusBadge from "@/components/common/StatusBadge"
+import {
+  getEffectiveAssignees,
+  SubtaskProgressBadge,
+  TaskAssigneeAvatars,
+} from "@/features/tasks/components/TaskAssigneeAvatars"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -74,7 +79,7 @@ export default function TaskCard({
   const overdue = isOverdue(task.dueDate, task.taskStatus)
 
   return (
-    <Card className="group flex h-full flex-col transition-shadow hover:shadow-md">
+    <Card className="group flex h-full min-w-0 flex-col overflow-hidden transition-shadow hover:shadow-md">
       <CardHeader className="space-y-3">
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
@@ -85,6 +90,10 @@ export default function TaskCard({
                 Blocked
               </span>
             )}
+            <SubtaskProgressBadge
+              subtaskCount={task.subtaskCount}
+              completedSubtaskCount={task.completedSubtaskCount}
+            />
           </div>
 
           <DropdownMenu>
@@ -138,18 +147,18 @@ export default function TaskCard({
         <button
           type="button"
           onClick={() => onView?.(task)}
-          className="w-full text-left"
+          className="w-full min-w-0 text-left"
           disabled={!onView}
         >
-          <h3 className="line-clamp-2 text-base font-semibold tracking-tight transition-colors group-hover:text-primary">
+          <h3 className="line-clamp-2 break-words text-base font-semibold tracking-tight transition-colors group-hover:text-primary">
             {task.title}
           </h3>
         </button>
       </CardHeader>
 
-      <CardContent className="flex-1 space-y-4">
+      <CardContent className="flex-1 min-w-0 space-y-4">
         {task.description ? (
-          <p className="line-clamp-3 text-sm leading-6 text-muted-foreground">
+          <p className="line-clamp-3 break-words text-sm leading-6 text-muted-foreground">
             {task.description}
           </p>
         ) : (
@@ -161,21 +170,33 @@ export default function TaskCard({
         <Separator />
 
         <div className="space-y-3">
-          <div className="flex items-center gap-2 text-sm">
-            <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted">
-              <UserRound className="size-3.5 text-muted-foreground" />
-            </div>
+          {(() => {
+            const effectiveAssignees = getEffectiveAssignees(task)
+            const coAssigneeCount = Math.max(0, effectiveAssignees.length - 1)
+            return (
+              <div className="flex items-center gap-2 text-sm">
+                {coAssigneeCount > 0 ? (
+                  <TaskAssigneeAvatars task={task} size="md" maxVisible={3} />
+                ) : (
+                  <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted">
+                    <UserRound className="size-3.5 text-muted-foreground" />
+                  </div>
+                )}
 
-            <div className="min-w-0">
-              <p className="text-xs text-muted-foreground">Assigned to</p>
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground">Assigned to</p>
 
-              <p className="truncate font-medium">
-                {assignedUser
-                  ? `${assignedUser.firstName} ${assignedUser.lastName}`
-                  : "Unassigned"}
-              </p>
-            </div>
-          </div>
+                  <p className="truncate font-medium">
+                    {assignedUser
+                      ? `${assignedUser.firstName} ${assignedUser.lastName}${
+                          coAssigneeCount > 0 ? ` +${coAssigneeCount}` : ""
+                        }`
+                      : "Unassigned"}
+                  </p>
+                </div>
+              </div>
+            )
+          })()}
 
           <div className="flex items-center gap-2 text-sm">
             <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted">

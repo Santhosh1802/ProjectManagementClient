@@ -101,6 +101,7 @@ export async function updateUser(
       firstName: request.firstName,
       lastName: request.lastName ?? "",
       email: request.email,
+      ...(request.avatarUrl !== undefined ? { avatarUrl: request.avatarUrl } : {}),
     }
   )
 

@@ -1,12 +1,15 @@
-import { useEffect, useState } from "react"
-import { Plus, X } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
+import { Download, Plus, X } from "lucide-react"
 import { useNavigate, useSearchParams } from "react-router-dom"
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Kbd } from "@/components/ui/kbd"
+import { toast } from "@/components/ui/toast"
+import { downloadCsv } from "@/lib/csvExport"
 import PageContainer from "@/components/common/PageContainer"
 import PageHeader from "@/components/common/PageHeader"
+import DataPagination from "@/components/common/DataPagination"
+import ShortcutHint from "@/components/common/ShortcutHint"
 
 import type {
   ProjectFilters,
@@ -28,54 +31,12 @@ import { useAppDispatch, useAppSelector } from "@/hooks/redux-hooks"
 import { useProjectsQuery } from "@/features/projects/hooks/useProjectsQuery"
 
 import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination"
-
-import {
   setProjects,
   setProjectLoading,
   setProjectError,
   setProjectPage,
   setProjectPageSize,
 } from "@/features/projects/slice/projectSlice"
-
-function getPaginationItems(
-  totalPages: number,
-  currentPage: number
-): (number | "ellipsis")[] {
-  if (totalPages <= 7) {
-    return Array.from({ length: totalPages }, (_, index) => index)
-  }
-
-  const pages = new Set<number>([
-    0,
-    totalPages - 1,
-    currentPage,
-    currentPage - 1,
-    currentPage + 1,
-  ])
-
-  const visiblePages = [...pages]
-    .filter((p) => p >= 0 && p < totalPages)
-    .sort((a, b) => a - b)
-
-  const result: (number | "ellipsis")[] = []
-
-  visiblePages.forEach((p, index) => {
-    if (index > 0 && p - visiblePages[index - 1] > 1) {
-      result.push("ellipsis")
-    }
-    result.push(p)
-  })
-
-  return result
-}
 
 export default function ProjectPage() {
   const dispatch = useAppDispatch()
@@ -245,6 +206,61 @@ export default function ProjectPage() {
     handleClearActiveSavedView()
   }
 
+  const displayedProjects = useMemo(() => {
+    if (filters.dueDate === "ALL") return projects
+    const now = Date.now()
+    const oneDayMs = 24 * 60 * 60 * 1000
+    const sevenDaysMs = 7 * oneDayMs
+    const thirtyDaysMs = 30 * oneDayMs
+    return projects.filter((p) => {
+      if (!p.dueDate) return false
+      const dueTime = new Date(p.dueDate).getTime()
+      if (filters.dueDate === "OVERDUE") {
+        return (
+          dueTime < now &&
+          p.projectStatus !== "COMPLETED" &&
+          p.projectStatus !== "ARCHIVED"
+        )
+      }
+      if (filters.dueDate === "DUE_TODAY") {
+        const dueDateStr = new Date(p.dueDate).toDateString()
+        const todayStr = new Date().toDateString()
+        return dueDateStr === todayStr
+      }
+      if (filters.dueDate === "DUE_THIS_WEEK") {
+        return dueTime >= now && dueTime <= now + sevenDaysMs
+      }
+      if (filters.dueDate === "DUE_THIS_MONTH") {
+        return dueTime >= now && dueTime <= now + thirtyDaysMs
+      }
+      return true
+    })
+  }, [projects, filters.dueDate])
+
+  const handleExportCsv = () => {
+    downloadCsv("projects-export.csv", displayedProjects, [
+      { header: "Name", accessor: (p) => p.name },
+      { header: "Status", accessor: (p) => p.projectStatus },
+      {
+        header: "Owner",
+        accessor: (p) =>
+          p.owner
+            ? `${p.owner.firstName ?? ""} ${p.owner.lastName ?? ""}`.trim()
+            : "",
+      },
+      { header: "Owner Email", accessor: (p) => p.owner?.email ?? "" },
+      { header: "Start Date", accessor: (p) => p.startDate },
+      { header: "Due Date", accessor: (p) => p.dueDate },
+      { header: "Description", accessor: (p) => p.description ?? "" },
+      { header: "Created At", accessor: (p) => p.createdAt },
+    ])
+    toast.add({
+      type: "success",
+      title: "CSV exported",
+      description: `Exported ${displayedProjects.length} project${displayedProjects.length === 1 ? "" : "s"}.`,
+    })
+  }
+
   return (
     <PageContainer>
       {/* Header */}
@@ -254,17 +270,34 @@ export default function ProjectPage() {
         onRefresh={() => void refetch()}
         isRefreshing={queryFetching}
         actions={
-          <Button
-            onClick={handleCreateProject}
-            className="w-fit sm:w-auto gap-2"
-          >
-            <Plus className="size-4" />
-            <span>Create Project</span>
-            <span className="hidden sm:inline-flex items-center gap-0.5 ml-1 opacity-75">
-              <Kbd className="h-4 min-w-4 px-1 text-[9px] bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30 font-mono">C</Kbd>
-              <Kbd className="h-4 min-w-4 px-1 text-[9px] bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30 font-mono">P</Kbd>
-            </span>
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleExportCsv}
+              disabled={displayedProjects.length === 0}
+              className="h-8 gap-1.5 text-xs"
+            >
+              <Download className="size-3.5" />
+              <span>Export CSV</span>
+            </Button>
+            <Button
+              onClick={handleCreateProject}
+              className="w-fit sm:w-auto gap-2"
+            >
+              <Plus className="size-4" />
+              <span>Create Project</span>
+              <ShortcutHint
+                keys={["c", "p"]}
+                sequence
+                compact
+                decorative
+                variant="onPrimary"
+                className="hidden sm:inline-flex ml-1"
+              />
+            </Button>
+          </div>
         }
       />
 
@@ -305,15 +338,15 @@ export default function ProjectPage() {
 
       {/* Active Filter Chips */}
       {hasFilters && (
-        <div className="flex flex-wrap items-center gap-1.5 pt-1">
+        <div className="flex flex-wrap items-center gap-1.5 pt-1 min-w-0">
           <span className="text-xs text-muted-foreground mr-1">Active filters:</span>
           {filters.search && (
-            <Badge variant="secondary" className="gap-1 text-xs py-0.5">
-              <span>Keyword: "{filters.search}"</span>
+            <Badge variant="secondary" className="gap-1 text-xs py-0.5 max-w-full">
+              <span className="max-w-[200px] truncate">Keyword: "{filters.search}"</span>
               <button
                 type="button"
                 onClick={() => handleFiltersChange({ ...filters, search: "" })}
-                className="hover:text-destructive"
+                className="hover:text-destructive shrink-0"
               >
                 <X className="size-3" />
               </button>
@@ -367,11 +400,11 @@ export default function ProjectPage() {
 
       {/* Count */}
 
-      {!loading && projects.length > 0 && (
+      {!loading && displayedProjects.length > 0 && (
         <div className="text-sm text-muted-foreground">
           Showing{" "}
           <span className="font-medium text-foreground">
-            {projects.length}
+            {displayedProjects.length}
           </span>{" "}
           of{" "}
           <span className="font-medium text-foreground">
@@ -401,7 +434,7 @@ export default function ProjectPage() {
 
       {/* Empty */}
 
-      {!loading && projects.length === 0 && (
+      {!loading && displayedProjects.length === 0 && (
         <ProjectEmptyState
           hasFilters={hasFilters}
         />
@@ -410,106 +443,47 @@ export default function ProjectPage() {
       {/* Card */}
 
       {!loading &&
-        projects.length > 0 &&
+        displayedProjects.length > 0 &&
         view === "card" && (
           <ProjectCard
-            projects={projects}
+            projects={displayedProjects}
           />
         )}
 
       {/* List */}
 
       {!loading &&
-        projects.length > 0 &&
+        displayedProjects.length > 0 &&
         view === "list" && (
           <ProjectList
-            projects={projects}
+            projects={displayedProjects}
           />
         )}
 
       {/* Table */}
 
       {!loading &&
-        projects.length > 0 &&
+        displayedProjects.length > 0 &&
         view === "table" && (
           <ProjectTable
-            projects={projects}
+            projects={displayedProjects}
           />
         )}
 
       {/* Pagination */}
       {!loading && totalElements > 0 && (
-        <div className="flex flex-col gap-4 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-muted-foreground">
-            Showing {page * size + 1}–{Math.min((page + 1) * size, totalElements)} of{" "}
-            {totalElements.toLocaleString("en-IN")} projects
-          </p>
-
-          <Pagination className="mx-0 w-auto justify-start sm:justify-end">
-            <PaginationContent className="flex-wrap">
-              <PaginationItem>
-                <PaginationPrevious
-                  href="#"
-                  aria-disabled={page === 0}
-                  tabIndex={page === 0 ? -1 : undefined}
-                  className={
-                    page === 0
-                      ? "pointer-events-none opacity-50"
-                      : "cursor-pointer"
-                  }
-                  onClick={(event) => {
-                    event.preventDefault()
-                    if (page > 0) {
-                      dispatch(setProjectPage(page - 1))
-                    }
-                  }}
-                />
-              </PaginationItem>
-
-              {getPaginationItems(totalPages, page).map((item, index) => (
-                <PaginationItem key={`${item}-${index}`}>
-                  {item === "ellipsis" ? (
-                    <PaginationEllipsis />
-                  ) : (
-                    <PaginationLink
-                      href="#"
-                      isActive={page === item}
-                      aria-label={`Go to page ${item + 1}`}
-                      aria-current={page === item ? "page" : undefined}
-                      onClick={(event) => {
-                        event.preventDefault()
-                        if (page !== item) {
-                          dispatch(setProjectPage(item))
-                        }
-                      }}
-                    >
-                      {item + 1}
-                    </PaginationLink>
-                  )}
-                </PaginationItem>
-              ))}
-
-              <PaginationItem>
-                <PaginationNext
-                  href="#"
-                  aria-disabled={page >= totalPages - 1}
-                  tabIndex={page >= totalPages - 1 ? -1 : undefined}
-                  className={
-                    page >= totalPages - 1
-                      ? "pointer-events-none opacity-50"
-                      : "cursor-pointer"
-                  }
-                  onClick={(event) => {
-                    event.preventDefault()
-                    if (page < totalPages - 1) {
-                      dispatch(setProjectPage(page + 1))
-                    }
-                  }}
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
-        </div>
+        <DataPagination
+          page={page}
+          totalPages={totalPages}
+          totalElements={totalElements}
+          pageSize={size}
+          itemLabel="projects"
+          onPageChange={(nextPage) => dispatch(setProjectPage(nextPage))}
+          onPageSizeChange={(newSize) => {
+            dispatch(setProjectPageSize(newSize))
+            dispatch(setProjectPage(0))
+          }}
+        />
       )}
 
     </PageContainer>

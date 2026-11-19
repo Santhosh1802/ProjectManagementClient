@@ -2,6 +2,8 @@ import * as React from "react";
 
 import { useAppDispatch, useAppSelector } from "@/hooks/redux-hooks";
 import { setTheme, type Theme } from "@/app/slice/themeSlice";
+import { THEME_COLORS, type ThemeColorKey } from "@/config/themeColors";
+import { isEditableTarget, isOverlayOpen } from "@/lib/keyboard";
 
 const COLOR_SCHEME_QUERY = "(prefers-color-scheme: dark)";
 
@@ -37,20 +39,6 @@ function disableTransitionsTemporarily() {
   };
 }
 
-function isEditableTarget(target: EventTarget | null) {
-  if (!(target instanceof HTMLElement)) {
-    return false;
-  }
-
-  if (target.isContentEditable) {
-    return true;
-  }
-
-  return !!target.closest(
-    "input, textarea, select, [contenteditable='true']"
-  );
-}
-
 export function ThemeProvider({
   children,
 }: ThemeProviderProps) {
@@ -62,9 +50,20 @@ export function ThemeProvider({
   const colorTheme = useAppSelector(
     (state) => state.theme.colorTheme || "indigo"
   );
+  const primaryColor = useAppSelector(
+    (state) => state.theme.primaryColor || "indigo"
+  );
+  const secondaryColor = useAppSelector(
+    (state) => state.theme.secondaryColor || "teal"
+  );
 
   const applyTheme = React.useCallback(
-    (currentTheme: Theme, currentColorTheme: string) => {
+    (
+      currentTheme: Theme,
+      currentColorTheme: string,
+      currentPrimary: ThemeColorKey,
+      currentSecondary: ThemeColorKey
+    ) => {
       const root = document.documentElement;
 
       const resolvedTheme =
@@ -80,13 +79,33 @@ export function ThemeProvider({
       root.setAttribute("data-mode", resolvedTheme);
       root.setAttribute("data-theme", currentColorTheme);
 
+      const primaryDef = THEME_COLORS[currentPrimary] ?? THEME_COLORS.indigo;
+      const secondaryDef = THEME_COLORS[currentSecondary] ?? THEME_COLORS.teal;
+      const pTokens = resolvedTheme === "dark" ? primaryDef.dark : primaryDef.light;
+      const sTokens = resolvedTheme === "dark" ? secondaryDef.dark : secondaryDef.light;
+
+      root.style.setProperty("--primary", pTokens.primary);
+      root.style.setProperty("--primary-foreground", pTokens.primaryForeground);
+      root.style.setProperty("--ring", pTokens.ring);
+      root.style.setProperty("--sidebar-primary", pTokens.primary);
+      root.style.setProperty("--sidebar-primary-foreground", pTokens.primaryForeground);
+      root.style.setProperty("--sidebar-accent", sTokens.secondary);
+      root.style.setProperty("--sidebar-accent-foreground", sTokens.secondaryForeground);
+      root.style.setProperty("--sidebar-ring", pTokens.ring);
+
+      root.style.setProperty("--secondary", sTokens.secondary);
+      root.style.setProperty("--secondary-foreground", sTokens.secondaryForeground);
+      root.style.setProperty("--accent", sTokens.secondary);
+      root.style.setProperty("--accent-foreground", sTokens.secondaryForeground);
+      root.style.setProperty("--chart-2", sTokens.gradientStop);
+
       restoreTransitions();
     },
     []
   );
 
   React.useEffect(() => {
-    applyTheme(theme, colorTheme);
+    applyTheme(theme, colorTheme, primaryColor, secondaryColor);
 
     if (theme !== "system") {
       return;
@@ -97,21 +116,15 @@ export function ThemeProvider({
     );
 
     const handleChange = () => {
-      applyTheme("system", colorTheme);
+      applyTheme("system", colorTheme, primaryColor, secondaryColor);
     };
 
-    mediaQuery.addEventListener(
-      "change",
-      handleChange
-    );
+    mediaQuery.addEventListener("change", handleChange);
 
     return () => {
-      mediaQuery.removeEventListener(
-        "change",
-        handleChange
-      );
+      mediaQuery.removeEventListener("change", handleChange);
     };
-  }, [theme, colorTheme, applyTheme]);
+  }, [theme, colorTheme, primaryColor, secondaryColor, applyTheme]);
 
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -123,12 +136,13 @@ export function ThemeProvider({
       if (
         event.metaKey ||
         event.ctrlKey ||
-        event.altKey
+        event.altKey ||
+        event.shiftKey
       ) {
         return;
       }
 
-      if (isEditableTarget(event.target)) {
+      if (isEditableTarget(event.target) || isOverlayOpen()) {
         return;
       }
 

@@ -40,6 +40,9 @@ const OrganizationSettingsPage = lazy(() => import("@/pages/app/OrganizationSett
 
 const Settings = lazy(() => import("@/pages/app/Settings"))
 const NotificationsPage = lazy(() => import("@/pages/app/NotificationsPage"))
+const SuperAdminPage = lazy(() => import("@/pages/app/SuperAdminPage"))
+const WhiteboardPage = lazy(() => import("@/pages/app/WhiteboardPage"))
+const ChatPage = lazy(() => import("@/pages/app/ChatPage"))
 const AppNotFoundPage = lazy(() => import("@/pages/app/AppNotFoundPage"))
 
 export default function AppRoutes() {
@@ -83,6 +86,9 @@ export default function AppRoutes() {
           <Route path="tasks/create" element={<CreateTaskPage />} />
           <Route path="tasks/:taskId" element={<TaskDetailsPage />} />
           <Route path="organization/settings" element={<OrganizationSettingsPage />} />
+          <Route element={<RoleGuard allowedRoles={ROUTE_ROLES.superAdmin} />}>
+            <Route path="super-admin" element={<SuperAdminPage />} />
+          </Route>
           <Route element={<RoleGuard allowedRoles={ROUTE_ROLES.userManagement} />}>
             <Route path="users" element={<UsersPage />} />
           </Route>
@@ -92,6 +98,8 @@ export default function AppRoutes() {
             <Route path="users/:userId" element={<UserDetailsPage />} />
           </Route>
           <Route path="notifications" element={<NotificationsPage />} />
+          <Route path="whiteboards" element={<WhiteboardPage />} />
+          <Route path="chat" element={<ChatPage />} />
           <Route path="settings" element={<Settings />} />
           <Route path="*" element={<AppNotFoundPage />} />
         </Route>

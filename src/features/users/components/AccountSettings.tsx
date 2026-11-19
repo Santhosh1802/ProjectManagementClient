@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useForm, Controller, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -19,26 +19,38 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 
 import {
+  Camera,
   CheckCircle2,
   CircleX,
   Cloud,
+  Copy,
   Eye,
   EyeOff,
   KeyRound,
   Loader2,
+  QrCode,
+  ShieldAlert,
   ShieldCheck,
+  Smartphone,
+  Trash2,
+  Upload,
   User as UserIcon,
 } from "lucide-react"
 
 import { userSchema } from "../schemas/user.schema"
 import type { User } from "../types/user.types"
 import { updateUser, updateUserPassword } from "../services/users.service"
+import { disableMfa, enableMfa, setupMfa } from "@/features/auth/services/auth.service"
+import type { MfaSetupResponse } from "@/features/auth/types/auth.types"
 import { useAppDispatch, useAppSelector } from "@/hooks/redux-hooks"
 import { setUser } from "../slice/user.slice"
 import { setAuthUser } from "@/features/auth/slice/authSlice"
 import { toast } from "@/components/ui/toast"
+import ShortcutHint from "@/components/common/ShortcutHint"
+import { submitFormOnModEnter, toAriaKeyShortcuts } from "@/lib/keyboard"
 
 /* -------------------------------------------------- */
 /* Password Validation Schema */
@@ -74,6 +86,18 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
   const dispatch = useAppDispatch()
   const currentUser = useAppSelector((state) => state.auth.user)
   const userId = currentUser?.id ?? user.id
+  const avatarFileInputRef = useRef<HTMLInputElement | null>(null)
+
+  /* Centralized Profile Picture state */
+  const [avatarUrlInput, setAvatarUrlInput] = useState<string>(user.avatarUrl ?? "")
+  const [isSavingAvatar, setIsSavingAvatar] = useState(false)
+
+  /* MFA state */
+  const [mfaSetupData, setMfaSetupData] = useState<MfaSetupResponse | null>(null)
+  const [mfaVerificationCode, setMfaVerificationCode] = useState("")
+  const [mfaDisablePassword, setMfaDisablePassword] = useState("")
+  const [showDisableMfaForm, setShowDisableMfaForm] = useState(false)
+  const [isMfaBusy, setIsMfaBusy] = useState(false)
 
   /* Password visibility states */
   const [showCurrentPassword, setShowCurrentPassword] = useState(false)
@@ -83,6 +107,70 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
   /* Status message for password update */
   const [passwordSuccessMessage, setPasswordSuccessMessage] = useState<string | null>(null)
   const [passwordErrorMessage, setPasswordErrorMessage] = useState<string | null>(null)
+
+  useEffect(() => {
+    setAvatarUrlInput(user.avatarUrl ?? "")
+  }, [user.avatarUrl])
+
+  function syncUserToRedux(updated: User) {
+    dispatch(setUser(updated))
+    dispatch(
+      setAuthUser({
+        id: updated.id,
+        firstName: updated.firstName ?? "",
+        lastName: updated.lastName ?? "",
+        email: updated.email,
+        user_role: updated.userRole,
+        avatarUrl: updated.avatarUrl ?? null,
+        mfaEnabled: Boolean(updated.mfaEnabled),
+      })
+    )
+  }
+
+  /* -------------------------------------------------- */
+  /* Centralized Profile Picture Handlers (DB backed) */
+  /* -------------------------------------------------- */
+  async function handleSaveAvatar(nextAvatarUrl: string) {
+    setIsSavingAvatar(true)
+    try {
+      const updated = await updateUser({
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName ?? "",
+        email: user.email,
+        avatarUrl: nextAvatarUrl.trim(),
+      })
+      syncUserToRedux(updated)
+      setAvatarUrlInput(updated.avatarUrl ?? "")
+      toast.add({
+        type: "success",
+        title: "Profile picture updated",
+        description: "Your centralized profile picture has been saved to your account.",
+      })
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "Failed to save profile picture."
+      toast.add({
+        type: "error",
+        title: "Avatar update failed",
+        description: msg,
+      })
+    } finally {
+      setIsSavingAvatar(false)
+    }
+  }
+
+  function handleAvatarFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setAvatarUrlInput(reader.result)
+        void handleSaveAvatar(reader.result)
+      }
+    }
+    reader.readAsDataURL(file)
+  }
 
   /* -------------------------------------------------- */
   /* 1. Personal Information Form */
@@ -118,20 +206,10 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
+        avatarUrl: avatarUrlInput.trim(),
       })
 
-      dispatch(setUser(updated))
-      if (currentUser) {
-        dispatch(
-          setAuthUser({
-            ...currentUser,
-            firstName: updated.firstName ?? "",
-            lastName: updated.lastName ?? "",
-            email: updated.email,
-            user_role: updated.userRole,
-          })
-        )
-      }
+      syncUserToRedux(updated)
       resetProfile(data)
       toast.add({
         type: "success",
@@ -205,6 +283,79 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
     }
   }
 
+  /* -------------------------------------------------- */
+  /* 3. Multi-Factor Authentication (MFA) Handlers */
+  /* -------------------------------------------------- */
+  async function handleStartMfaSetup() {
+    setIsMfaBusy(true)
+    try {
+      const data = await setupMfa()
+      setMfaSetupData(data)
+      setMfaVerificationCode("")
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "Unable to start MFA setup."
+      toast.add({
+        type: "error",
+        title: "MFA Setup Error",
+        description: msg,
+      })
+    } finally {
+      setIsMfaBusy(false)
+    }
+  }
+
+  async function handleConfirmEnableMfa() {
+    if (mfaVerificationCode.trim().length !== 6) return
+    setIsMfaBusy(true)
+    try {
+      const updated = await enableMfa(mfaVerificationCode.trim())
+      syncUserToRedux(updated)
+      setMfaSetupData(null)
+      setMfaVerificationCode("")
+      toast.add({
+        type: "success",
+        title: "Two-Factor Authentication Enabled",
+        description: "Your account is now protected with 6-digit authenticator verification.",
+      })
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "Invalid 6-digit code. Please try again."
+      toast.add({
+        type: "error",
+        title: "Verification Failed",
+        description: msg,
+      })
+    } finally {
+      setIsMfaBusy(false)
+    }
+  }
+
+  async function handleConfirmDisableMfa() {
+    if (!mfaDisablePassword.trim()) return
+    setIsMfaBusy(true)
+    try {
+      const updated = await disableMfa(mfaDisablePassword)
+      syncUserToRedux(updated)
+      setShowDisableMfaForm(false)
+      setMfaDisablePassword("")
+      toast.add({
+        type: "success",
+        title: "Two-Factor Authentication Disabled",
+        description: "MFA has been turned off for your account.",
+      })
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "Incorrect password. Could not disable MFA."
+      toast.add({
+        type: "error",
+        title: "Disable MFA Failed",
+        description: msg,
+      })
+    } finally {
+      setIsMfaBusy(false)
+    }
+  }
+
+  const initials = `${user.firstName?.[0] ?? ""}${user.lastName?.[0] ?? ""}`.toUpperCase() || "U"
+
   return (
     <Card className="w-full overflow-hidden rounded-xl border border-border shadow-xs">
       <CardHeader className="border-b border-border bg-muted/20 px-6 py-5">
@@ -213,15 +364,110 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
             <UserIcon className="size-5" />
           </div>
           <div>
-            <CardTitle className="text-base font-semibold">Account Profile & Security</CardTitle>
+            <CardTitle className="text-base font-semibold">Account Profile &amp; Security</CardTitle>
             <CardDescription className="mt-1 text-xs">
-              Manage your personal details, email address, and security credentials in one place.
+              Manage your centralized profile photo, personal details, password, and Two-Factor Authentication (MFA).
             </CardDescription>
           </div>
         </div>
       </CardHeader>
 
       <CardContent className="divide-y divide-border p-0">
+        {/* ========================================================= */}
+        {/* SECTION 0: Centralized Profile Picture (Stored in DB) */}
+        {/* ========================================================= */}
+        <div className="space-y-4 p-6">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <Camera className="size-4 text-primary" />
+                <h3 className="text-sm font-semibold text-foreground">Profile Picture</h3>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Stored centrally in the database and displayed across your workspace, header, and Team Chat.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-4 rounded-xl border border-border/80 bg-muted/20 p-4 sm:flex-row sm:items-center">
+            <div className="flex size-18 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-primary/40 bg-primary/10 text-lg font-semibold text-primary">
+              {avatarUrlInput ? (
+                <img
+                  src={avatarUrlInput}
+                  alt={user.firstName}
+                  className="size-full object-cover"
+                />
+              ) : (
+                <span>{initials}</span>
+              )}
+            </div>
+
+            <div className="min-w-0 flex-1 space-y-2.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  ref={avatarFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  aria-label="Upload centralized profile picture"
+                  onChange={handleAvatarFileSelect}
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={isSavingAvatar}
+                  onClick={() => avatarFileInputRef.current?.click()}
+                  className="h-8 gap-1.5 text-xs"
+                >
+                  {isSavingAvatar ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <Upload className="size-3.5" />
+                  )}
+                  Upload Photo
+                </Button>
+
+                {avatarUrlInput && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    disabled={isSavingAvatar}
+                    onClick={() => {
+                      setAvatarUrlInput("")
+                      void handleSaveAvatar("")
+                    }}
+                    className="h-8 gap-1 text-xs text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="size-3.5" />
+                    Remove Photo
+                  </Button>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <Input
+                  value={avatarUrlInput}
+                  onChange={(e) => setAvatarUrlInput(e.target.value)}
+                  placeholder="Or paste an image URL (https://...)"
+                  aria-label="Profile image URL"
+                  className="h-8 flex-1 text-xs"
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={isSavingAvatar || avatarUrlInput === (user.avatarUrl ?? "")}
+                  onClick={() => void handleSaveAvatar(avatarUrlInput)}
+                  className="h-8 shrink-0 text-xs"
+                >
+                  Save Photo URL
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* ========================================================= */}
         {/* SECTION 1: Personal Details */}
         {/* ========================================================= */}
@@ -239,7 +485,12 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
             </div>
           </div>
 
-          <form id="profile-info-form" onSubmit={handleProfileSubmit(onSaveProfile)}>
+          <form
+            id="profile-info-form"
+            onSubmit={handleProfileSubmit(onSaveProfile)}
+            onKeyDown={submitFormOnModEnter}
+            aria-keyshortcuts={toAriaKeyShortcuts(["mod", "Enter"])}
+          >
             <FieldGroup>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {/* First Name */}
@@ -351,20 +602,216 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
               className="h-8 gap-1.5 text-xs"
             >
               {isProfileSubmitting && <Loader2 className="size-3.5 animate-spin" />}
-              Save Profile
+              <span>Save Profile</span>
+              <ShortcutHint
+                keys={["mod", "Enter"]}
+                compact
+                decorative
+                variant="onPrimary"
+                className="hidden sm:inline-flex ml-1"
+              />
             </Button>
           </div>
         </div>
 
         {/* ========================================================= */}
-        {/* SECTION 2: Password Security */}
+        {/* SECTION 2: Two-Factor Authentication (MFA) */}
+        {/* ========================================================= */}
+        <div className="space-y-4 p-6">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <Smartphone className="size-4 text-primary" />
+                <h3 className="text-sm font-semibold text-foreground">
+                  Two-Factor Authentication (MFA)
+                </h3>
+                {user.mfaEnabled ? (
+                  <Badge className="bg-emerald-600 text-white hover:bg-emerald-600/90 text-[10px]">
+                    Enabled
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="text-[10px]">
+                    Disabled
+                  </Badge>
+                )}
+              </div>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Add a second layer of security using an Authenticator app (Google Authenticator, Authy, 1Password).
+              </p>
+            </div>
+
+            {!user.mfaEnabled && !mfaSetupData && (
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => void handleStartMfaSetup()}
+                disabled={isMfaBusy}
+                className="h-8 gap-1.5 text-xs"
+              >
+                {isMfaBusy ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <ShieldCheck className="size-3.5" />
+                )}
+                Enable MFA
+              </Button>
+            )}
+
+            {user.mfaEnabled && !showDisableMfaForm && (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => setShowDisableMfaForm(true)}
+                className="h-8 gap-1.5 text-xs text-destructive hover:text-destructive"
+              >
+                <ShieldAlert className="size-3.5" />
+                Disable MFA
+              </Button>
+            )}
+          </div>
+
+          {/* MFA Setup Wizard */}
+          {mfaSetupData && !user.mfaEnabled && (
+            <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-4">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                <div className="flex size-36 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-white p-2 shadow-2xs">
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(
+                      mfaSetupData.otpAuthUri
+                    )}`}
+                    alt="MFA QR Code"
+                    className="size-full object-contain"
+                  />
+                </div>
+                <div className="min-w-0 flex-1 space-y-2">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                    <QrCode className="size-4 text-primary" />
+                    Step 1: Scan QR Code or Enter Setup Key
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Scan the QR code in your authenticator app, or manually enter this Base32 secret key:
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <code className="rounded-md border border-border bg-background px-2.5 py-1 font-mono text-xs font-semibold tracking-wider text-foreground">
+                      {mfaSetupData.secret}
+                    </code>
+                    <Button
+                      type="button"
+                      size="icon-xs"
+                      variant="outline"
+                      onClick={() => {
+                        void navigator.clipboard?.writeText(mfaSetupData.secret)
+                        toast.add({
+                          type: "success",
+                          title: "Secret copied",
+                          description: "MFA secret key copied to clipboard.",
+                        })
+                      }}
+                      title="Copy secret key"
+                      aria-label="Copy MFA secret key"
+                    >
+                      <Copy className="size-3" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-border/60 pt-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                <div className="space-y-1 flex-1 max-w-xs">
+                  <FieldLabel htmlFor="mfa-verify-code" className="text-xs font-semibold">
+                    Step 2: Enter 6-digit code from your app
+                  </FieldLabel>
+                  <Input
+                    id="mfa-verify-code"
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={mfaVerificationCode}
+                    onChange={(e) => setMfaVerificationCode(e.target.value.replace(/\D/g, ""))}
+                    placeholder="123456"
+                    className="h-8 font-mono tracking-widest text-xs"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setMfaSetupData(null)}
+                    className="h-8 text-xs"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={isMfaBusy || mfaVerificationCode.trim().length !== 6}
+                    onClick={() => void handleConfirmEnableMfa()}
+                    className="h-8 gap-1.5 text-xs"
+                  >
+                    {isMfaBusy && <Loader2 className="size-3.5 animate-spin" />}
+                    Verify &amp; Enable MFA
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Disable MFA Confirmation */}
+          {user.mfaEnabled && showDisableMfaForm && (
+            <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 space-y-3">
+              <p className="text-xs font-medium text-foreground">
+                Confirm your current account password to disable Two-Factor Authentication:
+              </p>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <Input
+                  type="password"
+                  value={mfaDisablePassword}
+                  onChange={(e) => setMfaDisablePassword(e.target.value)}
+                  placeholder="Enter current password"
+                  aria-label="Password to disable MFA"
+                  className="h-8 max-w-xs text-xs"
+                />
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      setShowDisableMfaForm(false)
+                      setMfaDisablePassword("")
+                    }}
+                    className="h-8 text-xs"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="destructive"
+                    disabled={isMfaBusy || !mfaDisablePassword.trim()}
+                    onClick={() => void handleConfirmDisableMfa()}
+                    className="h-8 gap-1.5 text-xs"
+                  >
+                    {isMfaBusy && <Loader2 className="size-3.5 animate-spin" />}
+                    Confirm Disable MFA
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ========================================================= */}
+        {/* SECTION 3: Password Security */}
         {/* ========================================================= */}
         <div className="space-y-5 p-6">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <div className="flex items-center gap-2">
                 <KeyRound className="size-4 text-primary" />
-                <h3 className="text-sm font-semibold text-foreground">Password & Security</h3>
+                <h3 className="text-sm font-semibold text-foreground">Password &amp; Security</h3>
               </div>
               <p className="mt-0.5 text-xs text-muted-foreground">
                 Ensure your account is using a long, random password to stay secure.
@@ -384,7 +831,12 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
             )}
           </div>
 
-          <form id="password-change-form" onSubmit={handlePasswordSubmit(onUpdatePassword)}>
+          <form
+            id="password-change-form"
+            onSubmit={handlePasswordSubmit(onUpdatePassword)}
+            onKeyDown={submitFormOnModEnter}
+            aria-keyshortcuts={toAriaKeyShortcuts(["mod", "Enter"])}
+          >
             {/* Accessibility hidden username */}
             <input
               type="text"
@@ -533,7 +985,14 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
               ) : (
                 <>
                   <CheckCircle2 className="size-3.5" />
-                  Update Password
+                  <span>Update Password</span>
+                  <ShortcutHint
+                    keys={["mod", "Enter"]}
+                    compact
+                    decorative
+                    variant="onPrimary"
+                    className="hidden sm:inline-flex ml-1"
+                  />
                 </>
               )}
             </Button>

@@ -54,6 +54,7 @@ import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 
 import { DatePicker } from "@/components/ui/date-picker"
+import ShortcutHint from "@/components/common/ShortcutHint"
 
 import { useAppSelector } from "@/hooks/redux-hooks"
 
@@ -178,7 +179,7 @@ export default function CreateProjectPage() {
 
   const {
     control,
-
+    setValue,
     handleSubmit,
 
     formState: { isSubmitting },
@@ -204,6 +205,7 @@ export default function CreateProjectPage() {
 
   ---------------------------------------------------------- */
 
+  const dueDate = useWatch({ control, name: "dueDate" })
   const startDate = useWatch({
     control,
 
@@ -494,7 +496,7 @@ Remove member
   ========================================================== */
 
   return (
-    <PageContainer className="max-w-4xl">
+    <PageContainer className="max-w-6xl">
       <div className="mb-6 sm:mb-8">
         <Button
           type="button"
@@ -588,6 +590,8 @@ Remove member
       STEP 1
 
       ================================================== */}{" "}
+        <div className="grid gap-6 lg:grid-cols-12">
+        <div className="lg:col-span-8">
         {step === 1 && (
           <Card className="overflow-visible shadow-sm">
             {" "}
@@ -604,6 +608,50 @@ Remove member
               {" "}
               <CardContent className="p-4 sm:p-6">
                 {" "}
+                <div className="mb-5 space-y-2 rounded-xl border border-border/70 bg-muted/25 p-3">
+                  <div className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
+                    Quick Start Templates
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      {
+                        label: "Software Sprint",
+                        name: "Sprint Delivery Platform",
+                        desc: "Two-week agile sprint for API, UI, and QA milestones.",
+                        days: 14,
+                      },
+                      {
+                        label: "Product Launch",
+                        name: "Q4 Product Launch",
+                        desc: "Cross-functional launch checklist, marketing assets, and release readiness.",
+                        days: 30,
+                      },
+                      {
+                        label: "Client Onboarding",
+                        name: "Enterprise Onboarding",
+                        desc: "Workspace setup, data migration, and stakeholder kickoff.",
+                        days: 21,
+                      },
+                    ].map((tpl) => (
+                      <Button
+                        key={tpl.label}
+                        type="button"
+                        size="xs"
+                        variant="outline"
+                        onClick={() => {
+                          const start = new Date()
+                          const due = new Date(start.getTime() + tpl.days * 86400000)
+                          setValue("name", tpl.name, { shouldValidate: true })
+                          setValue("description", tpl.desc, { shouldValidate: true })
+                          setValue("startDate", start.toISOString().slice(0, 10), { shouldValidate: true })
+                          setValue("dueDate", due.toISOString().slice(0, 10), { shouldValidate: true })
+                        }}
+                      >
+                        {tpl.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
                 <FieldGroup>
                   {" "}
                   {/* ========================================
@@ -1133,6 +1181,50 @@ Remove member
             </CardFooter>{" "}
           </Card>
         )}
+        </div>
+        <aside className="space-y-4 lg:col-span-4">
+          <Card className="sticky top-6 border-border/80 bg-card/95 shadow-xs">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between gap-2">
+                <CardTitle className="text-sm font-semibold">Live Project Preview</CardTitle>
+                <Badge variant="secondary">Step {step} of 2</Badge>
+              </div>
+              <CardDescription className="text-xs">
+                Real-time summary of your project setup.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 text-xs">
+              <div className="space-y-1.5 rounded-xl border border-border/70 bg-muted/30 p-3">
+                <p className="truncate text-sm font-semibold text-foreground">
+                  {projectName?.trim() || "Untitled Project"}
+                </p>
+                <p className="line-clamp-2 text-muted-foreground">
+                  {description?.trim() || "Add a project description to align your team."}
+                </p>
+              </div>
+              <div className="space-y-1.5 text-muted-foreground">
+                <div className="flex items-center justify-between">
+                  <span>Start date</span>
+                  <span className="font-mono text-foreground">{startDate || "Not set"}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Due date</span>
+                  <span className="font-mono text-foreground">{dueDate || "Not set"}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Team members</span>
+                  <span className="font-mono text-foreground">{members.length + 1}</span>
+                </div>
+              </div>
+              <Separator />
+              <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                <span>Quick continue</span>
+                <ShortcutHint keys={["mod", "Enter"]} />
+              </div>
+            </CardContent>
+          </Card>
+        </aside>
+      </div>
     </PageContainer>
   )
 }

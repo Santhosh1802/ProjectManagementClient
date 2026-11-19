@@ -7,6 +7,11 @@ import {
 import type { Task } from "@/features/tasks/types/task.types"
 
 import StatusBadge from "@/components/common/StatusBadge"
+import {
+  getEffectiveAssignees,
+  SubtaskProgressBadge,
+  TaskAssigneeAvatars,
+} from "@/features/tasks/components/TaskAssigneeAvatars"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
@@ -122,6 +127,12 @@ export default function TaskTable({
                         {task.description}
                       </p>
                     )}
+
+                    <SubtaskProgressBadge
+                      subtaskCount={task.subtaskCount}
+                      completedSubtaskCount={task.completedSubtaskCount}
+                      className="mt-1.5"
+                    />
                   </button>
                 </TableCell>
 
@@ -137,27 +148,40 @@ export default function TaskTable({
 
                 {/* Assignee */}
                 <TableCell>
-                  <div className="flex min-w-37.5 items-center gap-2">
-                    <Avatar className="size-8">
-                      <AvatarFallback className="text-xs">
-                        {getInitials(
-                          task.assignedTo.firstName,
-                          task.assignedTo.lastName,
+                  {(() => {
+                    const effectiveAssignees = getEffectiveAssignees(task)
+                    const coAssigneeCount = Math.max(0, effectiveAssignees.length - 1)
+                    return (
+                      <div className="flex min-w-37.5 items-center gap-2">
+                        {coAssigneeCount > 0 ? (
+                          <TaskAssigneeAvatars task={task} size="md" maxVisible={3} />
+                        ) : (
+                          <Avatar className="size-8">
+                            <AvatarFallback className="text-xs">
+                              {getInitials(
+                                task.assignedTo.firstName,
+                                task.assignedTo.lastName,
+                              )}
+                            </AvatarFallback>
+                          </Avatar>
                         )}
-                      </AvatarFallback>
-                    </Avatar>
 
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">
-                        {task.assignedTo.firstName}{" "}
-                        {task.assignedTo.lastName}
-                      </p>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium">
+                            {task.assignedTo.firstName}{" "}
+                            {task.assignedTo.lastName}
+                            {coAssigneeCount > 0 ? ` +${coAssigneeCount}` : ""}
+                          </p>
 
-                      <p className="max-w-40 truncate text-xs text-muted-foreground">
-                        {task.assignedTo.email}
-                      </p>
-                    </div>
-                  </div>
+                          <p className="max-w-40 truncate text-xs text-muted-foreground">
+                            {coAssigneeCount > 0
+                              ? `${effectiveAssignees.length} assignees`
+                              : task.assignedTo.email}
+                          </p>
+                        </div>
+                      </div>
+                    )
+                  })()}
                 </TableCell>
 
                 {/* Due date */}

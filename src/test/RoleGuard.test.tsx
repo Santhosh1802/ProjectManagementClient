@@ -106,4 +106,30 @@ describe("RoleGuard", () => {
 
     expect(screen.getByText("Admin Content")).toBeInTheDocument()
   })
+
+  it("allows SUPER_ADMIN to access super-admin protected routes", () => {
+    useAppSelectorMock.mockReturnValue({
+      user: {
+        id: "3",
+        email: "superadmin@test.com",
+        firstName: "Platform",
+        lastName: "SuperAdmin",
+        user_role: "SUPER_ADMIN",
+      },
+      isLoading: false,
+      isAuthenticated: true,
+    })
+
+    render(
+      <MemoryRouter initialEntries={["/super-admin"]}>
+        <Routes>
+          <Route element={<RoleGuard allowedRoles={["SUPER_ADMIN"]} />}>
+            <Route path="/super-admin" element={<div>Super Admin Console</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    )
+
+    expect(screen.getByText("Super Admin Console")).toBeInTheDocument()
+  })
 })

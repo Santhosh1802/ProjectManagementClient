@@ -14,6 +14,8 @@ import {
 
 import PageContainer from "@/components/common/PageContainer"
 import PageHeader from "@/components/common/PageHeader"
+import ShortcutHint from "@/components/common/ShortcutHint"
+import { submitFormOnModEnter, toAriaKeyShortcuts } from "@/lib/keyboard"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -268,7 +270,12 @@ export default function WorkflowRuleEditorPage() {
           <Loader2 className="size-8 animate-spin text-muted-foreground" />
         </div>
       ) : (
-        <form onSubmit={handleSave} className="space-y-6 max-w-4xl">
+        <form
+          onSubmit={handleSave}
+          onKeyDown={submitFormOnModEnter}
+          aria-keyshortcuts={toAriaKeyShortcuts(["mod", "Enter"])}
+          className="space-y-6 max-w-4xl"
+        >
           {validationError && (
             <div className="flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
               <ShieldAlert className="size-5 shrink-0" />
@@ -708,7 +715,14 @@ export default function WorkflowRuleEditorPage() {
               ) : (
                 <>
                   <CheckCircle2 className="size-4" />
-                  {isEditing ? "Update Workflow Rule" : "Create Workflow Rule"}
+                  <span>{isEditing ? "Update Workflow Rule" : "Create Workflow Rule"}</span>
+                  <ShortcutHint
+                    keys={["mod", "Enter"]}
+                    compact
+                    decorative
+                    variant="onPrimary"
+                    className="hidden sm:inline-flex ml-1"
+                  />
                 </>
               )}
             </Button>

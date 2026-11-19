@@ -1,6 +1,7 @@
 import {
   Avatar,
   AvatarFallback,
+  AvatarImage,
 } from "@/components/ui/avatar";
 
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +10,7 @@ import {
   Check,
   Circle,
   Lock,
+  ShieldCheck,
 } from "lucide-react";
 
 import { formatDateTime } from "@/lib/dateConverter";
@@ -26,7 +28,6 @@ export default function UserDetails({
     `${user.firstName?.[0] ?? ""}${user.lastName?.[0] ?? ""}`
       .toUpperCase();
 
-
   return (
     <div
       className="
@@ -41,25 +42,25 @@ export default function UserDetails({
         shadow-sm
       "
     >
-      {/* ----------------------------------------- */}
-      {/* User Information */}
-      {/* ----------------------------------------- */}
-
       <div
         className="
           flex
           flex-col
           gap-6
-
           lg:flex-row
           lg:items-start
           lg:justify-between
         "
       >
         {/* User */}
-
         <div className="flex min-w-0 items-center gap-4">
-          <Avatar className="size-16 shrink-0">
+          <Avatar className="size-16 shrink-0 border-2 border-primary/25">
+            {user.avatarUrl && (
+              <AvatarImage
+                src={user.avatarUrl}
+                alt={`${user.firstName} ${user.lastName ?? ""}`.trim()}
+              />
+            )}
             <AvatarFallback
               className="
                 bg-primary/10
@@ -74,7 +75,6 @@ export default function UserDetails({
 
           <div className="flex min-w-0 flex-col gap-2">
             {/* Name + Role */}
-
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-lg font-semibold">
                 {user.firstName} {user.lastName}
@@ -86,13 +86,11 @@ export default function UserDetails({
             </div>
 
             {/* Email */}
-
             <p className="truncate text-sm text-muted-foreground">
               {user.email}
             </p>
 
             {/* Status */}
-
             <div className="flex flex-wrap gap-2">
               <Badge
                 variant={
@@ -124,22 +122,28 @@ export default function UserDetails({
                   : "Unverified"}
               </Badge>
 
-              <Badge
-                variant="outline"
-                className="gap-1"
-              >
-                <Lock className="size-3" />
-
-                MFA Not Enforced
-              </Badge>
+              {user.mfaEnabled ? (
+                <Badge
+                  variant="default"
+                  className="gap-1 bg-emerald-600 text-white hover:bg-emerald-600/90"
+                >
+                  <ShieldCheck className="size-3" />
+                  MFA Enabled
+                </Badge>
+              ) : (
+                <Badge
+                  variant="outline"
+                  className="gap-1"
+                >
+                  <Lock className="size-3" />
+                  MFA Not Enabled
+                </Badge>
+              )}
             </div>
           </div>
         </div>
 
-        {/* --------------------------------------- */}
         {/* Account Metadata */}
-        {/* --------------------------------------- */}
-
         <div
           className="
             flex
@@ -147,7 +151,6 @@ export default function UserDetails({
             gap-6
             border-t
             pt-4
-
             lg:border-t-0
             lg:pt-0
             lg:text-right
@@ -193,4 +196,3 @@ export default function UserDetails({
     </div>
   );
 }
-

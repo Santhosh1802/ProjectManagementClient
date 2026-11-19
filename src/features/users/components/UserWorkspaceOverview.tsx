@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import StatusBadge from "@/components/common/StatusBadge"
+import DataPagination from "@/components/common/DataPagination"
 import { useUserOwnedProjectsQuery } from "../hooks/useUsersQuery"
 import { useTasksByAssignedToQuery } from "@/features/tasks/hooks/useTasksQuery"
 import { formatDate } from "@/lib/dateConverter"
@@ -34,10 +35,9 @@ export default function UserWorkspaceOverview({
 }: UserWorkspaceOverviewProps) {
   const navigate = useNavigate()
   const [projectsPage, setProjectsPage] = useState(0)
+  const [projectsPageSize, setProjectsPageSize] = useState(5)
   const [tasksPage, setTasksPage] = useState(0)
-
-  const PROJECTS_PER_PAGE = 5
-  const TASKS_PER_PAGE = 5
+  const [tasksPageSize, setTasksPageSize] = useState(5)
 
   const {
     data: ownedProjectsData,
@@ -48,7 +48,7 @@ export default function UserWorkspaceOverview({
     data: tasksData,
     isLoading: loadingTasks,
   } = useTasksByAssignedToQuery(
-    { assignedToId: user.id, page: tasksPage, size: TASKS_PER_PAGE },
+    { assignedToId: user.id, page: tasksPage, size: tasksPageSize },
     { enabled: Boolean(user.id) }
   )
 
@@ -58,10 +58,10 @@ export default function UserWorkspaceOverview({
   const totalTasksPages = tasksData?.totalPages ?? 1
 
   const totalProjects = ownedProjects.length
-  const totalProjectsPages = Math.ceil(totalProjects / PROJECTS_PER_PAGE) || 1
+  const totalProjectsPages = Math.ceil(totalProjects / projectsPageSize) || 1
   const paginatedOwnedProjects = ownedProjects.slice(
-    projectsPage * PROJECTS_PER_PAGE,
-    (projectsPage + 1) * PROJECTS_PER_PAGE
+    projectsPage * projectsPageSize,
+    (projectsPage + 1) * projectsPageSize
   )
 
   const activeProjectsCount = ownedProjects.filter(
@@ -279,33 +279,20 @@ export default function UserWorkspaceOverview({
                 ))}
 
                 {/* Pagination for Projects */}
-                {totalProjectsPages > 1 && (
-                  <div className="flex items-center justify-between border-t border-border pt-3">
-                    <p className="text-xs text-muted-foreground">
-                      Page {projectsPage + 1} of {totalProjectsPages}
-                    </p>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 px-2 text-xs"
-                        disabled={projectsPage === 0}
-                        onClick={() => setProjectsPage((p) => Math.max(0, p - 1))}
-                      >
-                        Previous
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 px-2 text-xs"
-                        disabled={projectsPage >= totalProjectsPages - 1}
-                        onClick={() => setProjectsPage((p) => p + 1)}
-                      >
-                        Next
-                      </Button>
-                    </div>
-                  </div>
-                )}
+                <DataPagination
+                  compact
+                  page={projectsPage}
+                  totalPages={totalProjectsPages}
+                  totalElements={totalProjects}
+                  pageSize={projectsPageSize}
+                  pageSizeOptions={[5, 10, 20]}
+                  itemLabel="projects"
+                  onPageChange={setProjectsPage}
+                  onPageSizeChange={(nextSize) => {
+                    setProjectsPageSize(nextSize)
+                    setProjectsPage(0)
+                  }}
+                />
               </div>
             )}
           </CardContent>
@@ -404,33 +391,20 @@ export default function UserWorkspaceOverview({
                 ))}
 
                 {/* Pagination for Tasks */}
-                {totalTasksPages > 1 && (
-                  <div className="flex items-center justify-between border-t border-border pt-3">
-                    <p className="text-xs text-muted-foreground">
-                      Page {tasksPage + 1} of {totalTasksPages}
-                    </p>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 px-2 text-xs"
-                        disabled={tasksPage === 0}
-                        onClick={() => setTasksPage((p) => Math.max(0, p - 1))}
-                      >
-                        Previous
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 px-2 text-xs"
-                        disabled={tasksPage >= totalTasksPages - 1}
-                        onClick={() => setTasksPage((p) => p + 1)}
-                      >
-                        Next
-                      </Button>
-                    </div>
-                  </div>
-                )}
+                <DataPagination
+                  compact
+                  page={tasksPage}
+                  totalPages={totalTasksPages}
+                  totalElements={totalTasks}
+                  pageSize={tasksPageSize}
+                  pageSizeOptions={[5, 10, 20]}
+                  itemLabel="tasks"
+                  onPageChange={setTasksPage}
+                  onPageSizeChange={(nextSize) => {
+                    setTasksPageSize(nextSize)
+                    setTasksPage(0)
+                  }}
+                />
               </div>
             )}
           </CardContent>

@@ -8,6 +8,13 @@ export type RegistrationForm={
 export type LoginForm = {
     email: string;
     password: string;
+    mfaCode?: string;
+}
+
+export interface MfaSetupResponse {
+    secret: string;
+    otpAuthUri: string;
+    mfaEnabled: boolean;
 }
 
 export type ForgotPasswordForm = {

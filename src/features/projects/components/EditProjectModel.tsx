@@ -1,5 +1,6 @@
 import { useState } from "react"
-import { submitFormOnModEnter } from "@/lib/keyboard"
+import { submitFormOnModEnter, toAriaKeyShortcuts } from "@/lib/keyboard"
+import ShortcutHint from "@/components/common/ShortcutHint"
 import { AlertCircle, Loader2 } from "lucide-react"
 import { Controller, useForm } from "react-hook-form"
 import { z } from "zod"
@@ -162,6 +163,7 @@ export default function EditProjectModal({
         <form
           onSubmit={handleSubmit(onSubmit)}
           onKeyDown={submitFormOnModEnter}
+          aria-keyshortcuts={toAriaKeyShortcuts(["mod", "Enter"])}
           className="flex min-h-0 flex-1 flex-col"
         >
           <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6">
@@ -338,11 +340,18 @@ export default function EditProjectModal({
             <Button
               type="submit"
               disabled={saving || !isDirty}
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto gap-2"
             >
               {saving && <Loader2 className="size-4 animate-spin" />}
 
-              {saving ? "Saving..." : "Save changes"}
+              <span>{saving ? "Saving..." : "Save changes"}</span>
+              <ShortcutHint
+                keys={["mod", "Enter"]}
+                compact
+                decorative
+                variant="onPrimary"
+                className="hidden sm:inline-flex ml-1"
+              />
             </Button>
           </DialogFooter>
         </form>

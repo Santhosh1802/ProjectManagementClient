@@ -1,8 +1,6 @@
-
 import { Navigate, Outlet } from "react-router-dom"
 import { useAppSelector } from "@/hooks/redux-hooks"
-
-type AppRole = "ADMIN" | "MANAGER" | "USER"
+import type { AppRole } from "@/config/routeAccess"
 
 interface RoleGuardProps {
   allowedRoles: AppRole[]

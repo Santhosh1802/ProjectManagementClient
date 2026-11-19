@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { useAppDispatch } from "@/hooks/redux-hooks"
+import { useAppDispatch, useAppSelector } from "@/hooks/redux-hooks"
 import {
+  ACTIVE_WORKSPACE_STORAGE_KEY,
   setWorkspaces,
   setActiveWorkspace,
 } from "../slice/workspaceSlice"
@@ -34,12 +35,41 @@ export const WORKSPACE_KEYS = {
 
 export function useWorkspacesQuery(enabled = true) {
   const dispatch = useAppDispatch()
+  const queryClient = useQueryClient()
+  const currentUserId = useAppSelector((state) => state.auth?.user?.id ?? null)
 
   return useQuery({
     queryKey: WORKSPACE_KEYS.all,
     queryFn: async () => {
+      const previousActiveId = (() => {
+        try {
+          return localStorage.getItem(ACTIVE_WORKSPACE_STORAGE_KEY)
+        } catch {
+          return null
+        }
+      })()
+
       const data = await getWorkspaces()
-      dispatch(setWorkspaces(data))
+      dispatch(setWorkspaces({ workspaces: data, userId: currentUserId }))
+
+      const nextActiveId = (() => {
+        try {
+          return localStorage.getItem(ACTIVE_WORKSPACE_STORAGE_KEY)
+        } catch {
+          return null
+        }
+      })()
+
+      if (nextActiveId && nextActiveId !== previousActiveId) {
+        queryClient.invalidateQueries({ queryKey: ["projects"] })
+        queryClient.invalidateQueries({ queryKey: ["tasks"] })
+        queryClient.invalidateQueries({ queryKey: ["dashboard"] })
+        queryClient.invalidateQueries({ queryKey: ["analytics"] })
+        queryClient.invalidateQueries({ queryKey: ["saved-views"] })
+        queryClient.invalidateQueries({ queryKey: ["workflow-rules"] })
+        queryClient.invalidateQueries({ queryKey: ["notifications"] })
+      }
+
       return data
     },
     enabled,

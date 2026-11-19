@@ -35,6 +35,7 @@ import { toast } from "@/components/ui/toast"
 import PageContainer from "@/components/common/PageContainer"
 import PageHeader from "@/components/common/PageHeader"
 import EmptyState from "@/components/common/EmptyState"
+import DataPagination from "@/components/common/DataPagination"
 
 import { useUserDetailQuery, useUserOwnedProjectsQuery } from "@/features/users/hooks/useUsersQuery"
 import { useTasksByAssignedToQuery, useTasksByCreatedByQuery } from "@/features/tasks/hooks/useTasksQuery"
@@ -97,11 +98,11 @@ export default function UserDetailsPage() {
   const [activeTab, setActiveTab] = useState<string>("overview")
 
   const [projectsPage, setProjectsPage] = useState(0)
+  const [projectsPageSize, setProjectsPageSize] = useState(5)
   const [assignedPage, setAssignedPage] = useState(0)
+  const [assignedPageSize, setAssignedPageSize] = useState(5)
   const [createdPage, setCreatedPage] = useState(0)
-
-  const PROJECTS_PER_PAGE = 5
-  const TASKS_PER_PAGE = 5
+  const [createdPageSize, setCreatedPageSize] = useState(6)
 
   /* 1. User detail query */
   const {
@@ -125,7 +126,7 @@ export default function UserDetailsPage() {
     isLoading: loadingAssignedTasks,
     refetch: refetchAssignedTasks,
   } = useTasksByAssignedToQuery(
-    { assignedToId: userId ?? "", page: assignedPage, size: TASKS_PER_PAGE },
+    { assignedToId: userId ?? "", page: assignedPage, size: assignedPageSize },
     { enabled: Boolean(userId) }
   )
 
@@ -135,7 +136,7 @@ export default function UserDetailsPage() {
     isLoading: loadingCreatedTasks,
     refetch: refetchCreatedTasks,
   } = useTasksByCreatedByQuery(
-    { createdByUserId: userId ?? "", page: createdPage, size: 6 },
+    { createdByUserId: userId ?? "", page: createdPage, size: createdPageSize },
     { enabled: Boolean(userId) }
   )
 
@@ -162,10 +163,10 @@ export default function UserDetailsPage() {
   ).length
 
   const totalProjects = ownedProjects.length
-  const totalProjectsPages = Math.ceil(totalProjects / PROJECTS_PER_PAGE) || 1
+  const totalProjectsPages = Math.ceil(totalProjects / projectsPageSize) || 1
   const paginatedOwnedProjects = ownedProjects.slice(
-    projectsPage * PROJECTS_PER_PAGE,
-    (projectsPage + 1) * PROJECTS_PER_PAGE
+    projectsPage * projectsPageSize,
+    (projectsPage + 1) * projectsPageSize
   )
 
   const totalAssignedPages = assignedTasksData?.totalPages ?? 1
@@ -523,33 +524,20 @@ export default function UserDetailsPage() {
                     ))}
 
                     {/* Pagination for Projects */}
-                    {totalProjectsPages > 1 && (
-                      <div className="flex items-center justify-between border-t border-border pt-3">
-                        <p className="text-xs text-muted-foreground">
-                          Page {projectsPage + 1} of {totalProjectsPages}
-                        </p>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-7 px-2 text-xs"
-                            disabled={projectsPage === 0}
-                            onClick={() => setProjectsPage((p) => Math.max(0, p - 1))}
-                          >
-                            Previous
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-7 px-2 text-xs"
-                            disabled={projectsPage >= totalProjectsPages - 1}
-                            onClick={() => setProjectsPage((p) => p + 1)}
-                          >
-                            Next
-                          </Button>
-                        </div>
-                      </div>
-                    )}
+                    <DataPagination
+                      compact
+                      page={projectsPage}
+                      totalPages={totalProjectsPages}
+                      totalElements={totalProjects}
+                      pageSize={projectsPageSize}
+                      pageSizeOptions={[5, 10, 20]}
+                      itemLabel="projects"
+                      onPageChange={setProjectsPage}
+                      onPageSizeChange={(nextSize) => {
+                        setProjectsPageSize(nextSize)
+                        setProjectsPage(0)
+                      }}
+                    />
                   </div>
                 )}
               </CardContent>
@@ -629,33 +617,20 @@ export default function UserDetailsPage() {
                     ))}
 
                     {/* Pagination for Assigned Tasks */}
-                    {totalAssignedPages > 1 && (
-                      <div className="flex items-center justify-between border-t border-border pt-3">
-                        <p className="text-xs text-muted-foreground">
-                          Page {assignedPage + 1} of {totalAssignedPages}
-                        </p>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-7 px-2 text-xs"
-                            disabled={assignedPage === 0}
-                            onClick={() => setAssignedPage((p) => Math.max(0, p - 1))}
-                          >
-                            Previous
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-7 px-2 text-xs"
-                            disabled={assignedPage >= totalAssignedPages - 1}
-                            onClick={() => setAssignedPage((p) => p + 1)}
-                          >
-                            Next
-                          </Button>
-                        </div>
-                      </div>
-                    )}
+                    <DataPagination
+                      compact
+                      page={assignedPage}
+                      totalPages={totalAssignedPages}
+                      totalElements={totalAssignedTasks}
+                      pageSize={assignedPageSize}
+                      pageSizeOptions={[5, 10, 20]}
+                      itemLabel="tasks"
+                      onPageChange={setAssignedPage}
+                      onPageSizeChange={(nextSize) => {
+                        setAssignedPageSize(nextSize)
+                        setAssignedPage(0)
+                      }}
+                    />
                   </div>
                 )}
               </CardContent>
@@ -737,33 +712,20 @@ export default function UserDetailsPage() {
                   </div>
 
                   {/* Pagination for Authored Tasks */}
-                  {totalCreatedPages > 1 && (
-                    <div className="flex items-center justify-between border-t border-border pt-3">
-                      <p className="text-xs text-muted-foreground">
-                        Page {createdPage + 1} of {totalCreatedPages}
-                      </p>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-7 px-2 text-xs"
-                          disabled={createdPage === 0}
-                          onClick={() => setCreatedPage((p) => Math.max(0, p - 1))}
-                        >
-                          Previous
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-7 px-2 text-xs"
-                          disabled={createdPage >= totalCreatedPages - 1}
-                          onClick={() => setCreatedPage((p) => p + 1)}
-                        >
-                          Next
-                        </Button>
-                      </div>
-                    </div>
-                  )}
+                  <DataPagination
+                    compact
+                    page={createdPage}
+                    totalPages={totalCreatedPages}
+                    totalElements={totalCreatedTasks}
+                    pageSize={createdPageSize}
+                    pageSizeOptions={[6, 12, 24]}
+                    itemLabel="authored tasks"
+                    onPageChange={setCreatedPage}
+                    onPageSizeChange={(nextSize) => {
+                      setCreatedPageSize(nextSize)
+                      setCreatedPage(0)
+                    }}
+                  />
                 </>
               )}
             </CardContent>

@@ -16,6 +16,7 @@ import { formatDistanceToNow } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import DataPagination from "@/components/common/DataPagination"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,7 +43,7 @@ export default function NotificationsPage() {
   const navigate = useNavigate()
   const [filter, setFilter] = useState<"all" | "unread">("all")
   const [page, setPage] = useState(0)
-  const pageSize = 20
+  const [pageSize, setPageSize] = useState(20)
 
   const unreadOnly = filter === "unread"
   const { data: unreadCount = 0 } = useUnreadNotificationsCountQuery()
@@ -62,6 +63,7 @@ export default function NotificationsPage() {
 
   const notifications = notificationsPage?.content ?? []
   const totalPages = notificationsPage?.totalPages ?? 0
+  const totalElements = notificationsPage?.totalElements ?? notifications.length
 
   const handleNotificationClick = (item: NotificationItem) => {
     if (!item.isRead) {
@@ -96,6 +98,7 @@ export default function NotificationsPage() {
       case "TASK_STATUS_CHANGED":
         return <Check className="size-5 text-amber-500" />
       case "TASK_COMMENT_ADDED":
+      case "COMMENT_MENTIONED":
         return <MessageSquare className="size-5 text-blue-500" />
       case "PROJECT_MEMBER_ADDED":
         return <UserPlus className="size-5 text-emerald-500" />
@@ -105,7 +108,7 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6 min-w-0">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
         <div className="space-y-1">
@@ -258,7 +261,7 @@ export default function NotificationsPage() {
                     </span>
                   </div>
 
-                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed line-clamp-2 sm:line-clamp-none">
+                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed line-clamp-2 sm:line-clamp-none break-words">
                     {item.message}
                   </p>
 
@@ -306,28 +309,21 @@ export default function NotificationsPage() {
       </div>
 
       {/* Pagination Controls */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between pt-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPage((prev) => Math.max(0, prev - 1))}
-            disabled={page === 0 || isLoading}
-          >
-            Previous
-          </Button>
-          <span className="text-xs text-muted-foreground">
-            Page {page + 1} of {totalPages}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPage((prev) => prev + 1)}
-            disabled={page >= totalPages - 1 || isLoading}
-          >
-            Next
-          </Button>
-        </div>
+      {!isLoading && !isError && totalElements > 0 && (
+        <DataPagination
+          page={page}
+          totalPages={totalPages}
+          totalElements={totalElements}
+          pageSize={pageSize}
+          pageSizeOptions={[10, 20, 50]}
+          itemLabel="notifications"
+          disabled={isLoading}
+          onPageChange={setPage}
+          onPageSizeChange={(nextSize) => {
+            setPageSize(nextSize)
+            setPage(0)
+          }}
+        />
       )}
     </div>
   )

@@ -1,9 +1,17 @@
 import { useEffect, useState } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
-import { ArrowLeft, CheckSquare } from "lucide-react"
+import {
+  ArrowLeft,
+  CalendarClock,
+  CheckCircle2,
+  CheckSquare,
+  FolderKanban,
+  Sparkles,
+} from "lucide-react"
 
 import PageContainer from "@/components/common/PageContainer"
 import PageHeader from "@/components/common/PageHeader"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -12,6 +20,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import ShortcutHint from "@/components/common/ShortcutHint"
+import { Separator } from "@/components/ui/separator"
 import { toast } from "@/components/ui/toast"
 
 import { searchProjects } from "@/features/projects/services/projects.services"
@@ -132,6 +142,12 @@ export default function CreateTaskPage() {
       throw new Error("Unable to identify the authenticated user.")
     }
 
+    const uniqueAssigneeIds = Array.from(
+      new Set(
+        [values.assignedToId, ...(values.assigneeIds ?? [])].filter(Boolean)
+      )
+    )
+
     const newTask = await createTask({
       title: values.title.trim(),
       description: values.description?.trim() || undefined,
@@ -139,6 +155,7 @@ export default function CreateTaskPage() {
       taskPriority: values.taskPriority,
       projectId: values.projectId,
       assignedToId: values.assignedToId,
+      assigneeIds: uniqueAssigneeIds,
       dueDate: formatDueDateForSubmission(values.dueDate),
     })
 
@@ -155,10 +172,11 @@ export default function CreateTaskPage() {
     navigate("/app/tasks")
   }
 
+  const defaultProjectName = projects.find((p) => p.id === defaultProjectId)?.name
+
   return (
-    <PageContainer className="max-w-4xl space-y-6">
-      {/* Back button */}
-      <div>
+    <PageContainer className="max-w-6xl space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <Button
           type="button"
           variant="ghost"
@@ -167,6 +185,10 @@ export default function CreateTaskPage() {
         >
           <ArrowLeft className="size-4" /> Back to Tasks
         </Button>
+        <Badge variant="secondary" className="gap-1.5">
+          <Sparkles className="size-3 text-primary" />
+          New Task Workflow
+        </Badge>
       </div>
 
       <PageHeader
@@ -174,34 +196,89 @@ export default function CreateTaskPage() {
         description="Define task details, assign it to a team member, and schedule a due date."
       />
 
-      <Card className="border shadow-xs">
-        <CardHeader className="border-b pb-4">
-          <div className="flex items-center gap-2">
-            <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <CheckSquare className="size-4" />
+      <div className="grid gap-6 lg:grid-cols-12">
+        <Card className="border shadow-xs lg:col-span-8">
+          <CardHeader className="border-b bg-muted/20 pb-4">
+            <div className="flex items-center gap-2.5">
+              <div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary/20 to-chart-2/20 text-primary">
+                <CheckSquare className="size-4" />
+              </div>
+              <div>
+                <CardTitle className="text-base">Task Information</CardTitle>
+                <CardDescription className="text-xs">
+                  Fill in the details below to create a new task.
+                </CardDescription>
+              </div>
             </div>
-            <div>
-              <CardTitle className="text-base">Task Information</CardTitle>
-              <CardDescription className="text-xs">
-                Fill in the details below to create a new task.
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
+          </CardHeader>
 
-        <CardContent className="pt-6">
-          <CreateTaskForm
-            defaultProjectId={defaultProjectId}
-            defaultStatus={defaultStatus}
-            projects={projects}
-            projectsLoading={projectsLoading}
-            onProjectSearch={handleProjectSearch}
-            onSubmitTask={handleSubmitTask}
-            onCreated={handleCreated}
-            onCancel={() => navigate("/app/tasks")}
-          />
-        </CardContent>
-      </Card>
+          <CardContent className="pt-6">
+            <CreateTaskForm
+              defaultProjectId={defaultProjectId}
+              defaultStatus={defaultStatus}
+              projects={projects}
+              projectsLoading={projectsLoading}
+              onProjectSearch={handleProjectSearch}
+              onSubmitTask={handleSubmitTask}
+              onCreated={handleCreated}
+              onCancel={() => navigate("/app/tasks")}
+            />
+          </CardContent>
+        </Card>
+
+        <aside className="space-y-4 lg:col-span-4">
+          <Card className="sticky top-6 border-border/80 bg-card/95 shadow-xs">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold">
+                Creation Checklist &amp; Context
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Tips for clear, trackable sprint tasks.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 text-xs">
+              {(defaultProjectName || defaultStatus) && (
+                <div className="space-y-2 rounded-lg border border-primary/25 bg-primary/5 p-3">
+                  <div className="font-semibold text-primary">Pre-filled Context</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {defaultProjectName && (
+                      <Badge variant="secondary" className="gap-1">
+                        <FolderKanban className="size-3" />
+                        {defaultProjectName}
+                      </Badge>
+                    )}
+                    {defaultStatus && (
+                      <Badge variant="outline">{defaultStatus.replace("_", " ")}</Badge>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <ul className="space-y-2.5 text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-primary" />
+                  <span>Start titles with an action verb (e.g. &ldquo;Implement&rdquo;, &ldquo;Fix&rdquo;, &ldquo;Review&rdquo;).</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <FolderKanban className="mt-0.5 size-3.5 shrink-0 text-primary" />
+                  <span>Link to a project and assign an owner so notifications trigger automatically.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CalendarClock className="mt-0.5 size-3.5 shrink-0 text-primary" />
+                  <span>Set a due date &amp; priority for accurate calendar and dashboard tracking.</span>
+                </li>
+              </ul>
+
+              <Separator />
+
+              <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                <span>Quick submit</span>
+                <ShortcutHint keys={["mod", "Enter"]} />
+              </div>
+            </CardContent>
+          </Card>
+        </aside>
+      </div>
     </PageContainer>
   )
 }

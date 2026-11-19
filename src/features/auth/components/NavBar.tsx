@@ -5,7 +5,7 @@ import ThemeColorSelector from "@/components/common/ThemeColorSelector";
 
 export default function NavBar() {
   return (
-    <nav className="sticky top-0 z-50 w-full border-b bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+    <nav className="sticky top-0 z-40 w-full border-b bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
       <div className="mx-auto flex h-14 w-full max-w-7xl items-center justify-between px-4 sm:h-16 sm:px-6 lg:px-8">
         <LogoWithVersion />
 

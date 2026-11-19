@@ -2,6 +2,7 @@ import api from "@/config/api"
 
 import type {
   ApiResponse,
+  CreateSubtaskRequest,
   CreateTaskRequest,
   DeleteTaskRequest,
   GetTaskByIdRequest,
@@ -11,6 +12,8 @@ import type {
   GetTasksRequest,
   Task,
   TaskPageResponse,
+  TaskSubtask,
+  UpdateSubtaskRequest,
   UpdateTaskDetailsRequest,
   UpdateTaskStatusRequest,
 } from "../types/task.types"
@@ -31,7 +34,10 @@ export async function createTask(
       taskPriority: request.taskPriority,
       dueDate: request.dueDate,
       projectId: request.projectId,
-      assignedToId: request.assignedToId
+      assignedToId: request.assignedToId,
+      ...(request.assigneeIds !== undefined
+        ? { assigneeIds: request.assigneeIds }
+        : {}),
     }
   )
 
@@ -158,6 +164,9 @@ export async function updateTaskDetails(
       dueDate: request.dueDate,
       projectId: request.projectId,
       assignedToId: request.assignedToId,
+      ...(request.assigneeIds !== undefined
+        ? { assigneeIds: request.assigneeIds }
+        : {}),
       createdById: request.createdById,
     }
   )
@@ -265,5 +274,76 @@ export async function searchTasks(
   const response = await api.get<ApiResponse<TaskPageResponse>>("/tasks/search", {
     params,
   })
+  return response.data.data
+}
+
+/**
+ * List subtasks / checklist items for a task.
+ * GET /api/tasks/{taskId}/subtasks
+ */
+export async function getTaskSubtasks(taskId: string): Promise<TaskSubtask[]> {
+  const response = await api.get<ApiResponse<TaskSubtask[]>>(
+    `/tasks/${taskId}/subtasks`
+  )
+  return response.data.data
+}
+
+/**
+ * Create a new subtask on a task.
+ * POST /api/tasks/{taskId}/subtasks
+ */
+export async function createTaskSubtask(
+  taskId: string,
+  request: CreateSubtaskRequest
+): Promise<TaskSubtask> {
+  const response = await api.post<ApiResponse<TaskSubtask>>(
+    `/tasks/${taskId}/subtasks`,
+    request
+  )
+  return response.data.data
+}
+
+/**
+ * Update a subtask (title, completion status, assignee, due date, sort order).
+ * PATCH /api/tasks/{taskId}/subtasks/{subtaskId}
+ */
+export async function updateTaskSubtask(
+  taskId: string,
+  subtaskId: string,
+  request: UpdateSubtaskRequest
+): Promise<TaskSubtask> {
+  const response = await api.patch<ApiResponse<TaskSubtask>>(
+    `/tasks/${taskId}/subtasks/${subtaskId}`,
+    request
+  )
+  return response.data.data
+}
+
+/**
+ * Reorder subtasks for a task.
+ * PUT /api/tasks/{taskId}/subtasks/reorder
+ */
+export async function reorderTaskSubtasks(
+  taskId: string,
+  subtaskIds: string[]
+): Promise<TaskSubtask[]> {
+  const response = await api.put<ApiResponse<TaskSubtask[]>>(
+    `/tasks/${taskId}/subtasks/reorder`,
+    { subtaskIds }
+  )
+  return response.data.data
+}
+
+/**
+ * Delete a subtask from a task.
+ * DELETE /api/tasks/{taskId}/subtasks/{subtaskId}
+ */
+export async function deleteTaskSubtask(
+  taskId: string,
+  subtaskId: string
+): Promise<boolean> {
+  const response = await api.delete<ApiResponse<boolean>>(
+    `/tasks/${taskId}/subtasks/${subtaskId}`
+  )
   return response.data.data
 }

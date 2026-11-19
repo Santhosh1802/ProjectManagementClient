@@ -1,10 +1,12 @@
 import type { ProjectRole } from "@/features/projects/types/project.types"
+import type { WorkspaceRole } from "@/features/workspaces/types/workspace.types"
 
 export interface ProjectPermissionContext {
   userId: string
   userRole: string
   projectOwnerId: string
   projectRole?: ProjectRole
+  workspaceRole?: WorkspaceRole | string | null
 }
 
 export interface ProjectPermissions {
@@ -21,29 +23,31 @@ export function getProjectPermissions({
   userRole,
   projectOwnerId,
   projectRole,
+  workspaceRole,
 }: ProjectPermissionContext): ProjectPermissions {
-  const isAdmin = userRole === "ADMIN"
-  const isOwner = userId === projectOwnerId
+  const normalizedGlobalRole = (userRole ?? "").toUpperCase()
+  const normalizedWorkspaceRole = (workspaceRole ?? "").toUpperCase()
+
+  const isGlobalAdmin =
+    normalizedGlobalRole === "SUPER_ADMIN" || normalizedGlobalRole === "ADMIN"
+  const isOrgAdmin =
+    normalizedWorkspaceRole === "OWNER" || normalizedWorkspaceRole === "ADMIN"
+  const isOwner = Boolean(userId && projectOwnerId && userId === projectOwnerId)
   const isManager = projectRole === "MANAGER"
   const isMember = projectRole === "MEMBER"
 
   return {
-    canEditProject:
-      isAdmin || isOwner || isManager,
+    canEditProject: isGlobalAdmin || isOrgAdmin || isOwner || isManager,
 
-    canManageMembers:
-      isAdmin || isOwner || isManager,
+    canManageMembers: isGlobalAdmin || isOrgAdmin || isOwner || isManager,
 
-    canChangeOwner:
-      isAdmin || isOwner,
+    canChangeOwner: isGlobalAdmin || isOrgAdmin || isOwner,
 
-    canDeleteProject:
-      isAdmin || isOwner,
+    canDeleteProject: isGlobalAdmin || isOrgAdmin || isOwner,
 
     canCreateTask:
-      isAdmin || isOwner || isManager || isMember,
+      isGlobalAdmin || isOrgAdmin || isOwner || isManager || isMember,
 
-    canAssignTask:
-      isAdmin || isOwner || isManager,
+    canAssignTask: isGlobalAdmin || isOrgAdmin || isOwner || isManager,
   }
 }

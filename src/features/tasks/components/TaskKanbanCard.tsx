@@ -11,6 +11,11 @@ import {
 
 import type { Task, TaskStatus } from "@/features/tasks/types/task.types"
 import StatusBadge from "@/components/common/StatusBadge"
+import {
+  getEffectiveAssignees,
+  SubtaskProgressBadge,
+  TaskAssigneeAvatars,
+} from "@/features/tasks/components/TaskAssigneeAvatars"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -94,7 +99,7 @@ export default function TaskKanbanCard({
           onView?.(task)
         }
       }}
-      className={`group relative flex flex-col gap-2.5 rounded-xl border bg-card p-3.5 text-card-foreground shadow-xs transition-all duration-150 cursor-grab active:cursor-grabbing hover:border-primary/40 hover:shadow-md ${
+      className={`group relative flex min-w-0 flex-col gap-2.5 overflow-hidden rounded-xl border bg-card p-3.5 text-card-foreground shadow-xs transition-all duration-150 cursor-grab active:cursor-grabbing hover:border-primary/40 hover:shadow-md ${
         isDragging
           ? "opacity-40 scale-[0.98] ring-2 ring-primary/40 shadow-none border-dashed border-primary"
           : "hover:-translate-y-0.5"
@@ -193,58 +198,78 @@ export default function TaskKanbanCard({
       </div>
 
       {/* Task Title */}
-      <h4 className="line-clamp-2 text-sm font-semibold tracking-tight text-foreground transition-colors group-hover:text-primary">
+      <h4 className="line-clamp-2 break-words text-sm font-semibold tracking-tight text-foreground transition-colors group-hover:text-primary">
         {task.title}
       </h4>
 
       {/* Task Description snippet (if any) */}
       {task.description && (
-        <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+        <p className="line-clamp-2 break-words text-xs leading-relaxed text-muted-foreground">
           {task.description}
         </p>
       )}
 
       {/* Card Footer: Due Date & Assignee */}
       <div className="flex items-center justify-between gap-2 border-t pt-2.5 text-xs text-muted-foreground">
-        {/* Due Date */}
-        <div
-          className={`flex items-center gap-1.5 ${
-            overdue ? "font-medium text-destructive" : ""
-          }`}
-          title={task.dueDate ? `Due: ${new Date(task.dueDate).toLocaleDateString()}` : "No due date"}
-        >
-          {overdue ? (
-            <Clock3 className="size-3 shrink-0 text-destructive" />
-          ) : (
-            <CalendarDays className="size-3 shrink-0 text-muted-foreground" />
-          )}
-          <span className="text-[11px]">{formatDate(task.dueDate)}</span>
+        {/* Due Date & Subtask Progress */}
+        <div className="flex min-w-0 items-center gap-1.5">
+          <div
+            className={`flex items-center gap-1.5 ${
+              overdue ? "font-medium text-destructive" : ""
+            }`}
+            title={task.dueDate ? `Due: ${new Date(task.dueDate).toLocaleDateString()}` : "No due date"}
+          >
+            {overdue ? (
+              <Clock3 className="size-3 shrink-0 text-destructive" />
+            ) : (
+              <CalendarDays className="size-3 shrink-0 text-muted-foreground" />
+            )}
+            <span className="text-[11px]">{formatDate(task.dueDate)}</span>
+          </div>
+          <SubtaskProgressBadge
+            subtaskCount={task.subtaskCount}
+            completedSubtaskCount={task.completedSubtaskCount}
+          />
         </div>
 
         {/* Assignee */}
-        <div
-          className="flex items-center gap-1.5"
-          title={
-            assignedUser
-              ? `Assigned to ${assignedUser.firstName} ${assignedUser.lastName}`
-              : "Unassigned"
-          }
-        >
-          {assignedUser ? (
-            <div className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary">
-              {getInitials(assignedUser.firstName, assignedUser.lastName)}
+        {(() => {
+          const effectiveAssignees = getEffectiveAssignees(task)
+          const coAssigneeCount = Math.max(0, effectiveAssignees.length - 1)
+          return (
+            <div
+              className="flex shrink-0 items-center gap-1.5"
+              title={
+                effectiveAssignees.length > 0
+                  ? `Assigned to ${effectiveAssignees
+                      .map((u) => `${u.firstName} ${u.lastName}`.trim())
+                      .join(", ")}`
+                  : "Unassigned"
+              }
+            >
+              {coAssigneeCount > 0 ? (
+                <TaskAssigneeAvatars task={task} size="sm" maxVisible={3} />
+              ) : assignedUser ? (
+                <div className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary">
+                  {getInitials(assignedUser.firstName, assignedUser.lastName)}
+                </div>
+              ) : (
+                <div className="flex size-5 shrink-0 items-center justify-center rounded-full bg-muted">
+                  <UserRound className="size-3 text-muted-foreground" />
+                </div>
+              )}
+              <span className="max-w-[90px] truncate text-[11px]">
+                {assignedUser
+                  ? `${assignedUser.firstName} ${
+                      assignedUser.lastName?.charAt(0)
+                        ? `${assignedUser.lastName.charAt(0)}.`
+                        : ""
+                    }${coAssigneeCount > 0 ? ` +${coAssigneeCount}` : ""}`
+                  : "Unassigned"}
+              </span>
             </div>
-          ) : (
-            <div className="flex size-5 shrink-0 items-center justify-center rounded-full bg-muted">
-              <UserRound className="size-3 text-muted-foreground" />
-            </div>
-          )}
-          <span className="max-w-[80px] truncate text-[11px]">
-            {assignedUser
-              ? `${assignedUser.firstName} ${assignedUser.lastName?.charAt(0) ? `${assignedUser.lastName.charAt(0)}.` : ""}`
-              : "Unassigned"}
-          </span>
-        </div>
+          )
+        })()}
       </div>
     </div>
   )

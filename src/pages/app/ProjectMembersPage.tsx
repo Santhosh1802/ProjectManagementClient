@@ -45,6 +45,7 @@ import {
 } from "@/components/ui/dialog"
 
 import { Input } from "@/components/ui/input"
+import { Kbd } from "@/components/ui/kbd"
 
 import {
   Select,
@@ -72,16 +73,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { toast } from "@/components/ui/toast"
 import { getApiErrorMessage } from "@/lib/apiError"
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination"
-import PageSizeSelector from "@/components/common/PageSizeSelector"
+import DataPagination from "@/components/common/DataPagination"
 
 import { useAppDispatch, useAppSelector } from "@/hooks/redux-hooks"
 
@@ -120,38 +112,6 @@ import {
 } from "@/features/projects/slice/projectMemberSlice"
 
 type RoleFilter = "ALL" | ProjectRole
-
-function getPaginationItems(
-  totalPages: number,
-  currentPage: number
-): (number | "ellipsis")[] {
-  if (totalPages <= 7) {
-    return Array.from({ length: totalPages }, (_, index) => index)
-  }
-
-  const pages = new Set<number>([
-    0,
-    totalPages - 1,
-    currentPage,
-    currentPage - 1,
-    currentPage + 1,
-  ])
-
-  const visiblePages = [...pages]
-    .filter((p) => p >= 0 && p < totalPages)
-    .sort((a, b) => a - b)
-
-  const result: (number | "ellipsis")[] = []
-
-  visiblePages.forEach((p, index) => {
-    if (index > 0 && p - visiblePages[index - 1] > 1) {
-      result.push("ellipsis")
-    }
-    result.push(p)
-  })
-
-  return result
-}
 
 function getUserName(member: ProjectMember) {
   return `${member.user?.firstName ?? ""} ${member.user?.lastName ?? ""}`.trim()
@@ -303,11 +263,16 @@ export default function ProjectMembersPage() {
     [members, currentUser?.id],
   )
 
+  const activeWorkspace = useAppSelector(
+    (state: RootState) => state.workspaces?.activeWorkspace
+  )
+
   const permissions = getProjectPermissions({
     userId: currentUser?.id ?? "",
     userRole: currentUser?.user_role ?? "",
     projectOwnerId: project?.owner?.id ?? "",
     projectRole: currentProjectMember?.projectRole,
+    workspaceRole: activeWorkspace?.currentUserRole,
   })
 
   /*
@@ -345,18 +310,14 @@ export default function ProjectMembersPage() {
    */
 
   useEffect(() => {
-    const keyword = memberSearch.trim()
-
-    function handleExceptions() {
-      if (!addMemberOpen || !keyword) {
-        setSearchResults([])
-        setSearchLoading(false)
-        setSearchError(null)
-        return
-      }
+    if (!addMemberOpen) {
+      setSearchResults([])
+      setSearchLoading(false)
+      setSearchError(null)
+      return
     }
 
-    handleExceptions();
+    const keyword = memberSearch.trim()
     let cancelled = false
 
     const timeout = window.setTimeout(async () => {
@@ -365,7 +326,7 @@ export default function ProjectMembersPage() {
         setSearchError(null)
 
         const response = await searchUsers({
-          keyword,
+          keyword: keyword || undefined,
           page: 0,
           size: 10,
         })
@@ -394,7 +355,7 @@ export default function ProjectMembersPage() {
           setSearchLoading(false)
         }
       }
-    }, 300)
+    }, 200)
 
     return () => {
       cancelled = true
@@ -704,8 +665,16 @@ export default function ProjectMembersPage() {
                     aria-label="Search members"
                     aria-keyshortcuts="/"
                     data-page-search=""
-                    className="w-full pl-9 sm:w-64"
+                    className="w-full pr-9 pl-9 sm:w-64"
                   />
+                  {!search && (
+                    <Kbd
+                      aria-hidden="true"
+                      className="pointer-events-none absolute top-1/2 right-2.5 hidden -translate-y-1/2 sm:inline-flex"
+                    >
+                      /
+                    </Kbd>
+                  )}
                 </div>
 
                 <Select
@@ -846,90 +815,21 @@ export default function ProjectMembersPage() {
               </div>
             )}
 
-            {totalPages > 0 && (
-              <div className="flex flex-col gap-4 border-t px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-                <div className="flex flex-wrap items-center gap-3">
-                  <p className="text-xs text-muted-foreground">
-                    Showing {totalElements === 0 ? 0 : page * size + 1}–{Math.min((page + 1) * size, totalElements)} of{" "}
-                    {totalElements.toLocaleString("en-IN")} members
-                  </p>
-                  <PageSizeSelector
-                    value={size}
-                    onChange={(newSize) => {
-                      dispatch(setProjectMemberPageSize(newSize))
-                      dispatch(setProjectMemberPage(0))
-                    }}
-                    options={[10, 20, 50]}
-                  />
-                </div>
-
-                {totalPages > 1 && (
-                  <Pagination className="mx-0 w-auto justify-start sm:justify-end">
-                    <PaginationContent className="flex-wrap">
-                      <PaginationItem>
-                        <PaginationPrevious
-                          href="#"
-                          aria-disabled={page === 0}
-                          tabIndex={page === 0 ? -1 : undefined}
-                          className={
-                            page === 0
-                              ? "pointer-events-none opacity-50"
-                              : "cursor-pointer"
-                          }
-                          onClick={(event) => {
-                            event.preventDefault()
-                            if (page > 0) {
-                              handlePageChange(page - 1)
-                            }
-                          }}
-                        />
-                      </PaginationItem>
-
-                      {getPaginationItems(totalPages, page).map((item, index) => (
-                        <PaginationItem key={`${item}-${index}`}>
-                          {item === "ellipsis" ? (
-                            <PaginationEllipsis />
-                          ) : (
-                            <PaginationLink
-                              href="#"
-                              isActive={page === item}
-                              aria-label={`Go to page ${item + 1}`}
-                              aria-current={page === item ? "page" : undefined}
-                              onClick={(event) => {
-                                event.preventDefault()
-                                if (page !== item) {
-                                  handlePageChange(item)
-                                }
-                              }}
-                            >
-                              {item + 1}
-                            </PaginationLink>
-                          )}
-                        </PaginationItem>
-                      ))}
-
-                      <PaginationItem>
-                        <PaginationNext
-                          href="#"
-                          aria-disabled={page >= totalPages - 1}
-                          tabIndex={page >= totalPages - 1 ? -1 : undefined}
-                          className={
-                            page >= totalPages - 1
-                              ? "pointer-events-none opacity-50"
-                              : "cursor-pointer"
-                          }
-                          onClick={(event) => {
-                            event.preventDefault()
-                            if (page < totalPages - 1) {
-                              handlePageChange(page + 1)
-                            }
-                          }}
-                        />
-                      </PaginationItem>
-                    </PaginationContent>
-                  </Pagination>
-                )}
-              </div>
+            {totalPages > 0 && totalElements > 0 && (
+              <DataPagination
+                className="px-4 py-4 sm:px-6"
+                page={page}
+                totalPages={totalPages}
+                totalElements={totalElements}
+                pageSize={size}
+                pageSizeOptions={[10, 20, 50]}
+                itemLabel="members"
+                onPageChange={handlePageChange}
+                onPageSizeChange={(newSize) => {
+                  dispatch(setProjectMemberPageSize(newSize))
+                  dispatch(setProjectMemberPage(0))
+                }}
+              />
             )}
           </CardContent>
         </Card>

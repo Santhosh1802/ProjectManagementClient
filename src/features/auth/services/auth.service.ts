@@ -1,5 +1,5 @@
 import api from "@/config/api";
-import type { LoginForm, RegistrationForm } from "../types/auth.types";
+import type { LoginForm, MfaSetupResponse, RegistrationForm } from "../types/auth.types";
 import type { ApiResponse, User } from "@/features/users/types/user.types";
 
 export async function registerUser(request:RegistrationForm) {
@@ -37,7 +37,27 @@ export async function verifyEmail(token: string) {
     return response.data;
 }
 
+export async function verifyEmailWithOtp(email: string, otp: string) {
+    const response = await api.post<ApiResponse<string>>("/auth/verify-otp", { email, otp });
+    return response.data;
+}
+
 export async function resendVerification(email: string) {
     const response = await api.post<ApiResponse<string>>("/auth/resend-verification", { email });
     return response.data;
+}
+
+export async function setupMfa(): Promise<MfaSetupResponse> {
+    const response = await api.post<ApiResponse<MfaSetupResponse>>("/auth/mfa/setup");
+    return response.data.data;
+}
+
+export async function enableMfa(code: string): Promise<User> {
+    const response = await api.post<ApiResponse<User>>("/auth/mfa/enable", { code });
+    return response.data.data;
+}
+
+export async function disableMfa(password: string): Promise<User> {
+    const response = await api.post<ApiResponse<User>>("/auth/mfa/disable", { password });
+    return response.data.data;
 }

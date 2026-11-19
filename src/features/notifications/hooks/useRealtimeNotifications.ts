@@ -4,6 +4,7 @@ import SockJS from "sockjs-client"
 import { useQueryClient } from "@tanstack/react-query"
 import { getWebSocketUrl } from "@/config/config"
 import { notificationKeys, taskKeys, projectKeys, activityKeys, analyticsKeys } from "@/lib/queryKeys"
+import { handleRealtimeDomainEvent, type RealtimeEnvelope } from "@/features/realtime/realtimeBoundary"
 import type { NotificationItem } from "../types/notification.types"
 
 interface UseRealtimeNotificationsOptions {
@@ -64,6 +65,16 @@ export function useRealtimeNotifications({ isAuthenticated }: UseRealtimeNotific
             }
           } catch (e) {
             console.error("Failed to parse incoming realtime notification:", e)
+          }
+        })
+
+        // Subscribe to Kafka-backed domain events topic for live cache invalidation
+        stompClient.subscribe("/topic/domain-events", (message) => {
+          try {
+            const envelope: RealtimeEnvelope = JSON.parse(message.body)
+            handleRealtimeDomainEvent(envelope, queryClient)
+          } catch (e) {
+            console.error("Failed to parse incoming realtime domain event:", e)
           }
         })
       },

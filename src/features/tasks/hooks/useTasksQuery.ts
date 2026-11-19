@@ -1,22 +1,34 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   createTask,
+  createTaskDependency,
+  createTaskSubtask,
   deleteTask,
+  deleteTaskSubtask,
   getAllTasks,
+  getProjectDependencies,
   getTaskById,
+  getTaskDependencies,
   getTasksByAssignedTo,
   getTasksByCreatedBy,
   getTasksByProject,
+  getTaskSubtasks,
+  removeTaskDependency,
+  reorderTaskSubtasks,
   updateTaskDetails,
   updateTaskStatus,
+  updateTaskSubtask,
 } from "../services/task.services"
 import type {
+  CreateSubtaskRequest,
+  CreateTaskDependencyRequest,
   CreateTaskRequest,
   DeleteTaskRequest,
   GetTasksByAssignedToRequest,
   GetTasksByCreatedByRequest,
   GetTasksByProjectRequest,
   GetTasksRequest,
+  UpdateSubtaskRequest,
   UpdateTaskDetailsRequest,
   UpdateTaskStatusRequest,
 } from "../types/task.types"
@@ -126,7 +138,7 @@ export function useDeleteTaskMutation(projectId?: string) {
 export function useTaskDependenciesQuery(taskId: string | undefined, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: taskKeys.dependencies(taskId ?? ""),
-    queryFn: () => (taskId ? import("../services/task.services").then(m => m.getTaskDependencies(taskId)) : Promise.reject("No taskId")),
+    queryFn: () => (taskId ? getTaskDependencies(taskId) : Promise.reject("No taskId")),
     enabled: Boolean(taskId) && (options?.enabled ?? true),
   })
 }
@@ -134,7 +146,7 @@ export function useTaskDependenciesQuery(taskId: string | undefined, options?: {
 export function useProjectDependenciesQuery(projectId: string | undefined, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: taskKeys.projectDependencies(projectId ?? ""),
-    queryFn: () => (projectId ? import("../services/task.services").then(m => m.getProjectDependencies(projectId)) : Promise.reject("No projectId")),
+    queryFn: () => (projectId ? getProjectDependencies(projectId) : Promise.reject("No projectId")),
     enabled: Boolean(projectId) && (options?.enabled ?? true),
   })
 }
@@ -142,8 +154,7 @@ export function useProjectDependenciesQuery(projectId: string | undefined, optio
 export function useCreateTaskDependencyMutation(taskId: string, projectId?: string) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (request: import("../types/task.types").CreateTaskDependencyRequest) =>
-      import("../services/task.services").then(m => m.createTaskDependency(request)),
+    mutationFn: (request: CreateTaskDependencyRequest) => createTaskDependency(request),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: taskKeys.dependencies(taskId) })
       if (projectId) {
@@ -161,13 +172,79 @@ export function useCreateTaskDependencyMutation(taskId: string, projectId?: stri
 export function useRemoveTaskDependencyMutation(taskId: string, projectId?: string) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (dependencyId: string) =>
-      import("../services/task.services").then(m => m.removeTaskDependency(dependencyId)),
+    mutationFn: (dependencyId: string) => removeTaskDependency(dependencyId),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: taskKeys.dependencies(taskId) })
       if (projectId) {
         void queryClient.invalidateQueries({ queryKey: taskKeys.projectDependencies(projectId) })
       }
+      void queryClient.invalidateQueries({ queryKey: taskKeys.all })
+      void queryClient.invalidateQueries({ queryKey: activityKeys.byTask(taskId) })
+      if (projectId) {
+        void queryClient.invalidateQueries({ queryKey: activityKeys.byProject(projectId) })
+      }
+    },
+  })
+}
+
+export function useTaskSubtasksQuery(taskId: string | undefined, options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: taskKeys.subtasks(taskId ?? ""),
+    queryFn: () => (taskId ? getTaskSubtasks(taskId) : Promise.reject("No taskId")),
+    enabled: Boolean(taskId) && (options?.enabled ?? true),
+  })
+}
+
+export function useCreateSubtaskMutation(taskId: string, projectId?: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (request: CreateSubtaskRequest) => createTaskSubtask(taskId, request),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: taskKeys.subtasks(taskId) })
+      void queryClient.invalidateQueries({ queryKey: taskKeys.detail(taskId) })
+      void queryClient.invalidateQueries({ queryKey: taskKeys.all })
+      void queryClient.invalidateQueries({ queryKey: activityKeys.byTask(taskId) })
+      if (projectId) {
+        void queryClient.invalidateQueries({ queryKey: activityKeys.byProject(projectId) })
+      }
+    },
+  })
+}
+
+export function useUpdateSubtaskMutation(taskId: string, projectId?: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ subtaskId, data }: { subtaskId: string; data: UpdateSubtaskRequest }) =>
+      updateTaskSubtask(taskId, subtaskId, data),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: taskKeys.subtasks(taskId) })
+      void queryClient.invalidateQueries({ queryKey: taskKeys.detail(taskId) })
+      void queryClient.invalidateQueries({ queryKey: taskKeys.all })
+      void queryClient.invalidateQueries({ queryKey: activityKeys.byTask(taskId) })
+      if (projectId) {
+        void queryClient.invalidateQueries({ queryKey: activityKeys.byProject(projectId) })
+      }
+    },
+  })
+}
+
+export function useReorderSubtasksMutation(taskId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (subtaskIds: string[]) => reorderTaskSubtasks(taskId, subtaskIds),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: taskKeys.subtasks(taskId) })
+    },
+  })
+}
+
+export function useDeleteSubtaskMutation(taskId: string, projectId?: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (subtaskId: string) => deleteTaskSubtask(taskId, subtaskId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: taskKeys.subtasks(taskId) })
+      void queryClient.invalidateQueries({ queryKey: taskKeys.detail(taskId) })
       void queryClient.invalidateQueries({ queryKey: taskKeys.all })
       void queryClient.invalidateQueries({ queryKey: activityKeys.byTask(taskId) })
       if (projectId) {

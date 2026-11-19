@@ -5,10 +5,11 @@ import PageContainer from "@/components/common/PageContainer"
 import PageHeader from "@/components/common/PageHeader"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Kbd } from "@/components/ui/kbd"
-import { Plus, X } from "lucide-react"
+import ShortcutHint from "@/components/common/ShortcutHint"
+import { Download, Plus, X } from "lucide-react"
 import confetti from "canvas-confetti"
 import { toast } from "@/components/ui/toast"
+import { downloadCsv } from "@/lib/csvExport"
 import type { SavedView } from "@/features/savedviews/types/savedView.types"
 
 import { useQuery } from "@tanstack/react-query"
@@ -19,6 +20,7 @@ import {
   getAllTasks,
   getTasksByAssignedTo,
   getTasksByCreatedBy,
+  updateTaskDetails,
   updateTaskStatus,
 } from "@/features/tasks/services/task.services"
 import { searchProjects } from "@/features/projects/services/projects.services"
@@ -51,51 +53,12 @@ import TaskListSkeleton from "@/features/tasks/components/TaskListSkeleton"
 import TaskTable from "@/features/tasks/components/TaskTable"
 import TaskTableSkeleton from "@/features/tasks/components/TaskTableSkeleton"
 import TaskEmptyState from "@/features/tasks/components/TaskEmptyState"
+import TaskCalendarView from "@/features/tasks/components/TaskCalendarView"
+import ProjectPlanningTimeline from "@/features/tasks/components/ProjectPlanningTimeline"
 
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination"
-
+import DataPagination from "@/components/common/DataPagination"
 import { useAppDispatch, useAppSelector } from "@/hooks/redux-hooks"
 import { useIsMobile } from "@/hooks/use-mobile"
-
-function getPaginationItems(
-  totalPages: number,
-  currentPage: number
-): (number | "ellipsis")[] {
-  if (totalPages <= 7) {
-    return Array.from({ length: totalPages }, (_, index) => index)
-  }
-
-  const pages = new Set<number>([
-    0,
-    totalPages - 1,
-    currentPage,
-    currentPage - 1,
-    currentPage + 1,
-  ])
-
-  const visiblePages = [...pages]
-    .filter((p) => p >= 0 && p < totalPages)
-    .sort((a, b) => a - b)
-
-  const result: (number | "ellipsis")[] = []
-
-  visiblePages.forEach((p, index) => {
-    if (index > 0 && p - visiblePages[index - 1] > 1) {
-      result.push("ellipsis")
-    }
-    result.push(p)
-  })
-
-  return result
-}
 
 type TaskFiltersState = TaskFilters
 
@@ -157,8 +120,6 @@ export default function TaskPage() {
     size,
     totalElements,
     totalPages,
-    first,
-    last,
     loading,
     error,
   } = useAppSelector((state) => state.task)
@@ -603,26 +564,70 @@ export default function TaskPage() {
     navigate(`/app/tasks/create?status=${status}`)
   }
 
-  /*
-   * ---------------------------------------------------------
-   * Pagination
-   * ---------------------------------------------------------
-   */
-
-  const handlePreviousPage = () => {
-    if (first) {
-      return
+  const handleRescheduleTask = async (
+    task: Task,
+    nextDueDateIso: string | null
+  ) => {
+    try {
+      const updated = await updateTaskDetails({
+        id: task.id,
+        title: task.title,
+        description: task.description ?? undefined,
+        taskStatus: task.taskStatus,
+        taskPriority: task.taskPriority,
+        dueDate: nextDueDateIso,
+        projectId: task.project.id,
+        assignedToId: task.assignedTo?.id ?? "",
+        assigneeIds: task.assignees?.map((a) => a.id),
+        createdById: task.createdBy?.id ?? "",
+      })
+      dispatch(updateTask(updated))
+      toast.add({
+        type: "success",
+        title: nextDueDateIso ? "Task rescheduled" : "Due date cleared",
+        description: `"${updated.title}" schedule updated successfully.`,
+      })
+    } catch (error) {
+      toast.add({
+        type: "error",
+        title: "Failed to reschedule task",
+        description:
+          error instanceof Error
+            ? error.message
+            : "An unexpected error occurred while updating due date.",
+      })
     }
-
-    dispatch(setTaskPage(Math.max(0, page - 1)))
   }
 
-  const handleNextPage = () => {
-    if (last) {
-      return
-    }
-
-    dispatch(setTaskPage(Math.min(totalPages - 1, page + 1)))
+  const handleExportCsv = () => {
+    downloadCsv("tasks-export.csv", filteredTasks, [
+      { header: "Title", accessor: (t) => t.title },
+      { header: "Project", accessor: (t) => t.project?.name ?? "" },
+      { header: "Status", accessor: (t) => t.taskStatus },
+      { header: "Priority", accessor: (t) => t.taskPriority },
+      {
+        header: "Assignee",
+        accessor: (t) =>
+          t.assignedTo
+            ? `${t.assignedTo.firstName ?? ""} ${t.assignedTo.lastName ?? ""}`.trim()
+            : "Unassigned",
+      },
+      { header: "Assignee Email", accessor: (t) => t.assignedTo?.email ?? "" },
+      { header: "Due Date", accessor: (t) => t.dueDate ?? "" },
+      {
+        header: "Created By",
+        accessor: (t) =>
+          t.createdBy
+            ? `${t.createdBy.firstName ?? ""} ${t.createdBy.lastName ?? ""}`.trim()
+            : "",
+      },
+      { header: "Created At", accessor: (t) => t.createdAt },
+    ])
+    toast.add({
+      type: "success",
+      title: "CSV exported",
+      description: `Exported ${filteredTasks.length} task${filteredTasks.length === 1 ? "" : "s"}.`,
+    })
   }
 
   /*
@@ -641,14 +646,31 @@ export default function TaskPage() {
         onRefresh={() => void refetch()}
         isRefreshing={queryFetching}
         actions={
-          <Button onClick={() => navigate("/app/tasks/create")} className="gap-2">
-            <Plus className="size-4" />
-            <span>Create task</span>
-            <span className="hidden sm:inline-flex items-center gap-0.5 ml-1 opacity-75">
-              <Kbd className="h-4 min-w-4 px-1 text-[9px] bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30 font-mono">C</Kbd>
-              <Kbd className="h-4 min-w-4 px-1 text-[9px] bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30 font-mono">T</Kbd>
-            </span>
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1.5 text-xs"
+              disabled={filteredTasks.length === 0}
+              onClick={handleExportCsv}
+            >
+              <Download className="size-3.5" />
+              <span>Export CSV</span>
+            </Button>
+            <Button onClick={() => navigate("/app/tasks/create")} className="gap-2">
+              <Plus className="size-4" />
+              <span>Create task</span>
+              <ShortcutHint
+                keys={["c", "t"]}
+                sequence
+                compact
+                decorative
+                variant="onPrimary"
+                className="hidden sm:inline-flex ml-1"
+              />
+            </Button>
+          </div>
         }
       />
 
@@ -685,15 +707,15 @@ export default function TaskPage() {
 
         {/* Active Filter Chips */}
         {hasActiveFilters && (
-          <div className="flex flex-wrap items-center gap-1.5 pt-1">
+          <div className="flex flex-wrap items-center gap-1.5 pt-1 min-w-0">
             <span className="text-xs text-muted-foreground mr-1">Active filters:</span>
             {filters.search && (
-              <Badge variant="secondary" className="gap-1 text-xs py-0.5">
-                <span>Keyword: "{filters.search}"</span>
+              <Badge variant="secondary" className="gap-1 text-xs py-0.5 max-w-full">
+                <span className="max-w-[200px] truncate">Keyword: "{filters.search}"</span>
                 <button
                   type="button"
                   onClick={() => handleFiltersChange({ ...filters, search: "" })}
-                  className="hover:text-destructive"
+                  className="hover:text-destructive shrink-0"
                 >
                   <X className="size-3" />
                 </button>
@@ -793,7 +815,7 @@ export default function TaskPage() {
         {loading && (
           <>
             {view === "kanban" && <TaskKanbanSkeleton />}
-            {(view === "card" || view === "list") && <TaskListSkeleton />}
+            {(view === "card" || view === "list" || view === "calendar" || view === "timeline") && <TaskListSkeleton />}
             {view === "table" && <TaskTableSkeleton />}
           </>
         )}
@@ -835,82 +857,39 @@ export default function TaskPage() {
                 onDelete={handleDeleteTask}
               />
             )}
+
+            {view === "calendar" && (
+              <TaskCalendarView
+                tasks={filteredTasks}
+                onViewTask={handleViewTask}
+                onRescheduleTask={handleRescheduleTask}
+              />
+            )}
+
+            {view === "timeline" && (
+              <ProjectPlanningTimeline
+                tasks={filteredTasks}
+                dependencies={[]}
+              />
+            )}
           </>
         )}
 
         {/* Pagination */}
         {!loading && totalElements > 0 && (
-          <div className="flex flex-col gap-4 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-muted-foreground">
-              Showing {page * size + 1}–{Math.min((page + 1) * size, totalElements)} of{" "}
-              {totalElements.toLocaleString("en-IN")} tasks
-            </p>
-
-            <Pagination className="mx-0 w-auto justify-start sm:justify-end">
-              <PaginationContent className="flex-wrap">
-                <PaginationItem>
-                  <PaginationPrevious
-                    href="#"
-                    aria-disabled={first || loading}
-                    tabIndex={first || loading ? -1 : undefined}
-                    className={
-                      first || loading
-                        ? "pointer-events-none opacity-50"
-                        : "cursor-pointer"
-                    }
-                    onClick={(event) => {
-                      event.preventDefault()
-                      if (!first && !loading) {
-                        handlePreviousPage()
-                      }
-                    }}
-                  />
-                </PaginationItem>
-
-                {getPaginationItems(totalPages, page).map((item, index) => (
-                  <PaginationItem key={`${item}-${index}`}>
-                    {item === "ellipsis" ? (
-                      <PaginationEllipsis />
-                    ) : (
-                      <PaginationLink
-                        href="#"
-                        isActive={page === item}
-                        aria-label={`Go to page ${item + 1}`}
-                        aria-current={page === item ? "page" : undefined}
-                        onClick={(event) => {
-                          event.preventDefault()
-                          if (page !== item && !loading) {
-                            dispatch(setTaskPage(item))
-                          }
-                        }}
-                      >
-                        {item + 1}
-                      </PaginationLink>
-                    )}
-                  </PaginationItem>
-                ))}
-
-                <PaginationItem>
-                  <PaginationNext
-                    href="#"
-                    aria-disabled={last || loading}
-                    tabIndex={last || loading ? -1 : undefined}
-                    className={
-                      last || loading
-                        ? "pointer-events-none opacity-50"
-                        : "cursor-pointer"
-                    }
-                    onClick={(event) => {
-                      event.preventDefault()
-                      if (!last && !loading) {
-                        handleNextPage()
-                      }
-                    }}
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          </div>
+          <DataPagination
+            page={page}
+            totalPages={totalPages}
+            totalElements={totalElements}
+            pageSize={size}
+            itemLabel="tasks"
+            disabled={loading}
+            onPageChange={(nextPage) => dispatch(setTaskPage(nextPage))}
+            onPageSizeChange={(newSize) => {
+              dispatch(setTaskPageSize(newSize))
+              dispatch(setTaskPage(0))
+            }}
+          />
         )}
     </PageContainer>
   )

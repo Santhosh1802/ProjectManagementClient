@@ -6,6 +6,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
+import DataPagination, { useClientPagination } from "@/components/common/DataPagination"
 import { Loader2, CheckCircle2, XCircle, Clock } from "lucide-react"
 import { useWorkflowRuleExecutionsQuery } from "../hooks/useWorkflowRulesQuery"
 import type { WorkflowRule } from "../types/workflow.types"
@@ -24,6 +25,16 @@ export function WorkflowExecutionHistoryDialog({
   const { data: executions = [], isLoading } = useWorkflowRuleExecutionsQuery(
     open ? rule?.id : undefined
   )
+
+  const {
+    page,
+    setPage,
+    pageSize,
+    setPageSize,
+    totalElements,
+    totalPages,
+    paginatedItems: paginatedExecutions,
+  } = useClientPagination(executions, 5)
 
   const formatTimestamp = (isoString: string) => {
     try {
@@ -86,36 +97,50 @@ export function WorkflowExecutionHistoryDialog({
             No execution history recorded for this rule yet.
           </div>
         ) : (
-          <div className="max-h-[380px] overflow-y-auto pr-3 space-y-3">
-            {executions.map((exec) => (
-              <div
-                key={exec.id}
-                className="rounded-lg border bg-card/60 p-3 text-sm space-y-1.5 transition-colors"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    {renderStatusBadge(exec.status)}
+          <div className="space-y-3 min-w-0">
+            <div className="max-h-[380px] overflow-y-auto pr-1 space-y-3">
+              {paginatedExecutions.map((exec) => (
+                <div
+                  key={exec.id}
+                  className="rounded-lg border bg-card/60 p-3 text-sm space-y-1.5 transition-colors min-w-0"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      {renderStatusBadge(exec.status)}
+                      <span className="text-xs text-muted-foreground">
+                        {exec.triggerType.replace(/_/g, " ")}
+                      </span>
+                    </div>
                     <span className="text-xs text-muted-foreground">
-                      {exec.triggerType.replace(/_/g, " ")}
+                      {formatTimestamp(exec.executedAt)}
                     </span>
                   </div>
-                  <span className="text-xs text-muted-foreground">
-                    {formatTimestamp(exec.executedAt)}
-                  </span>
-                </div>
 
-                {exec.errorMessage ? (
-                  <p className="text-xs text-destructive font-mono bg-destructive/5 rounded p-2">
-                    {exec.errorMessage}
-                  </p>
-                ) : exec.actionsExecutedJson && exec.actionsExecutedJson !== "[]" ? (
-                  <div className="text-xs text-muted-foreground">
-                    <span className="font-medium text-foreground">Actions: </span>
-                    {exec.actionsExecutedJson}
-                  </div>
-                ) : null}
-              </div>
-            ))}
+                  {exec.errorMessage ? (
+                    <p className="text-xs text-destructive font-mono bg-destructive/5 rounded p-2 break-all">
+                      {exec.errorMessage}
+                    </p>
+                  ) : exec.actionsExecutedJson && exec.actionsExecutedJson !== "[]" ? (
+                    <div className="text-xs text-muted-foreground break-all">
+                      <span className="font-medium text-foreground">Actions: </span>
+                      {exec.actionsExecutedJson}
+                    </div>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+
+            <DataPagination
+              compact
+              page={page}
+              totalPages={totalPages}
+              totalElements={totalElements}
+              pageSize={pageSize}
+              pageSizeOptions={[5, 10, 20]}
+              itemLabel="runs"
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+            />
           </div>
         )}
       </DialogContent>

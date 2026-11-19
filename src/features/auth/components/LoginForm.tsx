@@ -15,7 +15,7 @@ import {
   FieldError,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { Kbd } from "@/components/ui/kbd"
+import ShortcutHint from "@/components/common/ShortcutHint"
 import { Separator } from "@/components/ui/separator"
 import { zodResolver } from "@hookform/resolvers/zod"
 import {
@@ -57,6 +57,8 @@ export default function LoginForm() {
 
   const [showPassword, setShowPassword] = useState<boolean>(false)
   const [isSuccess, setIsSuccess] = useState<boolean>(false)
+  const [mfaStepRequired, setMfaStepRequired] = useState<boolean>(false)
+  const [mfaCode, setMfaCode] = useState<string>("")
   const [serverError, setServerError] = useState<{
     status?: number
     message: string
@@ -88,13 +90,20 @@ export default function LoginForm() {
       const request: LoginForm = {
         email: data.email,
         password: data.password,
+        ...(mfaStepRequired && mfaCode.trim() ? { mfaCode: mfaCode.trim() } : {}),
       }
 
       const response = await LoginUser(request)
+
+      if (response.status === 202 || response.data?.message === "MFA_REQUIRED") {
+        setMfaStepRequired(true)
+        setServerError(null)
+        return
+      }
+
       setIsSuccess(true)
       setServerError(null)
       const user = response.data?.data || null;
-      console.log(user);
       
       const loggedInUser:AuthUser = {
         id:user.id,
@@ -102,9 +111,13 @@ export default function LoginForm() {
         lastName:user.lastName,
         email:user.email,
         user_role:user.userRole,
+        avatarUrl:user.avatarUrl ?? null,
+        mfaEnabled:Boolean(user.mfaEnabled),
       }
       dispatch(setAuthUser(loggedInUser));
       reset()
+      setMfaStepRequired(false)
+      setMfaCode("")
       setTimeout(() => {
         navigate("/app/dashboard")
       }, 1500)
@@ -253,6 +266,24 @@ export default function LoginForm() {
                 </Field>
               )}
             />
+            {mfaStepRequired && (
+              <Field>
+                <FieldLabel htmlFor="login-mfa-code">
+                  Two-Factor Authentication Code (6 digits)
+                </FieldLabel>
+                <Input
+                  id="login-mfa-code"
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={mfaCode}
+                  onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, ""))}
+                  placeholder="Enter 6-digit code from Authenticator app"
+                  className="font-mono tracking-widest text-xs"
+                  autoFocus
+                />
+              </Field>
+            )}
           </FieldGroup>
         </form>
 
@@ -276,8 +307,10 @@ export default function LoginForm() {
             )}
           </Button>
         </Field>
-        <div className="font-mono font-light text-zinc-500">
-          Press <Kbd>Enter ⏎</Kbd> to continue
+        <div className="flex items-center gap-1.5 font-mono font-light text-zinc-500">
+          <span>Press</span>
+          <ShortcutHint keys={["Enter"]} />
+          <span>to continue</span>
         </div>
         <Separator></Separator>
         <div className="text-zinc-500">

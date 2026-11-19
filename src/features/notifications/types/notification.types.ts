@@ -2,7 +2,10 @@ export type NotificationType =
   | "TASK_ASSIGNED"
   | "TASK_STATUS_CHANGED"
   | "TASK_COMMENT_ADDED"
+  | "COMMENT_MENTIONED"
   | "PROJECT_MEMBER_ADDED"
+  | "CHAT_MESSAGE"
+  | "CHAT_MENTION"
 
 export interface NotificationItem {
   id: string
